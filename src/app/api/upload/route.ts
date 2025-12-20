@@ -40,7 +40,8 @@ export async function POST(request: Request) {
     await writeFile(filepath, buffer);
     // Ensure the URL is absolute or relative to the root, but consistent.
     // Using a relative path starting with / is correct for Next.js public folder.
-    const fileUrl = `/uploads/${filename}`;
+    // Use the API route to serve the file to avoid caching issues in production
+    const fileUrl = `/api/uploads/${filename}`;
     return NextResponse.json({ url: fileUrl });
   } catch (error) {
     console.error("Error saving file:", error);
