@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content } = await request.json();
+    const { content, images } = await request.json();
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
     }
 
-    const post = await createPost(content, session.user.id);
+    const post = await createPost(content, session.user.id, images);
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
   } catch (error) {

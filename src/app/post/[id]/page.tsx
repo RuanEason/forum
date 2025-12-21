@@ -9,6 +9,7 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
+import PostImages from "@/components/PostImages";
 
 interface AuthorProps {
   id: string;
@@ -24,6 +25,7 @@ interface PostDetailProps {
   likes: { userId: string }[];
   reposts: { userId: string }[];
   comments: CommentProps[];
+  images: { url: string }[];
 }
 
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,6 +66,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
                     {post.content}
                   </ReactMarkdown>
                 </div>
+                {post.images && post.images.length > 0 && (
+                  <PostImages images={post.images.map((img) => img.url)} isDetail={true} />
+                )}
               </div>
               <div className="mt-4 flex items-center space-x-8 pt-4 border-t border-gray-100">
                 <LikeButton

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import sharp from "sharp";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -28,8 +29,8 @@ export async function POST(request: Request) {
   }
 
   // Generate unique filename
-  const ext = path.extname(file.name);
-  const filename = `${uuidv4()}${ext}`;
+  // Always use .webp for optimized images
+  const filename = `${uuidv4()}.webp`;
   const uploadDir = path.join(process.cwd(), "public/uploads");
   const filepath = path.join(uploadDir, filename);
 
@@ -37,7 +38,18 @@ export async function POST(request: Request) {
     // Ensure the directory exists
     await mkdir(uploadDir, { recursive: true });
     
-    await writeFile(filepath, buffer);
+    // Process image with sharp
+    // 1. Resize if too large (max width 1920px)
+    // 2. Convert to WebP
+    // 3. Compress (quality 80)
+    await sharp(buffer)
+      .resize(1920, 1920, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .webp({ quality: 80 })
+      .toFile(filepath);
+
     // Ensure the URL is absolute or relative to the root, but consistent.
     // Using a relative path starting with / is correct for Next.js public folder.
     // Use the API route to serve the file to avoid caching issues in production

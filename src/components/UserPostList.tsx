@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PostImages from "@/components/PostImages";
 
 interface PostProps {
   id: string;
@@ -22,6 +23,7 @@ interface PostProps {
   likes: { userId: string }[];
   reposts: { userId: string }[];
   comments: { id: string }[];
+  images?: { url: string }[];
 }
 
 export default function UserPostList({ initialPosts }: { initialPosts: PostProps[] }) {
@@ -81,8 +83,11 @@ export default function UserPostList({ initialPosts }: { initialPosts: PostProps
                       </ReactMarkdown>
                     </div>
                   </Link>
+                  {post.images && post.images.length > 0 && (
+                    <PostImages images={post.images.map((img) => img.url)} />
+                  )}
                 </div>
-                
+
                 <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
                   <LikeButton
                     targetType="post"

@@ -25,6 +25,11 @@ export async function getPosts() {
           id: true,
         },
       },
+      images: {
+        select: {
+          url: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -32,11 +37,14 @@ export async function getPosts() {
   });
 }
 
-export async function createPost(content: string, authorId: string) {
+export async function createPost(content: string, authorId: string, images: string[] = []) {
   return prisma.post.create({
     data: {
       content,
       authorId,
+      images: {
+        create: images.map((url) => ({ url })),
+      },
     },
   });
 }
@@ -60,6 +68,11 @@ export async function getPostById(id: string) {
       reposts: {
         select: {
           userId: true,
+        },
+      },
+      images: {
+        select: {
+          url: true,
         },
       },
       comments: {
