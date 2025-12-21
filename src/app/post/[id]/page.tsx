@@ -10,6 +10,7 @@ import RepostButton from "@/components/RepostButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
+import { Metadata } from "next";
 
 interface AuthorProps {
   id: string;
@@ -28,6 +29,40 @@ interface PostDetailProps {
   images: { url: string }[];
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const post = await getPostById(id) as unknown as PostDetailProps | null;
+
+  if (!post) {
+    return {
+      title: "帖子未找到",
+    };
+  }
+
+  const title = `${post.author.name || "匿名用户"} 的帖子`;
+  const description = post.content.slice(0, 150) + (post.content.length > 150 ? "..." : "");
+  const images = post.images.map((img) => img.url);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      publishedTime: new Date(post.createdAt).toISOString(),
+      authors: [post.author.name || "匿名用户"],
+      images: images.length > 0 ? images : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: images.length > 0 ? images : undefined,
+    },
+  };
+}
+
 export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
@@ -42,8 +77,38 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
     );
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+    headline: `${post.author.name || "匿名用户"} 的帖子`,
+    datePublished: new Date(post.createdAt).toISOString(),
+    author: {
+      "@type": "Person",
+      name: post.author.name || "匿名用户",
+      url: `/user/${post.author.id}`,
+    },
+    articleBody: post.content,
+    image: post.images.map((img) => img.url),
+    interactionStatistic: [
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/LikeAction",
+        userInteractionCount: post.likes.length,
+      },
+      {
+        "@type": "InteractionCounter",
+        interactionType: "https://schema.org/CommentAction",
+        userInteractionCount: post.comments.length,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-4 sm:px-0">
           {/* Post Content */}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import Avatar from "@/components/Avatar";
 import UserPostList from "@/components/UserPostList";
+import { Metadata } from "next";
 
 interface UserProfileProps {
   params: Promise<{ id: string }>;
@@ -38,6 +39,11 @@ async function getUserProfile(id: string) {
               id: true,
             },
           },
+          images: {
+            select: {
+              url: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -45,6 +51,40 @@ async function getUserProfile(id: string) {
       },
     },
   });
+}
+
+export async function generateMetadata({ params }: UserProfileProps): Promise<Metadata> {
+  const { id } = await params;
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { name: true, bio: true, avatar: true },
+  });
+
+  if (!user) {
+    return {
+      title: "用户未找到",
+    };
+  }
+
+  const title = `${user.name || "匿名用户"} 的个人主页`;
+  const description = user.bio || `查看 ${user.name || "匿名用户"} 在同学论坛发布的帖子和动态。`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      images: user.avatar ? [user.avatar] : undefined,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images: user.avatar ? [user.avatar] : undefined,
+    },
+  };
 }
 
 export default async function UserProfile({ params }: UserProfileProps) {

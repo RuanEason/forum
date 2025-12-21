@@ -259,7 +259,7 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100">
+                <div key={post.id} className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200">
                   <div className="p-4 sm:p-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0 mr-3">
@@ -298,7 +298,7 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
                             : false
                         }
                       />
-                      <Link href={`/post/${post.id}`} className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group">
+                      <Link href={`/post/${post.id}`} className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group p-2 rounded-full hover:bg-blue-50 transition-colors">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="20"
@@ -327,7 +327,7 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
                       {session?.user?.id && session.user.id === post.author.id && (
                         <button
                           onClick={() => handleDeletePost(post.id)}
-                          className="text-red-500 hover:text-red-700 text-sm"
+                          className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"
                         >
                           删除
                         </button>

@@ -37,6 +37,7 @@ export default function PostImages({ images, isDetail = false }: PostImagesProps
             className={`relative overflow-hidden rounded-lg cursor-pointer ${getImageAspectClass(
               displayImages.length
             )}`}
+            style={displayImages.length === 1 ? { height: '500px' } : {}}
             onClick={() => setSelectedImage(url)}
           >
             <Image
@@ -44,6 +45,7 @@ export default function PostImages({ images, isDetail = false }: PostImagesProps
               alt={`Post image ${index + 1}`}
               fill
               className="object-cover hover:opacity-90 transition-opacity"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
             {!isDetail && index === 8 && remainingCount > 0 && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xl font-bold">
