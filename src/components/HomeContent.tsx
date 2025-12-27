@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -35,54 +36,9 @@ interface PostProps {
 }
 
 export default function HomeContent({ initialPosts }: { initialPosts: PostProps[] }) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
-  const [newPostContent, setNewPostContent] = useState("");
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-
-    setIsUploading(true);
-    setError("");
-
-    try {
-      const files = Array.from(e.target.files);
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Upload failed");
-        }
-
-        const data = await response.json();
-        return data.url;
-      });
-
-      const uploadedUrls = await Promise.all(uploadPromises);
-      setSelectedImages((prev) => [...prev, ...uploadedUrls]);
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError("图片上传失败，请重试");
-    } finally {
-      setIsUploading(false);
-      // Reset input value to allow selecting the same file again
-      e.target.value = "";
-    }
-  };
-
-  const removeImage = (indexToRemove: number) => {
-    setSelectedImages((prev) => prev.filter((_, index) => index !== indexToRemove));
-  };
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
@@ -107,148 +63,25 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
     }
   };
 
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!session?.user?.id) {
-      setError("请先登录才能发布帖子");
-      return;
-    }
-    if (!newPostContent.trim() && selectedImages.length === 0) {
-      setError("帖子内容或图片不能为空");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("/api/post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: newPostContent,
-          authorId: session.user.id,
-          images: selectedImages,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setNewPostContent("");
-        setSelectedImages([]);
-        // 重新获取帖子列表
-        const postsResponse = await fetch("/api/post");
-        if (postsResponse.ok) {
-          const updatedPosts = await postsResponse.json();
-          setPosts(updatedPosts);
-        }
-      } else {
-        setError(data.error || "发布帖子失败");
-      }
-    } catch (err) {
-      setError("网络错误，发布帖子失败");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <main className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-0 sm:px-0">
           {session && (
-            <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200">
-              <form onSubmit={handleCreatePost}>
-                <div className="flex space-x-3">
-                  <div className="flex-shrink-0">
-                    <Avatar src={session.user.avatar} name={session.user.name} size="md" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <textarea
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm sm:text-base"
-                      rows={3}
-                      placeholder="分享你的新鲜事..."
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      disabled={loading}
-                    ></textarea>
-
-                    {/* Image Previews */}
-                    {selectedImages.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {selectedImages.map((url, index) => (
-                          <div key={index} className="relative aspect-square group">
-                            <Image
-                              src={url}
-                              alt={`Upload preview ${index + 1}`}
-                              fill
-                              className="object-cover rounded-md"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-                    <div className="mt-3 flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <label className="cursor-pointer text-gray-500 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-gray-100">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleImageSelect}
-                            disabled={loading || isUploading}
-                          />
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </label>
-                        {isUploading && <span className="text-xs text-gray-500">上传中...</span>}
-                      </div>
-                      <button
-                        type="submit"
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
-                        disabled={loading || isUploading}
-                      >
-                        {loading ? "发布中..." : "发布"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </form>
+            <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Avatar src={session.user.avatar} name={session.user.name} size="md" />
+                <span className="text-gray-500 text-sm sm:text-base">分享你的新鲜事...</span>
+              </div>
+              <Link
+                href="/post/create"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                发布帖子
+              </Link>
             </div>
           )}
 
@@ -275,13 +108,19 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
-                          <Link href={`/post/${post.id}`} className="block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out">
+                          <div
+                            onClick={(e) => {
+                              if ((e.target as HTMLElement).closest("a")) return;
+                              router.push(`/post/${post.id}`);
+                            }}
+                            className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
+                          >
                             <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {post.content}
                               </ReactMarkdown>
                             </div>
-                          </Link>
+                          </div>
                           {post.images && post.images.length > 0 && (
                             <PostImages images={post.images.map((img) => img.url)} />
                           )}

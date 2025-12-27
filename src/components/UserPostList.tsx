@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -27,6 +28,7 @@ interface PostProps {
 }
 
 export default function UserPostList({ initialPosts }: { initialPosts: PostProps[] }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
 
@@ -76,13 +78,19 @@ export default function UserPostList({ initialPosts }: { initialPosts: PostProps
                   </span>
                 </div>
                 <div className="mt-2 text-sm text-gray-800">
-                  <Link href={`/post/${post.id}`} className="block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out">
+                  <div
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest("a")) return;
+                      router.push(`/post/${post.id}`);
+                    }}
+                    className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
+                  >
                     <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {post.content}
                       </ReactMarkdown>
                     </div>
-                  </Link>
+                  </div>
                   {post.images && post.images.length > 0 && (
                     <PostImages images={post.images.map((img) => img.url)} />
                   )}

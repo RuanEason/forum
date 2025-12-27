@@ -31,6 +31,15 @@ export default function Navbar() {
           <nav className="flex items-center space-x-4">
             {status === "authenticated" ? (
               <div className="flex items-center space-x-3 sm:space-x-4">
+                <Link
+                  href="/post/create"
+                  className="hidden sm:inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  发帖
+                </Link>
                 {session.user.role === "admin" && (
                    <Link href="/admin" className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors">
                      <span className="hidden sm:inline">管理面板</span>
