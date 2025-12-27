@@ -3,12 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import Image from "next/image";
+import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import "./editor.css";
-
-// Dynamically import MDEditor to avoid SSR issues
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
@@ -18,27 +15,6 @@ export default function CreatePostPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const commandsFilter = (command: any) => {
-    const allowedCommands = [
-      "bold",
-      "italic",
-      "strikethrough",
-      "hr",
-      "title",
-      "quote",
-      "unordered-list",
-      "ordered-list",
-      "link",
-      "code",
-      "codeBlock",
-    ];
-
-    if (allowedCommands.includes(command.name)) {
-      return command;
-    }
-    return false;
-  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -151,21 +127,13 @@ export default function CreatePostPage() {
           <div className="p-6">
             <form onSubmit={handleCreatePost}>
               <div className="space-y-6">
-                {/* Rich Text Editor */}
-                <div data-color-mode="light">
-                  <MDEditor
-                    value={content}
-                    onChange={(val) => setContent(val || "")}
-                    height={300}
-                    preview="edit"
-                    commandsFilter={commandsFilter}
-                    extraCommands={[]}
-                    textareaProps={{
-                      placeholder: "分享你的新鲜事...",
-                    }}
-                    className="w-full"
-                  />
-                </div>
+                {/* Simple Markdown Editor */}
+                <SimpleMarkdownEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="分享你的新鲜事... 支持 Markdown 格式"
+                  minHeight={300}
+                />
 
                 {/* Image Upload */}
                 <div>
