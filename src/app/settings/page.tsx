@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [postViewMode, setPostViewMode] = useState("both");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,7 @@ export default function SettingsPage() {
     if (session?.user) {
       setName(session.user.name || "");
       setAvatar(session.user.avatar || "");
+      setPostViewMode(session.user.postViewMode || "both");
       // Bio is not in session by default, we might need to fetch it or just rely on what we have.
       // For now, let's assume we update what's in session.
       // Ideally, we should fetch the latest user data from an API.
@@ -41,6 +43,7 @@ export default function SettingsPage() {
         setName(data.name || "");
         setBio(data.bio || "");
         setAvatar(data.avatar || "");
+        setPostViewMode(data.postViewMode || "both");
       }
     } catch (err) {
       console.error("Failed to fetch user data", err);
@@ -89,12 +92,13 @@ export default function SettingsPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/complete-profile", { // Reusing this endpoint as it updates user
+      const response = await fetch("/api/auth/complete-profile", {
+        // Reusing this endpoint as it updates user
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, bio, avatar }),
+        body: JSON.stringify({ name, bio, avatar, postViewMode }),
       });
 
       const data = await response.json();
@@ -106,6 +110,7 @@ export default function SettingsPage() {
             ...session?.user,
             name: name,
             avatar: avatar,
+            postViewMode: postViewMode,
           },
         });
         setSuccess("个人信息更新成功！");
@@ -121,7 +126,11 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("确定要注销账号吗？此操作不可逆，您的所有帖子、评论和点赞都将被删除。")) {
+    if (
+      !confirm(
+        "确定要注销账号吗？此操作不可逆，您的所有帖子、评论和点赞都将被删除。"
+      )
+    ) {
       return;
     }
 
@@ -150,7 +159,11 @@ export default function SettingsPage() {
   };
 
   if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">加载中...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        加载中...
+      </div>
+    );
   }
 
   if (!session) {
@@ -175,7 +188,11 @@ export default function SettingsPage() {
                     头像
                   </label>
                   <div className="flex items-center space-x-4">
-                    <Avatar src={avatar} name={name || session?.user?.email} size="lg" />
+                    <Avatar
+                      src={avatar}
+                      name={name || session?.user?.email}
+                      size="lg"
+                    />
                     <div>
                       <button
                         type="button"
@@ -197,7 +214,10 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     昵称
                   </label>
                   <input
@@ -212,7 +232,10 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="bio"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     个人简介
                   </label>
                   <textarea
@@ -224,11 +247,32 @@ export default function SettingsPage() {
                     onChange={(e) => setBio(e.target.value)}
                   />
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="postViewMode"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    帖子列表显示模式
+                  </label>
+                  <select
+                    id="postViewMode"
+                    name="postViewMode"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={postViewMode}
+                    onChange={(e) => setPostViewMode(e.target.value)}
+                  >
+                    <option value="both">显示标题和正文</option>
+                    <option value="title">仅显示标题</option>
+                    <option value="content">仅预览正文</option>
+                  </select>
+                  <p className="mt-2 text-sm text-gray-500">
+                    选择您在浏览帖子列表时希望看到的内容。
+                  </p>
+                </div>
               </div>
 
-              {error && (
-                <div className="text-red-600 text-sm">{error}</div>
-              )}
+              {error && <div className="text-red-600 text-sm">{error}</div>}
               {success && (
                 <div className="text-green-600 text-sm">{success}</div>
               )}
@@ -252,7 +296,9 @@ export default function SettingsPage() {
               危险区域
             </h3>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
-              <p>注销账号将永久删除您的所有数据，包括帖子、评论和点赞。此操作无法撤销。</p>
+              <p>
+                注销账号将永久删除您的所有数据，包括帖子、评论和点赞。此操作无法撤销。
+              </p>
             </div>
             <div className="mt-5">
               <button

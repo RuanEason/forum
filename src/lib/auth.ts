@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           avatar: user.avatar,
+          postViewMode: user.postViewMode,
         };
       }
     })
@@ -52,10 +53,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.avatar = user.avatar;
+        token.postViewMode = user.postViewMode;
       }
       if (trigger === "update" && session?.user) {
         token.name = session.user.name;
         token.avatar = session.user.avatar;
+        if (session.user.postViewMode) {
+          token.postViewMode = session.user.postViewMode;
+        }
       }
       return token;
     },
@@ -64,6 +69,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
         session.user.avatar = token.avatar as string;
+        session.user.postViewMode = token.postViewMode as string;
       }
       return session;
     }

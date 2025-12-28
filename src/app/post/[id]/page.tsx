@@ -20,6 +20,7 @@ interface AuthorProps {
 
 interface PostDetailProps {
   id: string;
+  title: string | null;
   content: string;
   author: AuthorProps;
   createdAt: Date;
@@ -29,9 +30,13 @@ interface PostDetailProps {
   images: { url: string }[];
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPostById(id) as unknown as PostDetailProps | null;
+  const post = (await getPostById(id)) as unknown as PostDetailProps | null;
 
   if (!post) {
     return {
@@ -39,8 +44,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
   }
 
-  const title = `${post.author.name || "匿名用户"} 的帖子`;
-  const description = post.content.slice(0, 150) + (post.content.length > 150 ? "..." : "");
+  const title = post.title
+    ? `${post.title} - ${post.author.name || "匿名用户"}`
+    : `${post.author.name || "匿名用户"} 的帖子`;
+  const description =
+    post.content.slice(0, 150) + (post.content.length > 150 ? "..." : "");
   const images = post.images.map((img) => img.url);
 
   return {
@@ -63,11 +71,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PostDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
   const postId = id;
-  const post = await getPostById(postId) as unknown as PostDetailProps | null;
+  const post = (await getPostById(postId)) as unknown as PostDetailProps | null;
 
   if (!post) {
     return (
@@ -115,9 +127,16 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
           <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
             <div className="p-4 sm:p-6">
               <div className="flex items-center">
-                <Avatar src={post.author.avatar} name={post.author.name} size="md" />
+                <Avatar
+                  src={post.author.avatar}
+                  name={post.author.name}
+                  size="md"
+                />
                 <div className="ml-4">
-                  <Link href={`/user/${post.author.id}`} className="text-sm font-bold text-gray-900 hover:underline">
+                  <Link
+                    href={`/user/${post.author.id}`}
+                    className="text-sm font-bold text-gray-900 hover:underline"
+                  >
                     {post.author.name || "匿名用户"}
                   </Link>
                   <div className="text-xs text-gray-500">
@@ -125,6 +144,13 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </div>
               </div>
+
+              <div className="mt-4 mb-4">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {post.title || "无标题"}
+                </h1>
+              </div>
+
               <div className="mt-4">
                 <div className="prose prose-sm sm:prose-base max-w-none break-words">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -132,7 +158,10 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
                   </ReactMarkdown>
                 </div>
                 {post.images && post.images.length > 0 && (
-                  <PostImages images={post.images.map((img) => img.url)} isDetail={true} />
+                  <PostImages
+                    images={post.images.map((img) => img.url)}
+                    isDetail={true}
+                  />
                 )}
               </div>
               <div className="mt-4 flex items-center space-x-8 pt-4 border-t border-gray-100">
@@ -142,7 +171,9 @@ export default async function PostDetailPage({ params }: { params: Promise<{ id:
                   initialLikesCount={post.likes.length}
                   initialLikedByUser={
                     session?.user?.id
-                      ? post.likes.some((like) => like.userId === session.user.id)
+                      ? post.likes.some(
+                          (like) => like.userId === session.user.id
+                        )
                       : false
                   }
                 />

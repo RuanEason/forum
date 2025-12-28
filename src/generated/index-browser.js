@@ -116,12 +116,14 @@ exports.Prisma.UserScalarFieldEnum = {
   banned: 'banned',
   avatar: 'avatar',
   bio: 'bio',
+  postViewMode: 'postViewMode',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
 
 exports.Prisma.PostScalarFieldEnum = {
   id: 'id',
+  title: 'title',
   content: 'content',
   authorId: 'authorId',
   createdAt: 'createdAt',

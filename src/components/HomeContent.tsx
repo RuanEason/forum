@@ -14,6 +14,7 @@ import Image from "next/image";
 
 interface PostProps {
   id: string;
+  title: string | null;
   content: string;
   author: {
     id: string;
@@ -35,10 +36,16 @@ interface PostProps {
   createdAt: string;
 }
 
-export default function HomeContent({ initialPosts }: { initialPosts: PostProps[] }) {
+export default function HomeContent({
+  initialPosts,
+}: {
+  initialPosts: PostProps[];
+}) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+
+  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
@@ -70,15 +77,30 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
           {session && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <Avatar src={session.user.avatar} name={session.user.name} size="md" />
-                <span className="text-gray-500 text-sm sm:text-base">分享你的新鲜事...</span>
+                <Avatar
+                  src={session.user.avatar}
+                  name={session.user.name}
+                  size="md"
+                />
+                <span className="text-gray-500 text-sm sm:text-base">
+                  分享你的新鲜事...
+                </span>
               </div>
               <Link
                 href="/post/create"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-1"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 发布帖子
               </Link>
@@ -88,19 +110,31 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
           <div className="space-y-4 sm:space-y-6">
             {posts.length === 0 ? (
               <div className="text-center py-12 bg-white sm:rounded-lg shadow-sm">
-                <p className="text-gray-500">还没有帖子，快来发布第一个帖子吧！</p>
+                <p className="text-gray-500">
+                  还没有帖子，快来发布第一个帖子吧！
+                </p>
               </div>
             ) : (
               posts.map((post) => (
-                <div key={post.id} className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200">
+                <div
+                  key={post.id}
+                  className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200"
+                >
                   <div className="p-4 sm:p-6">
                     <div className="flex items-start">
                       <div className="flex-shrink-0 mr-3">
-                        <Avatar src={post.author.avatar} name={post.author.name} size="md" />
+                        <Avatar
+                          src={post.author.avatar}
+                          name={post.author.name}
+                          size="md"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <Link href={`/user/${post.author.id}`} className="text-sm font-bold text-gray-900 hover:underline truncate">
+                          <Link
+                            href={`/user/${post.author.id}`}
+                            className="text-sm font-bold text-gray-900 hover:underline truncate"
+                          >
                             {post.author.name || "匿名用户"}
                           </Link>
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
@@ -110,20 +144,34 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
                         <div className="mt-2 text-sm text-gray-800">
                           <div
                             onClick={(e) => {
-                              if ((e.target as HTMLElement).closest("a")) return;
+                              if ((e.target as HTMLElement).closest("a"))
+                                return;
                               router.push(`/post/${post.id}`);
                             }}
                             className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                           >
-                            <div className="prose prose-sm max-w-none line-clamp-4 break-words">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {post.content}
-                              </ReactMarkdown>
-                            </div>
+                            {(viewMode === "both" || viewMode === "title") &&
+                              post.title && (
+                                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                  {post.title}
+                                </h3>
+                              )}
+                            {(viewMode === "both" ||
+                              viewMode === "content") && (
+                              <div className="prose prose-sm max-w-none line-clamp-4 break-words">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {post.content}
+                                </ReactMarkdown>
+                              </div>
+                            )}
                           </div>
-                          {post.images && post.images.length > 0 && (
-                            <PostImages images={post.images.map((img) => img.url)} />
-                          )}
+                          {(viewMode === "both" || viewMode === "content") &&
+                            post.images &&
+                            post.images.length > 0 && (
+                              <PostImages
+                                images={post.images.map((img) => img.url)}
+                              />
+                            )}
                         </div>
 
                         <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
@@ -166,9 +214,7 @@ export default function HomeContent({ initialPosts }: { initialPosts: PostProps[
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))
+              ))
             )}
           </div>
         </div>

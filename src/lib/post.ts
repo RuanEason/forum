@@ -37,9 +37,15 @@ export async function getPosts() {
   });
 }
 
-export async function createPost(content: string, authorId: string, images: string[] = []) {
+export async function createPost(
+  title: string | undefined | null,
+  content: string,
+  authorId: string,
+  images: string[] = []
+) {
   return prisma.post.create({
     data: {
+      title: title || null,
       content,
       authorId,
       images: {
@@ -120,10 +126,13 @@ export async function getPostById(id: string) {
   });
 }
 
-export async function updatePost(id: string, content: string) {
+export async function updatePost(id: string, title: string | undefined | null, content: string) {
   return prisma.post.update({
     where: { id },
-    data: { content },
+    data: {
+      content,
+      title: title || null,
+    },
   });
 }
 

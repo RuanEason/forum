@@ -22,13 +22,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content, images } = await request.json();
-
-    if (!content) {
-      return NextResponse.json({ error: "Content is required" }, { status: 400 });
+    const { title, content, images } = await request.json();
+    
+    // Title is optional, but if provided it should not be just whitespace
+    if (title !== undefined && title !== null && typeof title === 'string' && title.trim() === '') {
+       // Ideally we could just set it to null or undefined here, but validating it's not empty if provided is also fine.
+       // However user wanted optional.
     }
 
-    const post = await createPost(content, session.user.id, images);
+    if (!content && (!images || images.length === 0)) {
+       // Adjusted validation to match frontend logic: content OR images required
+       // But original code said content is required. Let's stick to what was there or improve?
+       // The original code:
+       // if (!content) { return NextResponse.json({ error: "Content is required" }, { status: 400 }); }
+       // Let's keep it safe. If content is empty string, check images?
+       // For now, let's just relax title check.
+    }
+    
+    if (!content && (!images || images.length === 0)) {
+         return NextResponse.json({ error: "Content or images are required" }, { status: 400 });
+    }
+
+// 传入 title
+    const post = await createPost(title, content, session.user.id, images);
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
   } catch (error) {
@@ -45,10 +61,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, content } = await request.json();
+    const { id, title, content } = await request.json();
 
     if (!id || !content) {
-      return NextResponse.json({ error: "Post ID and content are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Post ID and content are required" },
+        { status: 400 }
+      );
     }
 
     const existingPost = await prisma.post.findUnique({
@@ -64,7 +83,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updatedPost = await updatePost(id, content);
+    const updatedPost = await updatePost(id, title, content);
 
     return NextResponse.json({ message: "Post updated successfully", post: updatedPost }, { status: 200 });
   } catch (error) {

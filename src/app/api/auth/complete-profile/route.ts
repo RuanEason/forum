@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, avatar, bio } = await request.json();
+    const { name, avatar, bio, postViewMode } = await request.json();
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
         name,
         avatar,
         bio,
+        postViewMode,
       }
     });
 
