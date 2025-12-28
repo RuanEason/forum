@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
+import BackButton from "@/components/BackButton";
 
 export default function SettingsPage() {
   const { data: session, status, update } = useSession();
@@ -18,7 +19,24 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -175,9 +193,17 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              编辑个人资料
-            </h3>
+            <div className="sm:hidden mb-4">
+              <BackButton />
+            </div>
+            <div className="relative">
+              <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
+                <BackButton />
+              </div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                编辑个人资料
+              </h3>
+            </div>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
               <p>更新您的个人信息和头像。</p>
             </div>
@@ -251,21 +277,111 @@ export default function SettingsPage() {
                 <div>
                   <label
                     htmlFor="postViewMode"
-                    className="block text-sm font-medium text-gray-700"
+                    className="block text-sm font-medium text-gray-700 mb-1"
                   >
                     帖子列表显示模式
                   </label>
-                  <select
-                    id="postViewMode"
-                    name="postViewMode"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={postViewMode}
-                    onChange={(e) => setPostViewMode(e.target.value)}
+                  <div
+                    className={`ui-dropdown ${isDropdownOpen ? "open" : ""}`}
+                    ref={dropdownRef}
                   >
-                    <option value="both">显示标题和正文</option>
-                    <option value="title">仅显示标题</option>
-                    <option value="content">仅预览正文</option>
-                  </select>
+                    <div
+                      className="ui-select-trigger"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      <span>
+                        {postViewMode === "both" && "智能显示标题或正文"}
+                        {postViewMode === "title" && "仅显示标题"}
+                        {postViewMode === "content" && "仅预览正文"}
+                      </span>
+                      <svg
+                        className={`h-5 w-5 text-gray-400 transition-transform ${
+                          isDropdownOpen ? "transform rotate-180" : ""
+                        }`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ui-dropdown-menu">
+                      <div
+                        className="ui-dropdown-item"
+                        onClick={() => {
+                          setPostViewMode("both");
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <span>智能显示标题或正文</span>
+                        {postViewMode === "both" && (
+                          <svg
+                            className="h-5 w-5 text-indigo-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div
+                        className="ui-dropdown-item"
+                        onClick={() => {
+                          setPostViewMode("title");
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <span>仅显示标题</span>
+                        {postViewMode === "title" && (
+                          <svg
+                            className="h-5 w-5 text-indigo-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div
+                        className="ui-dropdown-item"
+                        onClick={() => {
+                          setPostViewMode("content");
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <span>仅预览正文</span>
+                        {postViewMode === "content" && (
+                          <svg
+                            className="h-5 w-5 text-indigo-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   <p className="mt-2 text-sm text-gray-500">
                     选择您在浏览帖子列表时希望看到的内容。
                   </p>

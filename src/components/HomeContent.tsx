@@ -82,9 +82,6 @@ export default function HomeContent({
                   name={session.user.name}
                   size="md"
                 />
-                <span className="text-gray-500 text-sm sm:text-base">
-                  分享你的新鲜事...
-                </span>
               </div>
               <Link
                 href="/post/create"
@@ -156,7 +153,7 @@ export default function HomeContent({
                                   {post.title}
                                 </h3>
                               )}
-                            {(viewMode === "both" ||
+                            {((viewMode === "both" && !post.title) ||
                               viewMode === "content") && (
                               <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -165,7 +162,8 @@ export default function HomeContent({
                               </div>
                             )}
                           </div>
-                          {(viewMode === "both" || viewMode === "content") &&
+                          {((viewMode === "both" && !post.title) ||
+                            viewMode === "content") &&
                             post.images &&
                             post.images.length > 0 && (
                               <PostImages

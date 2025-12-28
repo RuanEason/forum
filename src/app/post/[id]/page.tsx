@@ -10,6 +10,7 @@ import RepostButton from "@/components/RepostButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
+import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
 
 interface AuthorProps {
@@ -124,9 +125,15 @@ export default async function PostDetailPage({
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-4 sm:px-0">
           {/* Post Content */}
-          <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
+          <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
             <div className="p-4 sm:p-6">
-              <div className="flex items-center">
+              <div className="sm:hidden mb-4">
+                <BackButton />
+              </div>
+              <div className="flex items-center relative">
+                <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
+                  <BackButton />
+                </div>
                 <Avatar
                   src={post.author.avatar}
                   name={post.author.name}

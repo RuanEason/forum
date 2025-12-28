@@ -109,7 +109,8 @@ export default function UserPostList({
                     }}
                     className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                   >
-                    {(viewMode === "both" || viewMode === "content") && (
+                    {((viewMode === "both" && !post.title) ||
+                      viewMode === "content") && (
                       <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {post.content}
@@ -117,7 +118,8 @@ export default function UserPostList({
                       </div>
                     )}
                   </div>
-                  {(viewMode === "both" || viewMode === "content") &&
+                  {((viewMode === "both" && !post.title) ||
+                    viewMode === "content") &&
                     post.images &&
                     post.images.length > 0 && (
                       <PostImages images={post.images.map((img) => img.url)} />

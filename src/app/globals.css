@@ -4,6 +4,28 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Custom Dropdown Variables */
+  --bg-surface: #ffffff;
+  --border-color: #e5e7eb;
+  --radius-md: 0.375rem;
+  --text-main: #171717;
+  --primary-color: #4f46e5;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --transition: all 0.2s ease;
+  --bg-hover: #f3f4f6;
+
+  /* Logout Button Variables */
+  --danger-base: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-light: #fef2f2;
+  --radius: 8px;
+  --transition-logout: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* New Modal & Button Variables */
+  --danger: #ef4444;
+  --text-sub: #6b7280;
+  --border: #e5e7eb;
 }
 
 @theme inline {
@@ -17,6 +39,12 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    
+    /* Dark Mode Overrides for Custom Dropdown */
+    --bg-surface: #171717;
+    --border-color: #404040;
+    --text-main: #ededed;
+    --bg-hover: #262626;
   }
 }
 
@@ -37,4 +65,312 @@ body {
   .text-shadow-sm {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
+}
+
+/* --------------------------
+   2. 退出按钮样式 (New)
+-------------------------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+    outline: none;
+    gap: 8px;
+}
+.btn:active { transform: scale(0.98); }
+
+/* 危险/退出按钮 */
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+.btn-danger:hover { background-color: var(--danger-hover); }
+
+/* 描边/取消按钮 */
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+.btn-outline:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background-color: #eff6ff;
+}
+
+/* --- 3. 弹窗样式 (Modal) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px); /* 磨砂效果 */
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+}
+
+/* 激活状态 */
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal {
+    background: var(--bg-surface);
+    width: 90%;
+    max-width: 420px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 1.5rem;
+    transform: scale(0.95) translateY(10px);
+    transition: var(--transition);
+    opacity: 0;
+}
+
+.modal-overlay.open .modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* 弹窗内部布局 */
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--danger-light);
+    color: var(--danger);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 4px 0;
+}
+
+.modal-desc {
+    font-size: 0.95rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 1.5rem;
+}
+
+/* --------------------------
+   3. 下拉栏样式 (Dropdown)
+-------------------------- */
+.ui-dropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+/* 下拉触发器 (看起来像个输入框) */
+.ui-select-trigger {
+  width: 100%;
+  padding: 0.5rem 0.75rem; /* Matches existing input padding */
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.ui-select-trigger:hover {
+  border-color: var(--primary-color);
+}
+
+/* 下拉菜单内容 */
+.ui-dropdown-menu {
+  position: absolute;
+  top: 110%; /* 在触发器下方一点 */
+  left: 0;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  
+  /* 隐藏状态 */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: var(--transition);
+  z-index: 100;
+}
+
+/* 展开状态 (通过 JS 控制类名) */
+.ui-dropdown.open .ui-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ui-dropdown-item {
+  padding: 0.6rem 1rem;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+}
+
+.ui-dropdown-item:hover {
+  background-color: var(--bg-hover);
+  color: var(--primary-color);
+}
+
+/* Custom Dropdown Styles */
+.custom-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-dropdown-trigger {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.custom-dropdown-trigger:hover {
+  border-color: #9ca3af;
+}
+
+.custom-dropdown-trigger:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.custom-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  background-color: var(--background);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  max-height: 15rem;
+  overflow: auto;
+}
+
+.custom-dropdown-item {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.custom-dropdown-item:hover {
+  background-color: #f3f4f6;
+}
+
+.custom-dropdown-item.selected {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
+@media (prefers-color-scheme: dark) {
+  .custom-dropdown-trigger {
+    border-color: #404040;
+  }
+  .custom-dropdown-trigger:hover {
+    border-color: #525252;
+  }
+  .custom-dropdown-menu {
+    border-color: #404040;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.18);
+  }
+  .custom-dropdown-item:hover {
+    background-color: #262626;
+  }
+  .custom-dropdown-item.selected {
+    background-color: #312e81;
+    color: #e0e7ff;
+  }
+}
+
+/* --- 核心样式 --- */
+.btn-back {
+    /* 布局与尺寸 */
+    width: 40px;            /* 稍微加大一点，方便手指点击 */
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 外观重置 */
+    border: none;
+    background: transparent;
+    border-radius: 50%;     /* 正圆形 */
+    cursor: pointer;
+    
+    /* 颜色与过渡 */
+    color: #6b7280;         /* 默认浅灰色 */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- 悬停交互效果 --- */
+.btn-back:hover {
+    background-color: #f3f4f6;  /* 悬停时的浅灰背景 */
+    color: #1f2937;             /* 图标变深色 */
+    transform: translateX(-4px); /* 关键动画：向左平移 4像素 */
+}
+
+/* 点击时的微缩反馈 */
+.btn-back:active {
+    transform: translateX(-4px) scale(0.9);
 }
