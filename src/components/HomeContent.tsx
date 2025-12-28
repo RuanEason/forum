@@ -87,9 +87,6 @@ export default function HomeContent({
                   name={session.user.name}
                   size="md"
                 />
-                <span className="text-gray-500 text-sm sm:text-base">
-                  分享你的新鲜事...
-                </span>
               </div>
               <Link
                 href="/post/create"
@@ -155,19 +152,13 @@ export default function HomeContent({
                             }}
                             className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                           >
-                            {((viewMode === "both" && post.title) ||
-                              viewMode === "title") && (
-                              <h3
-                                className={`text-2xl font-bold mb-2 line-clamp-2 ${
-                                  post.title
-                                    ? "text-gray-900"
-                                    : "text-gray-400 italic"
-                                }`}
-                              >
-                                {post.title || "无标题"}
-                              </h3>
-                            )}
-                            {(viewMode === "both" ||
+                            {(viewMode === "both" || viewMode === "title") &&
+                              post.title && (
+                                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                  {post.title}
+                                </h3>
+                              )}
+                            {((viewMode === "both" && !post.title) ||
                               viewMode === "content") && (
                               <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -176,7 +167,8 @@ export default function HomeContent({
                               </div>
                             )}
                           </div>
-                          {(viewMode === "both" || viewMode === "content") &&
+                          {((viewMode === "both" && !post.title) ||
+                            viewMode === "content") &&
                             post.images &&
                             post.images.length > 0 && (
                               <PostImages
