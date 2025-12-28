@@ -39,13 +39,34 @@ export default function AdminPanel() {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
     } else if (status === "authenticated") {
-      if (session.user.role !== "admin") {
-        router.push("/");
-      } else {
+      // 首先检查会话中的角色
+      if (session.user.role === "admin") {
         fetchData();
+      } else {
+        // 如果会话中的角色不是管理员，检查服务器上的最新信息
+        checkServerForAdminRole();
       }
     }
   }, [status, session, router]);
+
+  const checkServerForAdminRole = async () => {
+    try {
+      const response = await fetch("/api/auth/me");
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData.role === "admin") {
+          // 如果服务器上的角色是管理员，更新会话并允许访问
+          fetchData();
+          return;
+        }
+      }
+      // 如果服务器上的角色也不是管理员，重定向到首页
+      router.push("/");
+    } catch (error) {
+      console.error("检查管理员权限时出错:", error);
+      router.push("/");
+    }
+  };
 
   const fetchData = async () => {
     try {
