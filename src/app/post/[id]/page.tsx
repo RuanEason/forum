@@ -147,7 +147,7 @@ export default async function PostDetailPage({
 
               <div className="mt-4 mb-4">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {post.title || "无标题"}
+                  {post.title || ""}
                 </h1>
               </div>
 

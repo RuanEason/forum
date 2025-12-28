@@ -91,16 +91,20 @@ export default function UserPostList({
                     {format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")}
                   </span>
                 </div>
-                {(viewMode === "both" || viewMode === "title") &&
-                  post.title && (
-                    <div className="mt-2 mb-2">
-                      <Link href={`/post/${post.id}`} className="block group">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                          {post.title}
-                        </h3>
-                      </Link>
-                    </div>
-                  )}
+                {((viewMode === "both" && post.title) ||
+                  viewMode === "title") && (
+                  <div className="mt-2 mb-2">
+                    <Link href={`/post/${post.id}`} className="block group">
+                      <h3
+                        className={`text-lg font-bold group-hover:text-indigo-600 transition-colors ${
+                          post.title ? "text-gray-900" : "text-gray-400 italic"
+                        }`}
+                      >
+                        {post.title || "无标题"}
+                      </h3>
+                    </Link>
+                  </div>
+                )}
                 <div className="mt-2 text-sm text-gray-800">
                   <div
                     onClick={(e) => {
