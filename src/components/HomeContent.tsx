@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -44,6 +44,11 @@ export default function HomeContent({
   const router = useRouter();
   const { data: session, status } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const viewMode = session?.user?.postViewMode || "both"; // title, content, both
 
@@ -135,7 +140,7 @@ export default function HomeContent({
                             {post.author.name || "匿名用户"}
                           </Link>
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                            {new Date(post.createdAt).toLocaleString()}
+                            {mounted ? new Date(post.createdAt).toLocaleString() : ""}
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
@@ -174,17 +179,15 @@ export default function HomeContent({
 
                         <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
                           <LikeButton
-                            targetType="post"
-                            targetId={post.id}
-                            initialLikesCount={post.likes.length}
-                            initialLikedByUser={
-                              session?.user?.id
-                                ? post.likes.some(
-                                    (like) => like.userId === session.user.id
-                                  )
-                                : false
-                            }
-                          />
+                        targetType="post"
+                        targetId={post.id}
+                        initialLikesCount={post.likes.length}
+                        initialLikedByUser={
+                          session?.user?.id
+                            ? post.likes.some((like) => like.userId === session.user.id)
+                            : false
+                        }
+                      />
                           <Link
                             href={`/post/${post.id}`}
                             className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group p-2 rounded-full hover:bg-blue-50 transition-colors"
@@ -209,18 +212,7 @@ export default function HomeContent({
                                 : "评论"}
                             </span>
                           </Link>
-                          <RepostButton
-                            postId={post.id}
-                            initialRepostsCount={post.reposts.length}
-                            initialRepostedByUser={
-                              session?.user?.id
-                                ? post.reposts.some(
-                                    (repost) =>
-                                      repost.userId === session.user.id
-                                  )
-                                : false
-                            }
-                          />
+                          <RepostButton postId={post.id} />
                           {session?.user?.id &&
                             session.user.id === post.author.id && (
                               <button
