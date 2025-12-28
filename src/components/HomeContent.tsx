@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -44,6 +44,11 @@ export default function HomeContent({
   const router = useRouter();
   const { data: session, status } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const viewMode = session?.user?.postViewMode || "both"; // title, content, both
 
@@ -138,7 +143,7 @@ export default function HomeContent({
                             {post.author.name || "匿名用户"}
                           </Link>
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                            {new Date(post.createdAt).toLocaleString()}
+                            {mounted ? new Date(post.createdAt).toLocaleString() : ""}
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">

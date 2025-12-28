@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -187,6 +187,11 @@ function CommentItem({
 
   const displayedReplies = showAllReplies ? comment.replies : comment.replies?.slice(0, 1);
   const remainingRepliesCount = (comment.replies?.length || 0) - 1;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="border-t border-gray-200 pt-4">
@@ -197,7 +202,7 @@ function CommentItem({
             {comment.author.name || "匿名用户"}
           </Link>
           <div className="text-xs text-gray-500">
-            {format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")}
+            {mounted ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
           </div>
         </div>
       </div>

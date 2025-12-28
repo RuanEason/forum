@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -36,6 +36,11 @@ export default function UserPostList({
   const router = useRouter();
   const { data: session } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const viewMode = session?.user?.postViewMode || "both"; // title, content, both
 
@@ -88,7 +93,7 @@ export default function UserPostList({
                     {post.author.name || "匿名用户"}
                   </span>
                   <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                    {format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")}
+                    {mounted ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
                   </span>
                 </div>
                 {((viewMode === "both" && post.title) ||
