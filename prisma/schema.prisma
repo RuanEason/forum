@@ -23,6 +23,7 @@ model User {
   banned       Boolean       @default(false)
   avatar       String?
   bio          String?
+  postViewMode String        @default("both") // title, content, both
   posts        Post[]
   comments     Comment[]
   reposts      Repost[]
@@ -34,6 +35,7 @@ model User {
 
 model Post {
   id        String     @id @default(cuid())
+  title     String?
   content   String     @db.Text
   authorId  String
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)

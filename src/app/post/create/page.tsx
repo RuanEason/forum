@@ -15,6 +15,7 @@ export default function CreatePostPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -60,7 +61,9 @@ export default function CreatePostPage() {
   };
 
   const removeImage = (indexToRemove: number) => {
-    setSelectedImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setSelectedImages((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -83,6 +86,7 @@ export default function CreatePostPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          title: title,
           content: content,
           authorId: session.user.id,
           images: selectedImages,
@@ -123,10 +127,28 @@ export default function CreatePostPage() {
           <div className="p-6 border-b border-gray-100">
             <h1 className="text-xl font-bold text-gray-900">发布新帖子</h1>
           </div>
-          
+
           <div className="p-6">
             <form onSubmit={handleCreatePost}>
               <div className="space-y-6">
+                {/* 新增：标题输入框 */}
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    标题
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="请输入帖子标题（可选）"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                    maxLength={100}
+                  />
+                </div>
                 {/* Simple Markdown Editor */}
                 <SimpleMarkdownEditor
                   value={content}
@@ -145,7 +167,7 @@ export default function CreatePostPage() {
                       {selectedImages.length} / 9 张
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
                     {selectedImages.map((url, index) => (
                       <div key={index} className="relative aspect-square group">
@@ -175,7 +197,7 @@ export default function CreatePostPage() {
                         </button>
                       </div>
                     ))}
-                    
+
                     {selectedImages.length < 9 && (
                       <label className="relative aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-colors">
                         <input
@@ -204,7 +226,9 @@ export default function CreatePostPage() {
                                 d="M12 4v16m8-8H4"
                               />
                             </svg>
-                            <span className="mt-2 text-xs text-gray-500">上传图片</span>
+                            <span className="mt-2 text-xs text-gray-500">
+                              上传图片
+                            </span>
                           </>
                         )}
                       </label>
