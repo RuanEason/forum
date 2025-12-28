@@ -145,7 +145,7 @@ export default function UserProfileClient({
             </button>
             <button
               className="btn btn-danger"
-              onClick={() => signOut({ callbackUrl: `${window.location.origin}/auth/signin` })}
+              onClick={() => signOut()}
             >
               确定退出
             </button>
