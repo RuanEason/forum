@@ -124,15 +124,7 @@ export default function UserPostList({ initialPosts }: { initialPosts: PostProps
                     </svg>
                     <span className="text-sm font-medium">{post.comments.length > 0 ? post.comments.length : "评论"}</span>
                   </Link>
-                  <RepostButton
-                    postId={post.id}
-                    initialRepostsCount={post.reposts.length}
-                    initialRepostedByUser={
-                      session?.user?.id
-                        ? post.reposts.some((repost) => repost.userId === session.user.id)
-                        : false
-                    }
-                  />
+                  <RepostButton postId={post.id} />
                   {session?.user?.id && session.user.id === post.author.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
