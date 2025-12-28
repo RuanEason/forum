@@ -56,11 +56,11 @@ export default function UserProfileClient({
                   </h1>
                   <p className="text-gray-500 text-xs sm:text-sm mt-1">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}
-                  </p>
+                  </p >
                   {user.bio && (
                     <p className="mt-2 sm:mt-4 text-sm sm:text-base text-gray-700">
                       {user.bio}
-                    </p>
+                    </p >
                   )}
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function UserProfileClient({
               <h3 className="modal-title">确认退出账号？</h3>
               <p className="modal-desc">
                 退出后您将无法发送帖子，且需要重新登录才能继续使用系统。
-              </p>
+              </p >
             </div>
           </div>
 
@@ -145,7 +145,10 @@ export default function UserProfileClient({
             </button>
             <button
               className="btn btn-danger"
-              onClick={() => signOut()}
+              onClick={async () => {
+                await signOut({ redirect: false });
+                window.location.href = "/auth/signin";
+              }}
             >
               确定退出
             </button>
