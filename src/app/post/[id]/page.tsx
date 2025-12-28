@@ -177,17 +177,7 @@ export default async function PostDetailPage({
                       : false
                   }
                 />
-                <RepostButton
-                  postId={post.id}
-                  initialRepostsCount={post.reposts.length}
-                  initialRepostedByUser={
-                    session?.user?.id
-                      ? post.reposts.some(
-                          (repost) => repost.userId === session.user.id
-                        )
-                      : false
-                  }
-                />
+                <RepostButton postId={post.id} />
               </div>
             </div>
           </div>
