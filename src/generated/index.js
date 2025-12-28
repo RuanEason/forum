@@ -176,7 +176,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "c:\\Users\\Lenovo\\Desktop\\Ruan_\\forum\\forum\\src\\generated",
+      "value": "/media/ruan/Files/forum/src/generated",
       "fromEnvVar": null
     },
     "config": {
@@ -185,7 +185,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "debian-openssl-3.0.x",
         "native": true
       }
     ],
@@ -193,8 +193,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../prisma",
   "clientVersion": "5.10.2",
@@ -203,6 +202,7 @@ const config = {
     "db"
   ],
   "activeProvider": "mysql",
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -250,8 +250,8 @@ exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
-path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "src/generated/query_engine-windows.dll.node")
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "src/generated/libquery_engine-debian-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "src/generated/schema.prisma")
