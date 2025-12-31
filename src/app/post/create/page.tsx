@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
-import "./editor.css";
+import TopicSelector from "@/components/TopicSelector";
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
@@ -16,6 +16,7 @@ export default function CreatePostPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -90,6 +91,7 @@ export default function CreatePostPage() {
           content: content,
           authorId: session.user.id,
           images: selectedImages,
+          topicId: selectedTopicId,
         }),
       });
 
@@ -149,6 +151,18 @@ export default function CreatePostPage() {
                     maxLength={100}
                   />
                 </div>
+
+                {/* Topic Selector */}
+                <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                      选择话题 (可选)
+                   </label>
+                   <TopicSelector
+                      selectedTopicId={selectedTopicId}
+                      onSelect={setSelectedTopicId}
+                   />
+                </div>
+
                 {/* Simple Markdown Editor */}
                 <SimpleMarkdownEditor
                   value={content}

@@ -41,6 +41,12 @@ async function getUserProfile(id: string) {
               url: true,
             },
           },
+          topic: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",

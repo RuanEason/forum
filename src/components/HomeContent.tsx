@@ -33,13 +33,23 @@ interface PostProps {
   images: {
     url: string;
   }[];
+  topic?: {
+    id: string;
+    name: string;
+  } | null;
   createdAt: string;
 }
 
 export default function HomeContent({
   initialPosts,
+  hideCreateButton = false,
+  onPostDeleted,
+  currentUserId,
 }: {
   initialPosts: PostProps[];
+  hideCreateButton?: boolean;
+  onPostDeleted?: () => void;
+  currentUserId?: string;
 }) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -66,6 +76,9 @@ export default function HomeContent({
 
       if (response.ok) {
         setPosts(posts.filter((post) => post.id !== postId));
+        if (onPostDeleted) {
+          onPostDeleted();
+        }
       } else {
         const data = await response.json();
         alert(data.error || "删除失败");
@@ -79,7 +92,7 @@ export default function HomeContent({
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <main className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-0 sm:px-0">
-          {session && (
+          {session && !hideCreateButton && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar
@@ -133,12 +146,22 @@ export default function HomeContent({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <Link
-                            href={`/user/${post.author.id}`}
-                            className="text-sm font-bold text-gray-900 hover:underline truncate"
-                          >
-                            {post.author.name || "匿名用户"}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/user/${post.author.id}`}
+                              className="text-sm font-bold text-gray-900 hover:underline truncate"
+                            >
+                              {post.author.name || "匿名用户"}
+                            </Link>
+                            {post.topic && (
+                               <Link
+                                   href={`/topic/${post.topic.id}`}
+                                   className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                               >
+                                   #{post.topic.name}
+                               </Link>
+                            )}
+                         </div>
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
                             {mounted ? new Date(post.createdAt).toLocaleString() : ""}
                           </span>
@@ -183,8 +206,8 @@ export default function HomeContent({
                         targetId={post.id}
                         initialLikesCount={post.likes.length}
                         initialLikedByUser={
-                          session?.user?.id
-                            ? post.likes.some((like) => like.userId === session.user.id)
+                          (currentUserId || session?.user?.id)
+                            ? post.likes.some((like) => like.userId === (currentUserId || session?.user?.id))
                             : false
                         }
                       />

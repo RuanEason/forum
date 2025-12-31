@@ -26,6 +26,7 @@ interface PostProps {
   reposts: { userId: string }[];
   comments: { id: string }[];
   images?: { url: string }[];
+  topic?: { id: string; name: string } | null;
 }
 
 export default function UserPostList({
@@ -89,9 +90,19 @@ export default function UserPostList({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-gray-900 truncate">
-                    {post.author.name || "匿名用户"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-900 truncate">
+                      {post.author.name || "匿名用户"}
+                    </span>
+                    {post.topic && (
+                      <Link
+                          href={`/topic/${post.topic.id}`}
+                          className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                      >
+                          #{post.topic.name}
+                      </Link>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
                     {mounted ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
                   </span>

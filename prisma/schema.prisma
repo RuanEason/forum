@@ -25,6 +25,8 @@ model User {
   bio          String?
   postViewMode String        @default("both") // title, content, both
   posts        Post[]
+  createdTopics Topic[]      @relation("TopicCreator")
+  topics       Topic[]       @relation("TopicFollows")
   comments     Comment[]
   reposts      Repost[]
   postLikes    PostLike[]
@@ -43,8 +45,23 @@ model Post {
   reposts   Repost[]
   likes     PostLike[]
   images    PostImage[]
+  topicId   String?
+  topic     Topic?     @relation(fields: [topicId], references: [id])
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  posts       Post[]
+  creatorId   String?
+  creator     User?    @relation("TopicCreator", fields: [creatorId], references: [id])
+  followers   User[]   @relation("TopicFollows")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model PostImage {

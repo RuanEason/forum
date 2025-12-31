@@ -4,9 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma"; // 导入 prisma 实例
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const posts = await getPosts();
+    const { searchParams } = new URL(request.url);
+    const topicId = searchParams.get('topicId');
+    
+    const posts = await getPosts(topicId || undefined);
     return NextResponse.json(posts);
   } catch (error) {
     console.error("Get posts error:", error);
@@ -22,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images } = await request.json();
+    const { title, content, images, topicId } = await request.json();
     
     // Title is optional, but if provided it should not be just whitespace
     if (title !== undefined && title !== null && typeof title === 'string' && title.trim() === '') {
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
 // 传入 title
-    const post = await createPost(title, content, session.user.id, images);
+    const post = await createPost(title, content, session.user.id, images, topicId);
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
   } catch (error) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback } from "react";
+import "./SimpleMarkdownEditor.css";
 
 interface SimpleMarkdownEditorProps {
   value: string;
@@ -210,7 +211,7 @@ export default function SimpleMarkdownEditor({
   };
 
   return (
-    <div className="simple-md-editor">
+    <div className="simple-md-editor w-full">
       {/* Toolbar */}
       <div className="simple-md-editor-toolbar">
         {toolbarButtons.map((btn, index) =>

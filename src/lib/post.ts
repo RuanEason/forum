@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getPosts() {
+export async function getPosts(topicId?: string) {
   return prisma.post.findMany({
+    where: topicId ? { topicId } : undefined,
     include: {
       author: {
         select: {
@@ -30,6 +31,12 @@ export async function getPosts() {
           url: true,
         },
       },
+      topic: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -41,7 +48,8 @@ export async function createPost(
   title: string | undefined | null,
   content: string,
   authorId: string,
-  images: string[] = []
+  images: string[] = [],
+  topicId: string | null = null
 ) {
   return prisma.post.create({
     data: {
@@ -51,6 +59,7 @@ export async function createPost(
       images: {
         create: images.map((url) => ({ url })),
       },
+      topicId: topicId,
     },
   });
 }
@@ -79,6 +88,12 @@ export async function getPostById(id: string) {
       images: {
         select: {
           url: true,
+        },
+      },
+      topic: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       comments: {

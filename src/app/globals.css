@@ -374,3 +374,84 @@ body {
 .btn-back:active {
     transform: translateX(-4px) scale(0.9);
 }
+
+/* Topic Drawer Styles */
+.topic-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    z-index: 40;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.topic-drawer-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.topic-drawer {
+    position: fixed;
+    top: 0;
+    right: -100%; /* Initially hidden off-screen */
+    width: 100%;
+    max-width: 320px;
+    height: 100vh;
+    background: var(--bg-surface);
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.topic-drawer.open {
+    right: 0;
+}
+
+.topic-search-input {
+    @apply w-full px-4 py-2 text-sm bg-transparent border-none focus:ring-0 outline-none;
+}
+
+/* Animations for TopicParticipationEditor */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn95 {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-in {
+  animation-duration: 0.2s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in-95 {
+  animation-name: zoomIn95;
+}
+
+/* 彻底解决图片放大遮挡问题 */
+.image-preview-active header,
+.image-preview-active .sticky,
+.image-preview-active nav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.image-preview-active {
+  overflow: hidden !important;
+}

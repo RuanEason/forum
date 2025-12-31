@@ -29,6 +29,7 @@ interface PostDetailProps {
   reposts: { userId: string }[];
   comments: CommentProps[];
   images: { url: string }[];
+  topic?: { id: string; name: string } | null;
 }
 
 export async function generateMetadata({
@@ -146,8 +147,16 @@ export default async function PostDetailPage({
                   >
                     {post.author.name || "匿名用户"}
                   </Link>
-                  <div className="text-xs text-gray-500">
-                    {format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")}
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")}</span>
+                    {post.topic && (
+                         <Link
+                             href={`/topic/${post.topic.id}`}
+                             className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                         >
+                             #{post.topic.name}
+                         </Link>
+                    )}
                   </div>
                 </div>
               </div>
