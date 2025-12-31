@@ -129,11 +129,11 @@ export default async function PostDetailPage({
           <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
             <div className="p-4 sm:p-6">
               <div className="sm:hidden mb-4">
-                <BackButton />
+                <BackButton href="/" />
               </div>
               <div className="flex items-center relative">
                 <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
-                  <BackButton />
+                  <BackButton href="/" />
                 </div>
                 <Avatar
                   src={post.author.avatar}

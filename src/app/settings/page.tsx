@@ -194,11 +194,11 @@ export default function SettingsPage() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="sm:hidden mb-4">
-              <BackButton />
+              <BackButton href="/" />
             </div>
             <div className="relative">
               <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
-                <BackButton />
+                <BackButton href="/" />
               </div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 编辑个人资料

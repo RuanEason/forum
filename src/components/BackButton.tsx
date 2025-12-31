@@ -2,15 +2,23 @@
 
 import { useRouter } from "next/navigation";
 
-export default function BackButton() {
+interface BackButtonProps {
+  href?: string;
+}
+
+export default function BackButton({ href }: BackButtonProps) {
   const router = useRouter();
 
+  const handleClick = () => {
+    if (href) {
+      router.push(href);
+    } else {
+      router.back();
+    }
+  };
+
   return (
-    <button
-      onClick={() => router.back()}
-      className="btn-back"
-      title="返回上一页"
-    >
+    <button onClick={handleClick} className="btn-back" title="返回">
       <svg
         width="24"
         height="24"
