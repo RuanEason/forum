@@ -1,0 +1,40 @@
+name: 自动部署论坛
+
+# 只有当推送到 main 分支时才触发
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    # 这一步是利用第三方插件 appleboy/ssh-action 远程连接你的服务器
+    - name: SSH Remote Commands
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        # 下面这些会自动读取我们在第一步配置的 Secrets
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        password: ${{ secrets.PASSWORD }}
+        # 这里的 script 就是你要机器人替你在服务器上敲的命令
+        # 符号 | 表示后面是多行命令
+        script: |
+          echo "==== 开始自动部署 ===="
+          
+          # 1. 进入你服务器上的项目目录 (注意：这个路径必须是你服务器上真实的路径！)
+          cd /www/wwwroot/forum
+
+          # 2. 拉取 GitHub 上最新的代码
+          git pull origin main
+
+          # 3. 安装可能新增的依赖
+          npm install
+
+          # 4. 重新构建项目 (Next.js 需要这一步)
+          npm run build
+
+          # 5. 重启服务 
+          pm2 reload forum
+
+          echo "==== 部署完成 ===="
