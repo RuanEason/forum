@@ -164,6 +164,17 @@ exports.Prisma.PostLikeScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  isRead: 'isRead',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  postId: 'postId',
+  commentId: 'commentId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.CommentLikeScalarFieldEnum = {
   id: 'id',
   commentId: 'commentId',
@@ -186,7 +197,12 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-
+exports.NotificationType = exports.$Enums.NotificationType = {
+  REPLY_POST: 'REPLY_POST',
+  REPLY_COMMENT: 'REPLY_COMMENT',
+  LIKE_POST: 'LIKE_POST',
+  LIKE_COMMENT: 'LIKE_COMMENT'
+};
 
 exports.Prisma.ModelName = {
   User: 'User',
@@ -195,6 +211,7 @@ exports.Prisma.ModelName = {
   PostImage: 'PostImage',
   Comment: 'Comment',
   PostLike: 'PostLike',
+  Notification: 'Notification',
   CommentLike: 'CommentLike',
   Repost: 'Repost'
 };

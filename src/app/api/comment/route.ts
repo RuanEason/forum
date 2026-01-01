@@ -49,6 +49,46 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Notification Logic
+    // 1. If reply to comment (parentId exists), notify comment author
+    // 2. If reply to post (top-level), notify post author
+
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { authorId: true }
+      });
+      
+      if (parentComment && parentComment.authorId !== authorId) {
+        await prisma.notification.create({
+          data: {
+            type: "REPLY_COMMENT",
+            senderId: authorId,
+            receiverId: parentComment.authorId,
+            postId: postId,
+            commentId: comment.id,
+          }
+        });
+      }
+    } else {
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true }
+      });
+      
+      if (post && post.authorId !== authorId) {
+        await prisma.notification.create({
+          data: {
+            type: "REPLY_POST",
+            senderId: authorId,
+            receiverId: post.authorId,
+            postId: postId,
+            commentId: comment.id,
+          }
+        });
+      }
+    }
+
     return NextResponse.json({ message: "Comment created successfully", comment }, { status: 201 });
   } catch (error) {
     console.error("Create comment error:", error);

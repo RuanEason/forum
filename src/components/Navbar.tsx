@@ -5,10 +5,33 @@ import { useSession, signOut } from "next-auth/react";
 import Avatar from "@/components/Avatar";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      const fetchUnreadCount = async () => {
+        try {
+          const res = await fetch("/api/notifications/unread-count");
+          if (res.ok) {
+            const data = await res.json();
+            setUnreadCount(data.count);
+          }
+        } catch (error) {
+          console.error("Failed to fetch unread count", error);
+        }
+      };
+
+      fetchUnreadCount();
+      // Poll every minute
+      const interval = setInterval(fetchUnreadCount, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [status, pathname]);
 
   // Don't show navbar on auth pages if desired, or keep it simple.
   // For now, let's keep it everywhere as it provides a way back home.
@@ -51,6 +74,32 @@ export default function Navbar() {
                     发帖
                   </Link>
                 )}
+                <Link
+                  href="/notifications"
+                  className="relative p-1 text-gray-500 hover:text-indigo-600 transition-colors mr-2"
+                  aria-label="Notifications"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1rem] h-4 px-1 text-[10px] font-bold leading-none text-white bg-red-500 rounded-full ring-2 ring-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
                 {session.user.role === "admin" && (
                   <Link
                     href="/admin"

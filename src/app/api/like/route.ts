@@ -43,6 +43,37 @@ export async function POST(request: NextRequest) {
             userId,
           },
         });
+
+        // Notification: Like Post
+        const post = await prisma.post.findUnique({
+          where: { id: targetId },
+          select: { authorId: true }
+        });
+
+        if (post && post.authorId !== userId) {
+          // Check for duplicate unread notification
+          const existingNotif = await prisma.notification.findFirst({
+            where: {
+              type: "LIKE_POST",
+              senderId: userId,
+              receiverId: post.authorId,
+              postId: targetId,
+              isRead: false,
+            }
+          });
+
+          if (!existingNotif) {
+            await prisma.notification.create({
+              data: {
+                type: "LIKE_POST",
+                senderId: userId,
+                receiverId: post.authorId,
+                postId: targetId,
+              }
+            });
+          }
+        }
+
         return NextResponse.json({ message: "Liked successfully", liked: true, like }, { status: 201 });
       }
     } else if (targetType === "comment") {
@@ -69,6 +100,38 @@ export async function POST(request: NextRequest) {
             userId,
           },
         });
+
+        // Notification: Like Comment
+        const comment = await prisma.comment.findUnique({
+          where: { id: targetId },
+          select: { authorId: true, postId: true }
+        });
+
+        if (comment && comment.authorId !== userId) {
+           // Check for duplicate unread notification
+           const existingNotif = await prisma.notification.findFirst({
+            where: {
+              type: "LIKE_COMMENT",
+              senderId: userId,
+              receiverId: comment.authorId,
+              commentId: targetId,
+              isRead: false,
+            }
+          });
+
+          if (!existingNotif) {
+            await prisma.notification.create({
+              data: {
+                type: "LIKE_COMMENT",
+                senderId: userId,
+                receiverId: comment.authorId,
+                postId: comment.postId,
+                commentId: targetId,
+              }
+            });
+          }
+        }
+
         return NextResponse.json({ message: "Liked successfully", liked: true, like }, { status: 201 });
       }
     } else {
