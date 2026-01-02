@@ -293,6 +293,8 @@ export default function SettingsPage() {
                         {postViewMode === "both" && "智能显示标题或正文"}
                         {postViewMode === "title" && "仅显示标题"}
                         {postViewMode === "content" && "仅预览正文"}
+                        {postViewMode === "titleAndContent" &&
+                          "同时显示标题和正文"}
                       </span>
                       <svg
                         className={`h-5 w-5 text-gray-400 transition-transform ${
@@ -366,6 +368,29 @@ export default function SettingsPage() {
                       >
                         <span>仅预览正文</span>
                         {postViewMode === "content" && (
+                          <svg
+                            className="h-5 w-5 text-indigo-600"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div
+                        className="ui-dropdown-item"
+                        onClick={() => {
+                          setPostViewMode("titleAndContent");
+                          setIsDropdownOpen(false);
+                        }}
+                      >
+                        <span>同时显示标题和正文</span>
+                        {postViewMode === "titleAndContent" && (
                           <svg
                             className="h-5 w-5 text-indigo-600"
                             xmlns="http://www.w3.org/2000/svg"

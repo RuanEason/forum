@@ -1,16 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Avatar from "@/components/Avatar";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Search state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -33,16 +40,127 @@ export default function Navbar() {
     }
   }, [status, pathname]);
 
+  // Auto focus when search opens
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  // Handle click outside to close search
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        closeSearch();
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  // Handle Escape key to close search
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isSearchOpen) {
+        closeSearch();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isSearchOpen]);
+
+  const openSearch = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+      closeSearch();
+    }
+  }, [searchQuery, router, closeSearch]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
+
   // Don't show navbar on auth pages if desired, or keep it simple.
   // For now, let's keep it everywhere as it provides a way back home.
   // If specific pages need to be excluded, we can add logic here.
   const isAuthPage = pathname?.startsWith("/auth/");
 
+  // Search icon SVG
+  const SearchIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+      />
+    </svg>
+  );
+
+  // Close icon SVG
+  const CloseIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+  );
+
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center space-x-2 group">
+        <div className="flex justify-between items-center h-16 relative">
+          {/* Logo - hidden when search is open on mobile */}
+          <Link
+            href="/"
+            className={`flex items-center space-x-2 group transition-all duration-300 ${
+              isSearchOpen
+                ? "opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto"
+                : "opacity-100"
+            }`}
+          >
             <div className="relative w-8 h-8 overflow-hidden rounded-lg">
               <Image src="/logo.png" alt="Logo" fill className="object-cover" />
             </div>
@@ -51,7 +169,58 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <nav className="flex items-center space-x-4">
+          {/* Search Overlay */}
+          <div
+            ref={searchContainerRef}
+            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out ${
+              isSearchOpen
+                ? "opacity-100 visible"
+                : "opacity-0 invisible pointer-events-none"
+            }`}
+          >
+            {/* Search input container */}
+            <div
+              className={`flex items-center bg-white border border-gray-200 rounded-full shadow-lg transition-all duration-300 ease-in-out ${
+                isSearchOpen
+                  ? "w-full sm:w-[80%] md:w-[70%] lg:w-[60%] scale-100"
+                  : "w-0 scale-95"
+              }`}
+            >
+              {/* Search icon inside input */}
+              <div className="pl-4 text-gray-400">
+                <SearchIcon />
+              </div>
+
+              {/* Input field */}
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="搜索帖子、用户..."
+                className="flex-1 px-3 py-2.5 text-gray-900 placeholder-gray-400 bg-transparent border-none outline-none focus:ring-0 text-sm sm:text-base"
+              />
+
+              {/* Close button */}
+              <button
+                onClick={closeSearch}
+                className="p-2 mr-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="关闭搜索"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav
+            className={`flex items-center space-x-4 transition-all duration-300 ${
+              isSearchOpen
+                ? "opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto"
+                : "opacity-100"
+            }`}
+          >
             {status === "authenticated" ? (
               <div className="flex items-center space-x-3 sm:space-x-4">
                 {pathname !== "/" && (
@@ -74,9 +243,19 @@ export default function Navbar() {
                     发帖
                   </Link>
                 )}
+
+                {/* Search Button */}
+                <button
+                  onClick={openSearch}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="搜索"
+                >
+                  <SearchIcon />
+                </button>
+
                 <Link
                   href="/notifications"
-                  className="relative p-1 text-gray-500 hover:text-indigo-600 transition-colors mr-2"
+                  className="relative p-1 text-gray-500 hover:text-indigo-600 transition-colors"
                   aria-label="Notifications"
                 >
                   <svg
@@ -126,6 +305,15 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
+                {/* Search Button for non-authenticated users */}
+                <button
+                  onClick={openSearch}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="搜索"
+                >
+                  <SearchIcon />
+                </button>
+
                 <Link
                   href="/auth/signin"
                   className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md hover:bg-gray-50 transition-all"
