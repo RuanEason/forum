@@ -127,6 +127,7 @@ exports.Prisma.PostScalarFieldEnum = {
   content: 'content',
   authorId: 'authorId',
   topicId: 'topicId',
+  viewCount: 'viewCount',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

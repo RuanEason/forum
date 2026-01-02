@@ -15,6 +15,8 @@ import BackButton from "@/components/BackButton";
 import PostSidebar from "@/components/PostSidebar";
 import { extractHeadings } from "@/lib/markdown";
 import { Metadata } from "next";
+import { Eye } from "lucide-react";
+import ViewTracker from "@/components/ViewTracker";
 
 interface AuthorProps {
   id: string;
@@ -28,6 +30,7 @@ interface PostDetailProps {
   content: string;
   author: AuthorProps;
   createdAt: Date;
+  viewCount: number;
   likes: { userId: string }[];
   reposts: { userId: string }[];
   comments: CommentProps[];
@@ -137,6 +140,8 @@ export default async function PostDetailPage({
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
+      {/* 阅读量追踪组件 - 使用 Cookie 防刷机制 */}
+      <ViewTracker postId={post.id} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -220,6 +225,12 @@ export default async function PostDetailPage({
                   )}
                 </div>
                 <div className="mt-4 flex items-center space-x-8 pt-4 border-t border-gray-100">
+                  <div className="flex items-center space-x-1 text-gray-500 p-2">
+                    <Eye className="w-5 h-5" />
+                    <span className="text-sm font-medium">
+                      {post.viewCount}
+                    </span>
+                  </div>
                   <LikeButton
                     targetType="post"
                     targetId={post.id}

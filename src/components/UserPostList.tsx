@@ -11,11 +11,13 @@ import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PostImages from "@/components/PostImages";
+import { Eye } from "lucide-react";
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  viewCount?: number;
   createdAt: Date;
   author: {
     id: string;
@@ -151,6 +153,10 @@ export default function UserPostList({
                     )}
                 </div>
                 <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
+                  <div className="flex items-center space-x-1 text-gray-400 p-2">
+                    <Eye className="w-4 h-4" />
+                    <span className="text-sm">{post.viewCount ?? 0}</span>
+                  </div>
                   <LikeButton
                     targetType="post"
                     targetId={post.id}
