@@ -5,17 +5,28 @@ import Link from "next/link";
 import { format } from "date-fns";
 import Avatar from "@/components/Avatar";
 import UserPostList from "@/components/UserPostList";
+import UserStats from "@/components/UserStats";
 import { signOut } from "next-auth/react";
 import BackButton from "@/components/BackButton";
+
+interface UserStatsData {
+  daysJoined: number;
+  postsPublished: number;
+  totalViews: number;
+  likesReceived: number;
+  likesGiven: number;
+}
 
 interface UserProfileClientProps {
   user: any;
   isCurrentUser: boolean;
+  stats: UserStatsData;
 }
 
 export default function UserProfileClient({
   user,
   isCurrentUser,
+  stats,
 }: UserProfileClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -56,11 +67,11 @@ export default function UserProfileClient({
                   </h1>
                   <p className="text-gray-500 text-xs sm:text-sm mt-1">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}
-                  </p >
+                  </p>
                   {user.bio && (
                     <p className="mt-2 sm:mt-4 text-sm sm:text-base text-gray-700">
                       {user.bio}
-                    </p >
+                    </p>
                   )}
                 </div>
               </div>
@@ -97,6 +108,15 @@ export default function UserProfileClient({
             </div>
           </div>
 
+          {/* User Stats Grid */}
+          <UserStats
+            daysJoined={stats.daysJoined}
+            postsPublished={stats.postsPublished}
+            totalViews={stats.totalViews}
+            likesReceived={stats.likesReceived}
+            likesGiven={stats.likesGiven}
+          />
+
           {/* User Posts */}
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0">
             发布的帖子 ({user.posts.length})
@@ -132,7 +152,7 @@ export default function UserProfileClient({
               <h3 className="modal-title">确认退出账号？</h3>
               <p className="modal-desc">
                 退出后您将无法发送帖子，且需要重新登录才能继续使用系统。
-              </p >
+              </p>
             </div>
           </div>
 
