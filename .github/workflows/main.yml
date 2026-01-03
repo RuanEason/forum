@@ -25,8 +25,9 @@ jobs:
           # 1. 进入你服务器上的项目目录 (注意：这个路径必须是你服务器上真实的路径！)
           cd /www/wwwroot/forum
 
-          # 2. 拉取 GitHub 上最新的代码
-          git pull origin main
+          # 2. 强制同步 GitHub 代码 (防止冲突)
+          git fetch --all
+          git reset --hard origin/main
 
           # 3. 安装可能新增的依赖
           npm install
