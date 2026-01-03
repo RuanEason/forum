@@ -11,11 +11,13 @@ import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PostImages from "@/components/PostImages";
+import { Eye } from "lucide-react";
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  viewCount?: number;
   createdAt: Date;
   author: {
     id: string;
@@ -96,19 +98,22 @@ export default function UserPostList({
                     </span>
                     {post.topic && (
                       <Link
-                          href={`/topic/${post.topic.id}`}
-                          className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                        href={`/topic/${post.topic.id}`}
+                        className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
                       >
-                          #{post.topic.name}
+                        #{post.topic.name}
                       </Link>
                     )}
                   </div>
                   <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                    {mounted ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
+                    {mounted
+                      ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")
+                      : ""}
                   </span>
                 </div>
                 {((viewMode === "both" && post.title) ||
-                  viewMode === "title") && (
+                  viewMode === "title" ||
+                  viewMode === "titleAndContent") && (
                   <div className="mt-2 mb-2">
                     <Link href={`/post/${post.id}`} className="block group">
                       <h3
@@ -130,7 +135,8 @@ export default function UserPostList({
                     className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                   >
                     {((viewMode === "both" && !post.title) ||
-                      viewMode === "content") && (
+                      viewMode === "content" ||
+                      viewMode === "titleAndContent") && (
                       <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {post.content}
@@ -139,13 +145,18 @@ export default function UserPostList({
                     )}
                   </div>
                   {((viewMode === "both" && !post.title) ||
-                    viewMode === "content") &&
+                    viewMode === "content" ||
+                    viewMode === "titleAndContent") &&
                     post.images &&
                     post.images.length > 0 && (
                       <PostImages images={post.images.map((img) => img.url)} />
                     )}
                 </div>
                 <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
+                  <div className="flex items-center space-x-1 text-gray-400 p-2">
+                    <Eye className="w-4 h-4" />
+                    <span className="text-sm">{post.viewCount ?? 0}</span>
+                  </div>
                   <LikeButton
                     targetType="post"
                     targetId={post.id}

@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 export async function getPosts(topicId?: string) {
   return prisma.post.findMany({
     where: topicId ? { topicId } : undefined,
-    include: {
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      viewCount: true,
+      createdAt: true,
       author: {
         select: {
           id: true,
@@ -154,5 +159,20 @@ export async function updatePost(id: string, title: string | undefined | null, c
 export async function deletePost(id: string) {
   return prisma.post.delete({
     where: { id },
+  });
+}
+
+/**
+ * 增加帖子的阅读量
+ * 这个操作是非阻塞的，不需要等待结果
+ */
+export async function incrementViewCount(id: string) {
+  return prisma.post.update({
+    where: { id },
+    data: {
+      viewCount: {
+        increment: 1,
+      },
+    },
   });
 }

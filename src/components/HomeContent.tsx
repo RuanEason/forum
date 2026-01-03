@@ -11,11 +11,13 @@ import RepostButton from "@/components/RepostButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Image from "next/image";
+import { Eye } from "lucide-react";
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  viewCount?: number;
   author: {
     id: string;
     name: string | null;
@@ -154,16 +156,18 @@ export default function HomeContent({
                               {post.author.name || "匿名用户"}
                             </Link>
                             {post.topic && (
-                               <Link
-                                   href={`/topic/${post.topic.id}`}
-                                   className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
-                               >
-                                   #{post.topic.name}
-                               </Link>
+                              <Link
+                                href={`/topic/${post.topic.id}`}
+                                className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                              >
+                                #{post.topic.name}
+                              </Link>
                             )}
-                         </div>
+                          </div>
                           <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                            {mounted ? new Date(post.createdAt).toLocaleString() : ""}
+                            {mounted
+                              ? new Date(post.createdAt).toLocaleString()
+                              : ""}
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
@@ -175,14 +179,17 @@ export default function HomeContent({
                             }}
                             className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                           >
-                            {(viewMode === "both" || viewMode === "title") &&
+                            {(viewMode === "both" ||
+                              viewMode === "title" ||
+                              viewMode === "titleAndContent") &&
                               post.title && (
                                 <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
                                   {post.title}
                                 </h3>
                               )}
                             {((viewMode === "both" && !post.title) ||
-                              viewMode === "content") && (
+                              viewMode === "content" ||
+                              viewMode === "titleAndContent") && (
                               <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {post.content}
@@ -191,7 +198,8 @@ export default function HomeContent({
                             )}
                           </div>
                           {((viewMode === "both" && !post.title) ||
-                            viewMode === "content") &&
+                            viewMode === "content" ||
+                            viewMode === "titleAndContent") &&
                             post.images &&
                             post.images.length > 0 && (
                               <PostImages
@@ -201,16 +209,26 @@ export default function HomeContent({
                         </div>
 
                         <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
+                          <div className="flex items-center space-x-1 text-gray-400 p-2">
+                            <Eye className="w-4 h-4" />
+                            <span className="text-sm">
+                              {post.viewCount ?? 0}
+                            </span>
+                          </div>
                           <LikeButton
-                        targetType="post"
-                        targetId={post.id}
-                        initialLikesCount={post.likes.length}
-                        initialLikedByUser={
-                          (currentUserId || session?.user?.id)
-                            ? post.likes.some((like) => like.userId === (currentUserId || session?.user?.id))
-                            : false
-                        }
-                      />
+                            targetType="post"
+                            targetId={post.id}
+                            initialLikesCount={post.likes.length}
+                            initialLikedByUser={
+                              currentUserId || session?.user?.id
+                                ? post.likes.some(
+                                    (like) =>
+                                      like.userId ===
+                                      (currentUserId || session?.user?.id)
+                                  )
+                                : false
+                            }
+                          />
                           <Link
                             href={`/post/${post.id}`}
                             className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group p-2 rounded-full hover:bg-blue-50 transition-colors"

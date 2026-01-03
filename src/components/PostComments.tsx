@@ -24,7 +24,7 @@ export interface CommentProps {
   parentId: string | null;
   postId: string;
   likes: { userId: string }[];
-  replies: Omit<CommentProps, 'replies'>[];
+  replies: Omit<CommentProps, "replies">[];
 }
 
 interface PostCommentsProps {
@@ -64,11 +64,18 @@ export default function PostComments({ comments, postId }: PostCommentsProps) {
   };
 
   return (
-    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t border-gray-100">
+    <div
+      id="comments-section"
+      className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t border-gray-100"
+    >
       <div className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">评论 ({comments.length})</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+          评论 ({comments.length})
+        </h2>
         {comments.length === 0 ? (
-          <p className="text-gray-500 text-sm sm:text-base">还没有评论，快来发表第一条评论吧！</p>
+          <p className="text-gray-500 text-sm sm:text-base">
+            还没有评论，快来发表第一条评论吧！
+          </p>
         ) : (
           <div className="space-y-4">
             {comments.map((comment) => (
@@ -141,19 +148,28 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   if (!session) {
     return (
       <p className="text-center text-gray-500 mt-4">
-        <Link href="/auth/signin" className="text-blue-600 hover:underline">登录</Link> 后发表评论
+        <Link href="/auth/signin" className="text-blue-600 hover:underline">
+          登录
+        </Link>{" "}
+        后发表评论
       </p>
     );
   }
 
   return (
     <div className="mt-6">
-      <h3 className="text-lg font-bold mb-2">{parentId ? "回复" : "发表评论"}</h3>
+      <h3 className="text-lg font-bold mb-2">
+        {parentId ? "回复" : "发表评论"}
+      </h3>
       <form onSubmit={handleSubmit}>
         <textarea
           className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           rows={parentId ? 2 : 4}
-          placeholder={parentId ? "在这里输入你的回复..." : "在这里输入你的评论 (支持 Markdown)..."}
+          placeholder={
+            parentId
+              ? "在这里输入你的回复..."
+              : "在这里输入你的评论 (支持 Markdown)..."
+          }
           value={content}
           onChange={(e) => setContent(e.target.value)}
           disabled={loading}
@@ -164,7 +180,13 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
           className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
           disabled={loading}
         >
-          {loading ? (parentId ? "回复中..." : "评论中...") : (parentId ? "回复" : "发表评论")}
+          {loading
+            ? parentId
+              ? "回复中..."
+              : "评论中..."
+            : parentId
+            ? "回复"
+            : "发表评论"}
         </button>
       </form>
     </div>
@@ -175,7 +197,7 @@ function CommentItem({
   comment,
   currentUserId,
   onCommentPosted,
-  onDeleteComment
+  onDeleteComment,
 }: {
   comment: CommentProps;
   currentUserId: string | null;
@@ -185,7 +207,9 @@ function CommentItem({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  const displayedReplies = showAllReplies ? comment.replies : comment.replies?.slice(0, 1);
+  const displayedReplies = showAllReplies
+    ? comment.replies
+    : comment.replies?.slice(0, 1);
   const remainingRepliesCount = (comment.replies?.length || 0) - 1;
   const [mounted, setMounted] = useState(false);
 
@@ -194,15 +218,24 @@ function CommentItem({
   }, []);
 
   return (
-    <div className="border-t border-gray-200 pt-4">
+    <div id={`comment-${comment.id}`} className="border-t border-gray-200 pt-4">
       <div className="flex items-center">
-        <Avatar src={comment.author.avatar} name={comment.author.name} size="sm" />
+        <Avatar
+          src={comment.author.avatar}
+          name={comment.author.name}
+          size="sm"
+        />
         <div className="ml-3">
-          <Link href={`/user/${comment.author.id}`} className="text-sm font-medium text-gray-900 hover:underline">
+          <Link
+            href={`/user/${comment.author.id}`}
+            className="text-sm font-medium text-gray-900 hover:underline"
+          >
             {comment.author.name || "匿名用户"}
           </Link>
           <div className="text-xs text-gray-500">
-            {mounted ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
+            {mounted
+              ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")
+              : ""}
           </div>
         </div>
       </div>
@@ -240,7 +273,9 @@ function CommentItem({
             className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm group"
             title="回复"
           >
-            <span className="font-medium">{showReplyForm ? "取消回复" : "回复"}</span>
+            <span className="font-medium">
+              {showReplyForm ? "取消回复" : "回复"}
+            </span>
           </button>
         )}
         {currentUserId === comment.author.id && (

@@ -7,6 +7,7 @@ interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  viewCount?: number;
   author: {
     id: string;
     name: string | null;
@@ -59,22 +60,24 @@ export default function TopicPostList({
   }, [topicId]);
 
   if (loading) {
-    return <div className="text-center py-4 text-muted-foreground">加载中...</div>;
+    return (
+      <div className="text-center py-4 text-muted-foreground">加载中...</div>
+    );
   }
 
   return (
     <div className="space-y-4">
-        {posts.length === 0 ? (
-            <div className="text-center py-12 bg-card rounded-lg shadow-sm">
-                <p className="text-muted-foreground">该话题下暂无帖子。</p>
-            </div>
-        ) : (
-            <HomeContent
-              initialPosts={posts}
-              hideCreateButton={true}
-              onPostDeleted={onPostDeleted}
-            />
-        )}
+      {posts.length === 0 ? (
+        <div className="text-center py-12 bg-card rounded-lg shadow-sm">
+          <p className="text-muted-foreground">该话题下暂无帖子。</p>
+        </div>
+      ) : (
+        <HomeContent
+          initialPosts={posts}
+          hideCreateButton={true}
+          onPostDeleted={onPostDeleted}
+        />
+      )}
     </div>
   );
 }
