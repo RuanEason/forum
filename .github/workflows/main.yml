@@ -35,6 +35,6 @@ jobs:
           npm run build
 
           # 5. 重启服务 
-          pm2 reload forum
+          pm2 reload start
 
           echo "==== 部署完成 ===="
