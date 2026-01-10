@@ -33,7 +33,7 @@ jobs:
           npm install
 
           echo "正在停止服务以释放内存..."
-          pm2 stop forum || true
+          pm2 stop start || true
 
           # 4. 重新构建项目 (Next.js 需要这一步)
           npm run build
