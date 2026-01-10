@@ -32,8 +32,8 @@ jobs:
           # 3. 安装可能新增的依赖
           npm install
 
-          - name: Stop App to free memory
-            run: pm2 stop forum || true
+          echo "正在停止服务以释放内存..."
+          pm2 stop forum || true
 
           # 4. 重新构建项目 (Next.js 需要这一步)
           npm run build
