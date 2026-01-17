@@ -31,7 +31,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (user.banned) {
-          throw new Error("Account is banned");
+          // Use generic error message to avoid revealing user existence
+          throw new Error("Invalid credentials");
         }
 
         return {

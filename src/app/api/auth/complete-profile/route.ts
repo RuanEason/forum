@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+// Maximum field lengths
+const MAX_NAME_LENGTH = 50;
+const MAX_BIO_LENGTH = 500;
+const MAX_URL_LENGTH = 500;
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -12,6 +17,53 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, avatar, bio, postViewMode } = await request.json();
+
+    // Validate name
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+    if (name.length > MAX_NAME_LENGTH) {
+      return NextResponse.json(
+        { error: `Name must be less than ${MAX_NAME_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    // Validate avatar (optional)
+    if (avatar !== undefined && avatar !== null) {
+      if (typeof avatar !== 'string') {
+        return NextResponse.json({ error: "Avatar must be a string" }, { status: 400 });
+      }
+      if (avatar.length > MAX_URL_LENGTH) {
+        return NextResponse.json(
+          { error: `Avatar URL must be less than ${MAX_URL_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate bio (optional)
+    if (bio !== undefined && bio !== null) {
+      if (typeof bio !== 'string') {
+        return NextResponse.json({ error: "Bio must be a string" }, { status: 400 });
+      }
+      if (bio.length > MAX_BIO_LENGTH) {
+        return NextResponse.json(
+          { error: `Bio must be less than ${MAX_BIO_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate postViewMode (optional)
+    if (postViewMode !== undefined && postViewMode !== null) {
+      if (!['card', 'compact'].includes(postViewMode)) {
+        return NextResponse.json(
+          { error: "postViewMode must be either 'card' or 'compact'" },
+          { status: 400 }
+        );
+      }
+    }
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

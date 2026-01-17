@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+// Maximum field lengths
+const MAX_TOPIC_NAME_LENGTH = 50;
+const MAX_TOPIC_DESCRIPTION_LENGTH = 500;
+const MAX_TOPIC_ICON_LENGTH = 100;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -45,11 +50,51 @@ export async function POST(request: NextRequest) {
 
     const { name, description, icon } = await request.json();
 
-    if (!name || name.trim() === "") {
+    // Validate name
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
         { error: "Topic name is required" },
         { status: 400 }
       );
+    }
+
+    if (name.trim().length > MAX_TOPIC_NAME_LENGTH) {
+      return NextResponse.json(
+        { error: `Topic name must be less than ${MAX_TOPIC_NAME_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    // Validate description (optional)
+    if (description !== undefined && description !== null) {
+      if (typeof description !== 'string') {
+        return NextResponse.json(
+          { error: "Description must be a string" },
+          { status: 400 }
+        );
+      }
+      if (description.length > MAX_TOPIC_DESCRIPTION_LENGTH) {
+        return NextResponse.json(
+          { error: `Description must be less than ${MAX_TOPIC_DESCRIPTION_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validate icon (optional)
+    if (icon !== undefined && icon !== null) {
+      if (typeof icon !== 'string') {
+        return NextResponse.json(
+          { error: "Icon must be a string" },
+          { status: 400 }
+        );
+      }
+      if (icon.length > MAX_TOPIC_ICON_LENGTH) {
+        return NextResponse.json(
+          { error: `Icon must be less than ${MAX_TOPIC_ICON_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if topic exists

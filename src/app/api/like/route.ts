@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (post && post.authorId !== userId) {
-          // Check for duplicate unread notification
+          // Use findFirst to check for existing notification
           const existingNotif = await prisma.notification.findFirst({
             where: {
               type: "LIKE_POST",
@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (!existingNotif) {
+            // Create notification only if doesn't exist
             await prisma.notification.create({
               data: {
                 type: "LIKE_POST",

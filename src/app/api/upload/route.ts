@@ -6,6 +6,11 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+// Allowed image types
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -20,13 +25,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   }
 
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` },
+      { status: 400 }
+    );
+  }
+
+  // Validate file type (specific check)
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}` },
+      { status: 400 }
+    );
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-
-  // Validate file type (simple check)
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only images are allowed" }, { status: 400 });
-  }
 
   // Generate unique filename
   // Always use .webp for optimized images

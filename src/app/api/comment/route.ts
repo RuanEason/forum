@@ -20,7 +20,12 @@ export async function POST(request: NextRequest) {
 
     const authorId = session.user.id;
 
-    const data: any = {
+    const data: {
+      content: string;
+      postId: string;
+      authorId: string;
+      parentId?: string | null;
+    } = {
       content,
       postId,
       authorId,

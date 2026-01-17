@@ -4,11 +4,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma"; // 导入 prisma 实例
 
+// Maximum field lengths
+const MAX_TITLE_LENGTH = 200;
+const MAX_CONTENT_LENGTH = 10000;
+const MAX_IMAGES = 10;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const topicId = searchParams.get('topicId');
-    
+
     const posts = await getPosts(topicId || undefined);
     return NextResponse.json(posts);
   } catch (error) {
@@ -26,27 +31,60 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, content, images, topicId } = await request.json();
-    
-    // Title is optional, but if provided it should not be just whitespace
-    if (title !== undefined && title !== null && typeof title === 'string' && title.trim() === '') {
-       // Ideally we could just set it to null or undefined here, but validating it's not empty if provided is also fine.
-       // However user wanted optional.
+
+    // Validate title (optional)
+    if (title !== undefined && title !== null) {
+      if (typeof title !== 'string') {
+        return NextResponse.json({ error: "Title must be a string" }, { status: 400 });
+      }
+      if (title.length > MAX_TITLE_LENGTH) {
+        return NextResponse.json(
+          { error: `Title must be less than ${MAX_TITLE_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
     }
 
-    if (!content && (!images || images.length === 0)) {
-       // Adjusted validation to match frontend logic: content OR images required
-       // But original code said content is required. Let's stick to what was there or improve?
-       // The original code:
-       // if (!content) { return NextResponse.json({ error: "Content is required" }, { status: 400 }); }
-       // Let's keep it safe. If content is empty string, check images?
-       // For now, let's just relax title check.
-    }
-    
-    if (!content && (!images || images.length === 0)) {
-         return NextResponse.json({ error: "Content or images are required" }, { status: 400 });
+    // Validate content
+    if (content !== undefined && content !== null) {
+      if (typeof content !== 'string') {
+        return NextResponse.json({ error: "Content must be a string" }, { status: 400 });
+      }
+      if (content.length > MAX_CONTENT_LENGTH) {
+        return NextResponse.json(
+          { error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` },
+          { status: 400 }
+        );
+      }
     }
 
-// 传入 title
+    // Validate images (optional array of strings)
+    if (images !== undefined && images !== null) {
+      if (!Array.isArray(images)) {
+        return NextResponse.json({ error: "Images must be an array" }, { status: 400 });
+      }
+      if (images.length > MAX_IMAGES) {
+        return NextResponse.json(
+          { error: `Maximum ${MAX_IMAGES} images allowed` },
+          { status: 400 }
+        );
+      }
+      for (const img of images) {
+        if (typeof img !== 'string') {
+          return NextResponse.json({ error: "Each image must be a string URL" }, { status: 400 });
+        }
+      }
+    }
+
+    // Require either content or images
+    if ((!content || content.trim() === '') && (!images || images.length === 0)) {
+      return NextResponse.json(
+        { error: "Content or images are required" },
+        { status: 400 }
+      );
+    }
+
+    // 传入 title
     const post = await createPost(title, content, session.user.id, images, topicId);
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
