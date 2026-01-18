@@ -10,6 +10,9 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
 import { Eye, MessageCircle, Plus } from "lucide-react";
 
 interface PostProps {
@@ -146,11 +149,11 @@ export default function HomeContent({
 
           <div className="space-y-4 sm:space-y-6">
             {posts.length === 0 ? (
-              <div className="text-center py-12 bg-white sm:rounded-lg shadow-sm">
+              <Card className="text-center py-12">
                 <p className="text-gray-500">
                   还没有帖子，快来发布第一个帖子吧！
                 </p>
-              </div>
+              </Card>
             ) : (
               posts.map((post) => (
                 <div
@@ -176,11 +179,10 @@ export default function HomeContent({
                               {post.author.name || "匿名用户"}
                             </Link>
                             {post.topic && (
-                              <Link
-                                href={`/topic/${post.topic.id}`}
-                                className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
-                              >
-                                #{post.topic.name}
+                              <Link href={`/topic/${post.topic.id}`}>
+                                <Badge variant="primary" size="sm">
+                                  #{post.topic.name}
+                                </Badge>
                               </Link>
                             )}
                           </div>
