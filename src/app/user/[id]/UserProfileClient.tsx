@@ -17,8 +17,24 @@ interface UserStatsData {
   likesGiven: number;
 }
 
+interface Post {
+  id: string;
+  content: string;
+  createdAt: string;
+}
+
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+  posts: Post[];
+}
+
 interface UserProfileClientProps {
-  user: any;
+  user: User;
   isCurrentUser: boolean;
   stats: UserStatsData;
 }

@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
@@ -139,7 +139,7 @@ export async function generateMetadata({
 export default async function UserProfile({ params }: UserProfileProps) {
   const { id } = await params;
   const userId = id;
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
   const user = await getUserProfile(userId);
 
   if (!user) {
@@ -157,7 +157,7 @@ export default async function UserProfile({ params }: UserProfileProps) {
 
   return (
     <UserProfileClient
-      user={user}
+      user={user as any}
       isCurrentUser={isCurrentUser}
       stats={stats}
     />

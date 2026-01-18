@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -45,7 +44,7 @@ export default function SignUp() {
       } else {
         setError(data.error || "注册失败");
       }
-    } catch (error) {
+    } catch {
       setError("网络错误，请重试");
     } finally {
       setLoading(false);

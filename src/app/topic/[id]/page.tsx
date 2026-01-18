@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import TopicContent from "./TopicContent";
 
 async function getTopic(id: string) {
@@ -34,7 +32,6 @@ export default async function TopicDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
   const topic = await getTopic(id);
 
   if (!topic) {

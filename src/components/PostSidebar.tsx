@@ -163,6 +163,19 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
     }
   }, []);
 
+  // 悬停事件处理 - 移到条件返回之前
+  const handleMouseEnter = useCallback(() => {
+    if (!isTouchDevice && mode === "timeline") {
+      setIsTimelineExpanded(true);
+    }
+  }, [isTouchDevice, mode]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!isTouchDevice) {
+      setIsTimelineExpanded(false);
+    }
+  }, [isTouchDevice]);
+
   // 清理计时器
   useEffect(() => {
     return () => {
@@ -182,19 +195,6 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
 
   // 判断时间轴是否应该展开（桌面端悬停展开，移动端始终展开）
   const shouldTimelineExpand = isTouchDevice || isTimelineExpanded;
-
-  // 悬停事件处理
-  const handleMouseEnter = useCallback(() => {
-    if (!isTouchDevice && mode === "timeline") {
-      setIsTimelineExpanded(true);
-    }
-  }, [isTouchDevice, mode]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (!isTouchDevice) {
-      setIsTimelineExpanded(false);
-    }
-  }, [isTouchDevice]);
 
   return (
     <div

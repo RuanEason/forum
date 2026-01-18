@@ -70,7 +70,7 @@ export default function CreatePostPage() {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       setError("请先登录才能发布帖子");
       return;
     }
@@ -89,7 +89,7 @@ export default function CreatePostPage() {
         body: JSON.stringify({
           title: title,
           content: content,
-          authorId: session.user.id,
+          authorId: (session as any)?.user?.id,
           images: selectedImages,
           topicId: selectedTopicId,
         }),
@@ -103,7 +103,7 @@ export default function CreatePostPage() {
       } else {
         setError(data.error || "发布帖子失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，发布帖子失败");
     } finally {
       setLoading(false);

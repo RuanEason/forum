@@ -58,7 +58,7 @@ export default function CompleteProfile() {
       } else {
         setError(data.error || "图片上传失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，图片上传失败");
     } finally {
       setUploading(false);
@@ -95,7 +95,7 @@ export default function CompleteProfile() {
       } else {
         setError(data.error || "更新失败");
       }
-    } catch (error) {
+    } catch {
       setError("网络错误，请重试");
     } finally {
       setLoading(false);

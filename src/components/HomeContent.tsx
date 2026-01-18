@@ -10,7 +10,6 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
-import Image from "next/image";
 import { Eye } from "lucide-react";
 
 interface PostProps {
@@ -54,15 +53,16 @@ export default function HomeContent({
   currentUserId?: string;
 }) {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
+  const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
@@ -85,7 +85,7 @@ export default function HomeContent({
         const data = await response.json();
         alert(data.error || "删除失败");
       }
-    } catch (err) {
+    } catch {
       alert("网络错误，删除失败");
     }
   };
@@ -98,8 +98,8 @@ export default function HomeContent({
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar
-                  src={session.user.avatar}
-                  name={session.user.name}
+                  src={(session.user as any).avatar}
+                  name={(session.user as any).name}
                   size="md"
                 />
               </div>
@@ -220,11 +220,11 @@ export default function HomeContent({
                             targetId={post.id}
                             initialLikesCount={post.likes.length}
                             initialLikedByUser={
-                              currentUserId || session?.user?.id
+                              currentUserId || (session?.user as any)?.id
                                 ? post.likes.some(
                                     (like) =>
                                       like.userId ===
-                                      (currentUserId || session?.user?.id)
+                                      (currentUserId || (session?.user as any)?.id)
                                   )
                                 : false
                             }
@@ -254,8 +254,8 @@ export default function HomeContent({
                             </span>
                           </Link>
                           <RepostButton postId={post.id} />
-                          {session?.user?.id &&
-                            session.user.id === post.author.id && (
+                          {(session?.user as any)?.id &&
+                            (session?.user as any)?.id === post.author.id && (
                               <button
                                 onClick={() => handleDeletePost(post.id)}
                                 className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"

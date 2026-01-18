@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
-import Link from "next/link";
 import BackButton from "@/components/BackButton";
 
 export default function SettingsPage() {
@@ -43,9 +42,10 @@ export default function SettingsPage() {
       router.push("/auth/signin");
     }
     if (session?.user) {
-      setName(session.user.name || "");
-      setAvatar(session.user.avatar || "");
-      setPostViewMode(session.user.postViewMode || "both");
+      const user = session.user as any;
+      setName(user.name || "");
+      setAvatar(user.avatar || "");
+      setPostViewMode(user.postViewMode || "both");
       // Bio is not in session by default, we might need to fetch it or just rely on what we have.
       // For now, let's assume we update what's in session.
       // Ideally, we should fetch the latest user data from an API.
@@ -96,7 +96,7 @@ export default function SettingsPage() {
       } else {
         setError(data.error || "图片上传失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，图片上传失败");
     } finally {
       setUploading(false);
@@ -136,7 +136,7 @@ export default function SettingsPage() {
       } else {
         setError(data.error || "更新失败");
       }
-    } catch (error) {
+    } catch {
       setError("网络错误，请重试");
     } finally {
       setLoading(false);
@@ -170,7 +170,7 @@ export default function SettingsPage() {
         setError(data.error || "注销账号失败");
         setDeleting(false);
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，注销账号失败");
       setDeleting(false);
     }

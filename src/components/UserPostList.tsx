@@ -42,10 +42,11 @@ export default function UserPostList({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
+  const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
@@ -65,7 +66,7 @@ export default function UserPostList({
         const data = await response.json();
         alert(data.error || "删除失败");
       }
-    } catch (err) {
+    } catch {
       alert("网络错误，删除失败");
     }
   };
@@ -162,9 +163,9 @@ export default function UserPostList({
                     targetId={post.id}
                     initialLikesCount={post.likes.length}
                     initialLikedByUser={
-                      session?.user?.id
+                      (session?.user as any)?.id
                         ? post.likes.some(
-                            (like) => like.userId === session.user.id
+                            (like) => like.userId === (session?.user as any)?.id
                           )
                         : false
                     }
@@ -192,7 +193,7 @@ export default function UserPostList({
                     </span>
                   </Link>
                   <RepostButton postId={post.id} />
-                  {session?.user?.id && session.user.id === post.author.id && (
+                  {(session?.user as any)?.id && (session?.user as any).id === post.author.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
                       className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"

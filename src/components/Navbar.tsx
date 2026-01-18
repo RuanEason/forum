@@ -7,6 +7,42 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 
+// Search icon SVG component (defined outside to avoid recreating on each render)
+const SearchIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+    />
+  </svg>
+);
+
+// Close icon SVG component (defined outside to avoid recreating on each render)
+const CloseIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={1.5}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M6 18L18 6M6 6l12 12"
+    />
+  </svg>
+);
+
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -40,6 +76,15 @@ export default function Navbar() {
     }
   }, [status, pathname]);
 
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  }, []);
+
+  const openSearch = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
   // Auto focus when search opens
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -65,7 +110,7 @@ export default function Navbar() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isSearchOpen]);
+  }, [isSearchOpen, closeSearch]);
 
   // Handle Escape key to close search
   useEffect(() => {
@@ -79,16 +124,7 @@ export default function Navbar() {
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [isSearchOpen]);
-
-  const openSearch = useCallback(() => {
-    setIsSearchOpen(true);
-  }, []);
-
-  const closeSearch = useCallback(() => {
-    setIsSearchOpen(false);
-    setSearchQuery("");
-  }, []);
+  }, [isSearchOpen, closeSearch]);
 
   const handleSearch = useCallback(() => {
     const trimmedQuery = searchQuery.trim();
@@ -110,43 +146,7 @@ export default function Navbar() {
   // Don't show navbar on auth pages if desired, or keep it simple.
   // For now, let's keep it everywhere as it provides a way back home.
   // If specific pages need to be excluded, we can add logic here.
-  const isAuthPage = pathname?.startsWith("/auth/");
-
-  // Search icon SVG
-  const SearchIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-      />
-    </svg>
-  );
-
-  // Close icon SVG
-  const CloseIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6 18L18 6M6 6l12 12"
-      />
-    </svg>
-  );
+  // const isAuthPage = pathname?.startsWith("/auth/");
 
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
@@ -279,7 +279,7 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {session.user.role === "admin" && (
+                {(session.user as any)?.role === "admin" && (
                   <Link
                     href="/admin"
                     className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
@@ -289,17 +289,17 @@ export default function Navbar() {
                   </Link>
                 )}
                 <Link
-                  href={`/user/${session.user.id}`}
+                  href={`/user/${(session.user as any).id}`}
                   className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 group"
                 >
                   <Avatar
-                    src={session.user.avatar}
-                    name={session.user.name}
+                    src={(session.user as any).avatar}
+                    name={(session.user as any).name}
                     size="sm"
                     className="ring-2 ring-transparent group-hover:ring-indigo-100 transition-all"
                   />
                   <span className="hidden sm:inline text-sm font-medium group-hover:text-indigo-600 transition-colors">
-                    {session.user.name || "我"}
+                    {(session.user as any).name || "我"}
                   </span>
                 </Link>
               </div>

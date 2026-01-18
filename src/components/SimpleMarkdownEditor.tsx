@@ -47,6 +47,7 @@ export default function SimpleMarkdownEditor({
       // Restore focus and set cursor position
       setTimeout(() => {
         textarea.focus();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const newCursorPos = start + before.length + textToInsert.length + after.length;
         textarea.setSelectionRange(
           start + before.length,
