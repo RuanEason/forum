@@ -207,7 +207,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/media/ruan/Files/forum/src/generated",
+      "value": "C:\\Users\\36309\\Desktop\\website\\src\\generated",
       "fromEnvVar": null
     },
     "config": {
@@ -216,7 +216,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x",
+        "value": "windows",
         "native": true
       }
     ],
@@ -224,8 +224,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../prisma",
   "clientVersion": "5.10.2",
@@ -234,6 +233,7 @@ const config = {
     "db"
   ],
   "activeProvider": "mysql",
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "../components/providers";
 import ProfileCompletionCheck from "@/components/ProfileCompletionCheck";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,9 +39,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>
-          <ProfileCompletionCheck />
-          <Navbar />
-          {children}
+          <div className="flex flex-col min-h-screen">
+            <ProfileCompletionCheck />
+            <Navbar />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </div>
         </Providers>
       </body>
     </html>
