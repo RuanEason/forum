@@ -201,17 +201,20 @@ export default function HomeContent({
                             }}
                             className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                           >
-                            {(viewMode === "both" ||
-                              viewMode === "title" ||
-                              viewMode === "titleAndContent") &&
+                            {/* 标题显示逻辑 */}
+                            {(viewMode === "title" ||
+                              viewMode === "titleAndContent" ||
+                              (viewMode === "both" && post.title)) &&
                               post.title && (
                                 <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
                                   {post.title}
                                 </h3>
                               )}
-                            {((viewMode === "both" && !post.title) ||
-                              viewMode === "content" ||
-                              viewMode === "titleAndContent") && (
+
+                            {/* 内容显示逻辑 */}
+                            {(viewMode === "content" ||
+                              viewMode === "titleAndContent" ||
+                              (viewMode === "both" && !post.title)) && (
                               <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {post.content}
@@ -219,9 +222,11 @@ export default function HomeContent({
                               </div>
                             )}
                           </div>
-                          {((viewMode === "both" && !post.title) ||
-                            viewMode === "content" ||
-                            viewMode === "titleAndContent") &&
+
+                          {/* 图片显示逻辑 */}
+                          {(viewMode === "content" ||
+                            viewMode === "titleAndContent" ||
+                            (viewMode === "both" && !post.title)) &&
                             post.images &&
                             post.images.length > 0 && (
                               <PostImages
