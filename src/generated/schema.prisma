@@ -53,6 +53,10 @@ model Post {
   viewCount Int        @default(0)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([topicId])
 }
 
 model Topic {
@@ -88,6 +92,10 @@ model Comment {
   replies   Comment[]     @relation("CommentReplies")
   likes     CommentLike[]
   createdAt DateTime      @default(now())
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
 }
 
 model PostLike {
@@ -122,6 +130,9 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([receiverId])
+  @@index([receiverId, isRead, createdAt])
+  @@index([senderId, receiverId, type, postId, isRead])
+  @@index([senderId, receiverId, type, commentId, isRead])
 }
 
 model CommentLike {
