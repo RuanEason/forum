@@ -4,8 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
-import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
+import Card from "@/components/ui/Card";
+import Dropdown from "@/components/ui/Dropdown";
 
 export default function SettingsPage() {
   const { data: session, status, update } = useSession();
@@ -19,33 +23,17 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
     }
     if (session?.user) {
-      setName(session.user.name || "");
-      setAvatar(session.user.avatar || "");
-      setPostViewMode(session.user.postViewMode || "both");
+      const user = session.user as any;
+      setName(user.name || "");
+      setAvatar(user.avatar || "");
+      setPostViewMode(user.postViewMode || "both");
       // Bio is not in session by default, we might need to fetch it or just rely on what we have.
       // For now, let's assume we update what's in session.
       // Ideally, we should fetch the latest user data from an API.
@@ -96,7 +84,7 @@ export default function SettingsPage() {
       } else {
         setError(data.error || "图片上传失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，图片上传失败");
     } finally {
       setUploading(false);
@@ -136,7 +124,7 @@ export default function SettingsPage() {
       } else {
         setError(data.error || "更新失败");
       }
-    } catch (error) {
+    } catch {
       setError("网络错误，请重试");
     } finally {
       setLoading(false);
@@ -170,7 +158,7 @@ export default function SettingsPage() {
         setError(data.error || "注销账号失败");
         setDeleting(false);
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，注销账号失败");
       setDeleting(false);
     }
@@ -191,7 +179,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg">
+        <Card>
           <div className="px-4 py-5 sm:p-6">
             <div className="sm:hidden mb-4">
               <BackButton href="/" />
@@ -220,14 +208,14 @@ export default function SettingsPage() {
                       size="lg"
                     />
                     <div>
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                       >
                         {uploading ? "上传中..." : "更换头像"}
-                      </button>
+                      </Button>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -239,40 +227,24 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    昵称
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
+                <Input
+                  id="name"
+                  name="name"
+                  label="昵称"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
 
-                <div>
-                  <label
-                    htmlFor="bio"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    个人简介
-                  </label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    rows={3}
-                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                  />
-                </div>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  label="个人简介"
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
 
                 <div>
                   <label
@@ -281,132 +253,16 @@ export default function SettingsPage() {
                   >
                     帖子列表显示模式
                   </label>
-                  <div
-                    className={`ui-dropdown ${isDropdownOpen ? "open" : ""}`}
-                    ref={dropdownRef}
-                  >
-                    <div
-                      className="ui-select-trigger"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    >
-                      <span>
-                        {postViewMode === "both" && "智能显示标题或正文"}
-                        {postViewMode === "title" && "仅显示标题"}
-                        {postViewMode === "content" && "仅预览正文"}
-                        {postViewMode === "titleAndContent" &&
-                          "同时显示标题和正文"}
-                      </span>
-                      <svg
-                        className={`h-5 w-5 text-gray-400 transition-transform ${
-                          isDropdownOpen ? "transform rotate-180" : ""
-                        }`}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ui-dropdown-menu">
-                      <div
-                        className="ui-dropdown-item"
-                        onClick={() => {
-                          setPostViewMode("both");
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <span>智能显示标题或正文</span>
-                        {postViewMode === "both" && (
-                          <svg
-                            className="h-5 w-5 text-indigo-600"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <div
-                        className="ui-dropdown-item"
-                        onClick={() => {
-                          setPostViewMode("title");
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <span>仅显示标题</span>
-                        {postViewMode === "title" && (
-                          <svg
-                            className="h-5 w-5 text-indigo-600"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <div
-                        className="ui-dropdown-item"
-                        onClick={() => {
-                          setPostViewMode("content");
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <span>仅预览正文</span>
-                        {postViewMode === "content" && (
-                          <svg
-                            className="h-5 w-5 text-indigo-600"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <div
-                        className="ui-dropdown-item"
-                        onClick={() => {
-                          setPostViewMode("titleAndContent");
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <span>同时显示标题和正文</span>
-                        {postViewMode === "titleAndContent" && (
-                          <svg
-                            className="h-5 w-5 text-indigo-600"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <Dropdown
+                    value={postViewMode}
+                    onChange={(value) => setPostViewMode(value)}
+                    options={[
+                      { value: "both", label: "智能显示标题或正文" },
+                      { value: "title", label: "仅显示标题" },
+                      { value: "content", label: "仅预览正文" },
+                      { value: "titleAndContent", label: "同时显示标题和正文" },
+                    ]}
+                  />
                   <p className="mt-2 text-sm text-gray-500">
                     选择您在浏览帖子列表时希望看到的内容。
                   </p>
@@ -419,19 +275,19 @@ export default function SettingsPage() {
               )}
 
               <div>
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={loading}
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   {loading ? "保存中..." : "保存更改"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white shadow rounded-lg mt-6">
+        <Card className="mt-6">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-red-600">
               危险区域
@@ -442,17 +298,17 @@ export default function SettingsPage() {
               </p>
             </div>
             <div className="mt-5">
-              <button
+              <Button
                 type="button"
+                variant="danger"
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {deleting ? "注销中..." : "注销账号"}
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

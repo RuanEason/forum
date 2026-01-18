@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Card from "@/components/ui/Card";
+import { X, Plus, Loader2 } from "lucide-react";
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
@@ -70,7 +74,7 @@ export default function CreatePostPage() {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       setError("请先登录才能发布帖子");
       return;
     }
@@ -89,7 +93,7 @@ export default function CreatePostPage() {
         body: JSON.stringify({
           title: title,
           content: content,
-          authorId: session.user.id,
+          authorId: (session as any)?.user?.id,
           images: selectedImages,
           topicId: selectedTopicId,
         }),
@@ -103,7 +107,7 @@ export default function CreatePostPage() {
       } else {
         setError(data.error || "发布帖子失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，发布帖子失败");
     } finally {
       setLoading(false);
@@ -125,7 +129,7 @@ export default function CreatePostPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <Card>
           <div className="p-6 border-b border-gray-100">
             <h1 className="text-xl font-bold text-gray-900">发布新帖子</h1>
           </div>
@@ -134,23 +138,15 @@ export default function CreatePostPage() {
             <form onSubmit={handleCreatePost}>
               <div className="space-y-6">
                 {/* 新增：标题输入框 */}
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    标题
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="请输入帖子标题（可选）"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                    maxLength={100}
-                  />
-                </div>
+                <Input
+                  type="text"
+                  id="title"
+                  label="标题"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="请输入帖子标题（可选）"
+                  maxLength={100}
+                />
 
                 {/* Topic Selector */}
                 <div>
@@ -196,18 +192,7 @@ export default function CreatePostPage() {
                           onClick={() => removeImage(index)}
                           className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
                     ))}
@@ -223,23 +208,10 @@ export default function CreatePostPage() {
                           disabled={loading || isUploading}
                         />
                         {isUploading ? (
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
                         ) : (
                           <>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-8 w-8 text-gray-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                              />
-                            </svg>
+                            <Plus className="h-8 w-8 text-gray-400" />
                             <span className="mt-2 text-xs text-gray-500">
                               上传图片
                             </span>
@@ -257,26 +229,26 @@ export default function CreatePostPage() {
                 )}
 
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => router.back()}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     disabled={loading}
                   >
                     取消
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="primary"
                     disabled={loading || isUploading}
                   >
                     {loading ? "发布中..." : "发布帖子"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </form>
           </div>
-        </div>
+        </Card>
       </main>
     </div>
   );

@@ -12,7 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-  ]),
-]);
+    // 忽略自动生成的文件
+    "src/generated/**",
+  ]);
 
 export default eslintConfig;

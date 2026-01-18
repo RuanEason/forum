@@ -256,7 +256,7 @@ export default function TopicSelector({
             ) : searchTerm ? (
                 <div className="p-4">
                      <div className="text-center text-gray-500 text-sm mb-4">
-                        未找到与 "{searchTerm}" 相关的话题
+                        未找到与 &quot;{searchTerm}&quot; 相关的话题
                      </div>
                      <button
                         type="button"
@@ -272,7 +272,7 @@ export default function TopicSelector({
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                              </svg>
                         )}
-                        创建 "{searchTerm}" 话题
+                        创建 &quot;{searchTerm}&quot; 话题
                      </button>
                 </div>
             ) : (

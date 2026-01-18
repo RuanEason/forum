@@ -1,12 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 
-
+/**
+ * 创建评论或回复
+ * 支持创建新评论或对现有评论进行回复
+ *
+ * @param {NextRequest} request - Next.js 请求对象
+ * @param {Object} request.body - 请求体
+ * @param {string} request.body.content - 评论内容
+ * @param {string} request.body.postId - 帖子 ID
+ * @param {string} [request.body.parentId] - 父评论 ID（回复时使用）
+ * @returns {Promise<NextResponse>} 201 评论创建成功
+ * @throws {401} Unauthorized - 用户未登录
+ * @throws {400} Bad Request - 参数验证失败
+ * @throws {500} Internal Server Error - 服务器内部错误
+ *
+ * @example
+ * // 创建顶层评论
+ * POST /api/comment
+ * {
+ *   "content": "这是一条评论",
+ *   "postId": "post123"
+ * }
+ *
+ * // 回复评论
+ * POST /api/comment
+ * {
+ *   "content": "这是回复内容",
+ *   "postId": "post123",
+ *   "parentId": "comment456"
+ * }
+ */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as any;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +49,12 @@ export async function POST(request: NextRequest) {
 
     const authorId = session.user.id;
 
-    const data: any = {
+    const data: {
+      content: string;
+      postId: string;
+      authorId: string;
+      parentId?: string | null;
+    } = {
       content,
       postId,
       authorId,
@@ -96,9 +130,29 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * 删除评论
+ * 只有评论作者或管理员可以删除评论
+ *
+ * @param {NextRequest} request - Next.js 请求对象
+ * @param {Object} request.body - 请求体
+ * @param {string} request.body.id - 要删除的评论 ID
+ * @returns {Promise<NextResponse>} 200 删除成功
+ * @throws {401} Unauthorized - 用户未登录
+ * @throws {403} Forbidden - 无权限删除（非作者且非管理员）
+ * @throws {404} Not Found - 评论不存在
+ * @throws {400} Bad Request - 参数无效
+ * @throws {500} Internal Server Error - 服务器内部错误
+ *
+ * @example
+ * DELETE /api/comment
+ * {
+ *   "id": "comment123"
+ * }
+ */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as any;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

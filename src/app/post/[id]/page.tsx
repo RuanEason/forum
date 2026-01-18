@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getPostById } from "@/lib/post";
 import ReactMarkdown from "react-markdown";
@@ -85,7 +85,7 @@ export default async function PostDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions) as any;
   const postId = id;
   const post = (await getPostById(postId)) as unknown as PostDetailProps | null;
 

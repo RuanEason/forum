@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";

@@ -38,9 +38,10 @@ export default function AdminPanel() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
-    } else if (status === "authenticated") {
+    } else if (status === "authenticated" && session?.user) {
       // 首先检查会话中的角色
-      if (session.user.role === "admin") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((session.user as any).role === "admin") {
         fetchData();
       } else {
         // 如果会话中的角色不是管理员，检查服务器上的最新信息
@@ -78,7 +79,7 @@ export default function AdminPanel() {
       } else {
         setError(data.error || "Failed to fetch data");
       }
-    } catch (err) {
+    } catch {
       setError("Network error");
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ export default function AdminPanel() {
       } else {
         alert("Failed to update user status");
       }
-    } catch (err) {
+    } catch {
       alert("Network error");
     }
   };
@@ -122,7 +123,7 @@ export default function AdminPanel() {
       } else {
         alert("Failed to delete post");
       }
-    } catch (err) {
+    } catch {
       alert("Network error");
     }
   };

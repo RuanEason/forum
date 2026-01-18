@@ -167,12 +167,17 @@ export async function deletePost(id: string) {
  * 这个操作是非阻塞的，不需要等待结果
  */
 export async function incrementViewCount(id: string) {
-  return prisma.post.update({
-    where: { id },
-    data: {
-      viewCount: {
-        increment: 1,
+  try {
+    await prisma.post.update({
+      where: { id },
+      data: {
+        viewCount: {
+          increment: 1,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    // Log error but don't throw - view count increment is not critical
+    console.error('Failed to increment view count:', error);
+  }
 }

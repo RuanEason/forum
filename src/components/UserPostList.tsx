@@ -42,10 +42,11 @@ export default function UserPostList({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
+  const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
@@ -65,7 +66,7 @@ export default function UserPostList({
         const data = await response.json();
         alert(data.error || "删除失败");
       }
-    } catch (err) {
+    } catch {
       alert("网络错误，删除失败");
     }
   };
@@ -111,9 +112,10 @@ export default function UserPostList({
                       : ""}
                   </span>
                 </div>
-                {((viewMode === "both" && post.title) ||
-                  viewMode === "title" ||
-                  viewMode === "titleAndContent") && (
+                {/* 标题显示逻辑 */}
+                {(viewMode === "title" ||
+                  viewMode === "titleAndContent" ||
+                  (viewMode === "both" && post.title)) && (
                   <div className="mt-2 mb-2">
                     <Link href={`/post/${post.id}`} className="block group">
                       <h3
@@ -134,9 +136,10 @@ export default function UserPostList({
                     }}
                     className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                   >
-                    {((viewMode === "both" && !post.title) ||
-                      viewMode === "content" ||
-                      viewMode === "titleAndContent") && (
+                    {/* 内容显示逻辑 */}
+                    {(viewMode === "content" ||
+                      viewMode === "titleAndContent" ||
+                      (viewMode === "both" && !post.title)) && (
                       <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {post.content}
@@ -144,9 +147,10 @@ export default function UserPostList({
                       </div>
                     )}
                   </div>
-                  {((viewMode === "both" && !post.title) ||
-                    viewMode === "content" ||
-                    viewMode === "titleAndContent") &&
+                  {/* 图片显示逻辑 */}
+                  {(viewMode === "content" ||
+                    viewMode === "titleAndContent" ||
+                    (viewMode === "both" && !post.title)) &&
                     post.images &&
                     post.images.length > 0 && (
                       <PostImages images={post.images.map((img) => img.url)} />
@@ -162,9 +166,9 @@ export default function UserPostList({
                     targetId={post.id}
                     initialLikesCount={post.likes.length}
                     initialLikedByUser={
-                      session?.user?.id
+                      (session?.user as any)?.id
                         ? post.likes.some(
-                            (like) => like.userId === session.user.id
+                            (like) => like.userId === (session?.user as any)?.id
                           )
                         : false
                     }
@@ -192,7 +196,7 @@ export default function UserPostList({
                     </span>
                   </Link>
                   <RepostButton postId={post.id} />
-                  {session?.user?.id && session.user.id === post.author.id && (
+                  {(session?.user as any)?.id && (session?.user as any).id === post.author.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
                       className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"

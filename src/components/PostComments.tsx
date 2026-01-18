@@ -58,7 +58,7 @@ export default function PostComments({ comments, postId }: PostCommentsProps) {
         const data = await response.json();
         alert(data.error || "删除失败");
       }
-    } catch (err) {
+    } catch {
       alert("网络错误，删除失败");
     }
   };
@@ -82,7 +82,7 @@ export default function PostComments({ comments, postId }: PostCommentsProps) {
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                currentUserId={session?.user?.id ? session.user.id : null}
+                currentUserId={(session as any)?.user?.id || null}
                 onCommentPosted={refreshComments}
                 onDeleteComment={handleDeleteComment}
               />
@@ -111,7 +111,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       setError("请先登录才能发表评论");
       return;
     }
@@ -138,7 +138,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
       } else {
         setError(data.error || "发表评论失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，发表评论失败");
     } finally {
       setLoading(false);
@@ -214,6 +214,7 @@ function CommentItem({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

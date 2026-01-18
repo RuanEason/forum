@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +17,7 @@ export default function LikeButton({
   initialLikesCount,
   initialLikedByUser,
 }: LikeButtonProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [likedByUser, setLikedByUser] = useState(initialLikedByUser);
@@ -49,7 +49,7 @@ export default function LikeButton({
       } else {
         setError(data.error || "操作失败");
       }
-    } catch (err) {
+    } catch {
       setError("网络错误，操作失败");
     } finally {
       setLoading(false);
