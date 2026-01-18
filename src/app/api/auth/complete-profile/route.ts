@@ -57,9 +57,10 @@ export async function POST(request: NextRequest) {
 
     // Validate postViewMode (optional)
     if (postViewMode !== undefined && postViewMode !== null) {
-      if (!['card', 'compact'].includes(postViewMode)) {
+      const validModes = ['both', 'title', 'content', 'titleAndContent'];
+      if (!validModes.includes(postViewMode)) {
         return NextResponse.json(
-          { error: "postViewMode must be either 'card' or 'compact'" },
+          { error: `postViewMode must be one of: ${validModes.join(', ')}` },
           { status: 400 }
         );
       }
