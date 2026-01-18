@@ -3,6 +3,34 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * 处理点赞和取消点赞
+ * 支持对帖子或评论进行点赞或取消点赞，并发送通知
+ *
+ * @param {NextRequest} request - Next.js 请求对象
+ * @param {Object} request.body - 请求体
+ * @param {"post" | "comment"} request.body.targetType - 点赞对象类型
+ * @param {string} request.body.targetId - 帖子或评论 ID
+ * @returns {Promise<NextResponse>} 点赞状态
+ * @throws {401} Unauthorized - 用户未登录
+ * @throws {400} Bad Request - 参数无效
+ * @throws {500} Internal Server Error - 服务器内部错误
+ *
+ * @example
+ * // 点赞帖子
+ * POST /api/like
+ * {
+ *   "targetType": "post",
+ *   "targetId": "post123"
+ * }
+ *
+ * // 取消点赞（相同的请求）
+ * POST /api/like
+ * {
+ *   "targetType": "post",
+ *   "targetId": "post123"
+ * }
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions) as any;

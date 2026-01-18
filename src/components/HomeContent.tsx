@@ -10,7 +10,7 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
-import { Eye } from "lucide-react";
+import { Eye, MessageCircle, Plus } from "lucide-react";
 
 interface PostProps {
   id: string;
@@ -41,6 +41,27 @@ interface PostProps {
   createdAt: string;
 }
 
+/**
+ * 首页内容展示组件
+ * 展示帖子列表，支持创建按钮、删除功能和查看模式切换
+ *
+ * @param {Object} props - 组件属性
+ * @param {PostProps[]} props.initialPosts - 初始帖子列表
+ * @param {boolean} [props.hideCreateButton] - 是否隐藏创建按钮，默认为 false
+ * @param {() => void} [props.onPostDeleted] - 帖子删除回调函数
+ * @param {string} [props.currentUserId] - 当前用户 ID，用于显示删除按钮
+ * @returns {JSX.Element} 首页内容组件
+ *
+ * @example
+ * // 基本使用
+ * <HomeContent initialPosts={posts} />
+ *
+ * // 隐藏创建按钮
+ * <HomeContent initialPosts={posts} hideCreateButton={true} />
+ *
+ * // 监听删除事件
+ * <HomeContent initialPosts={posts} onPostDeleted={() => router.refresh()} />
+ */
 export default function HomeContent({
   initialPosts,
   hideCreateButton = false,
@@ -64,6 +85,16 @@ export default function HomeContent({
 
   const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
 
+  /**
+   * 处理删除帖子
+   * 发送删除请求到 API，成功后从列表中移除帖子并触发回调
+   *
+   * @param {string} postId - 要删除的帖子 ID
+   * @returns {Promise<void>}
+   *
+   * @example
+   * await handleDeletePost("post123");
+   */
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
 
@@ -107,18 +138,7 @@ export default function HomeContent({
                 href="/post/create"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-1"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <Plus className="h-5 w-5 mr-1" />
                 发布帖子
               </Link>
             </div>
@@ -233,20 +253,7 @@ export default function HomeContent({
                             href={`/post/${post.id}`}
                             className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group p-2 rounded-full hover:bg-blue-50 transition-colors"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="group-hover:scale-110 transition-transform duration-200"
-                            >
-                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                            </svg>
+                            <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
                             <span className="text-sm font-medium">
                               {post.comments.length > 0
                                 ? post.comments.length

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
+import { X, Plus, Loader2 } from "lucide-react";
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
@@ -196,18 +197,7 @@ export default function CreatePostPage() {
                           onClick={() => removeImage(index)}
                           className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
                     ))}
@@ -223,23 +213,10 @@ export default function CreatePostPage() {
                           disabled={loading || isUploading}
                         />
                         {isUploading ? (
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
                         ) : (
                           <>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-8 w-8 text-gray-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                              />
-                            </svg>
+                            <Plus className="h-8 w-8 text-gray-400" />
                             <span className="mt-2 text-xs text-gray-500">
                               上传图片
                             </span>

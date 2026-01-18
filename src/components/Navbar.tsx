@@ -6,42 +6,7 @@ import Avatar from "@/components/Avatar";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
-
-// Search icon SVG component (defined outside to avoid recreating on each render)
-const SearchIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-    />
-  </svg>
-);
-
-// Close icon SVG component (defined outside to avoid recreating on each render)
-const CloseIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={1.5}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6 18L18 6M6 6l12 12"
-    />
-  </svg>
-);
+import { Search, X, Plus, Bell, Settings } from "lucide-react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -188,7 +153,7 @@ export default function Navbar() {
             >
               {/* Search icon inside input */}
               <div className="pl-4 text-gray-400">
-                <SearchIcon />
+                <Search className="h-5 w-5" />
               </div>
 
               {/* Input field */}
@@ -208,7 +173,7 @@ export default function Navbar() {
                 className="p-2 mr-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                 aria-label="关闭搜索"
               >
-                <CloseIcon />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -228,18 +193,7 @@ export default function Navbar() {
                     href="/post/create"
                     className="hidden sm:inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 mr-1"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <Plus className="h-4 w-4 mr-1" />
                     发帖
                   </Link>
                 )}
@@ -250,7 +204,7 @@ export default function Navbar() {
                   className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="搜索"
                 >
-                  <SearchIcon />
+                  <Search className="h-5 w-5" />
                 </button>
 
                 <Link
@@ -258,20 +212,7 @@ export default function Navbar() {
                   className="relative p-1 text-gray-500 hover:text-indigo-600 transition-colors"
                   aria-label="Notifications"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+                  <Bell className="h-6 w-6" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[1rem] h-4 px-1 text-[10px] font-bold leading-none text-white bg-red-500 rounded-full ring-2 ring-white">
                       {unreadCount > 99 ? "99+" : unreadCount}
@@ -282,8 +223,9 @@ export default function Navbar() {
                 {(session.user as any)?.role === "admin" && (
                   <Link
                     href="/admin"
-                    className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
+                    className="flex items-center space-x-1 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors"
                   >
+                    <Settings className="h-4 w-4" />
                     <span className="hidden sm:inline">管理面板</span>
                     <span className="sm:hidden">管理</span>
                   </Link>
@@ -311,7 +253,7 @@ export default function Navbar() {
                   className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition-colors"
                   aria-label="搜索"
                 >
-                  <SearchIcon />
+                  <Search className="h-5 w-5" />
                 </button>
 
                 <Link
