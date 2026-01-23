@@ -159,8 +159,8 @@ export default async function PostDetailPage({
         {hasSidebar && <div className="post-detail-spacer hidden lg:block" />}
 
         {/* 主内容区域 */}
-        <div className={hasSidebar ? "post-detail-main" : "px-4 sm:px-0"}>
-          <div className={hasSidebar ? "" : "px-4 sm:px-0"}>
+        <div className={hasSidebar ? "post-detail-main" : "px-0"}>
+          <div className={hasSidebar ? "" : "px-0"}>
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
