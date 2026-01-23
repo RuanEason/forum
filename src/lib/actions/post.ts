@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 /**
  * 冷却时间（秒）：同一用户在此时间内重复访问不会增加阅读量
@@ -51,6 +52,8 @@ export async function incrementViewCount(
       sameSite: "lax",
       path: "/",
     });
+
+    revalidatePath(`/post/${postId}`);
 
     return {
       success: true,
