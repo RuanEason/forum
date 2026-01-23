@@ -4,12 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
-  // 启用 Server Actions
-  experimental: {
-    serverActions: {
-      allowedOrigins: ["localhost:3000", process.env.NEXTAUTH_URL || ""].filter(Boolean) as string[],
-    },
-  },
+  // 配置 trustHost 以支持反向代理
+  // 这允许 Next.js 信任来自反向代理的 x-forwarded-* 头
+  trustHost: true,
 
   async headers() {
     return [

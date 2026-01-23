@@ -2,6 +2,15 @@
 
 ## ViewTracker 500 错误排查步骤
 
+### 关键修复：trustHost 配置
+
+**问题**：Nginx 反向代理导致 Server Actions 失败
+```
+`x-forwarded-host` header with value `zyg2024.top:443` does not match `origin` header with value `zyg2024.top`
+```
+
+**解决方案**：已在 `next.config.ts` 中添加 `trustHost: true`
+
 ### 0. 快速诊断 - 数据库连接测试
 
 首先访问测试端点检查数据库连接：
@@ -185,25 +194,72 @@ pm2 restart your-app --update-env
 - 确保 NEXTAUTH_URL 与访问域名一致
 - 检查反向代理配置
 
-### 11. 反向代理配置（Nginx 示例）
+### 11. 反向代理配置（Nginx 示例） - 重要！
 
-如果使用 Nginx，确保正确配置：
+如果使用 Nginx，必须正确配置以支持 Server Actions：
 
 ```nginx
-location / {
-    proxy_pass http://localhost:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_cache_bypass $http_upgrade;
-
-    # 重要：传递 Cookie 相关的头部
-    proxy_set_header Cookie $http_cookie;
+server {
+    listen 80;
+    server_name zyg2024.top;
+    return 301 https://$server_name$request_uri;
 }
+
+server {
+    listen 443 ssl http2;
+    server_name zyg2024.top;
+
+    # SSL 证书配置
+    ssl_certificate /path/to/your/certificate.crt;
+    ssl_certificate_key /path/to/your/private.key;
+
+    # 反向代理到 Next.js 应用
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+
+        # 关键配置：正确传递代理头
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;  # 不要包含端口
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;  # 重要：不包含端口
+
+        # 缓存配置
+        proxy_cache_bypass $http_upgrade;
+
+        # 超时配置
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+
+    # 处理 Next.js 静态文件
+    location /_next/static {
+        proxy_pass http://localhost:3000;
+        proxy_cache_valid 200 60m;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**关键点**：
+- `X-Forwarded-Host` 必须设置为 `$host`（不包含端口）
+- `X-Forwarded-Proto` 必须设置为 `$scheme`（https）
+- `Host` 必须设置为 `$host`（不包含端口）
+- 不要设置 `X-Forwarded-Port`，避免端口冲突
+
+**重启 Nginx**：
+```bash
+# 测试配置
+sudo nginx -t
+
+# 重新加载配置
+sudo systemctl reload nginx
+
+# 或重启
+sudo systemctl restart nginx
 ```
 
 ### 12. 构建和部署命令
