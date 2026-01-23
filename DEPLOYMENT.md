@@ -2,14 +2,16 @@
 
 ## ViewTracker 500 错误排查步骤
 
-### 关键修复：trustHost 配置
+### 关键修复：Nginx 配置
 
 **问题**：Nginx 反向代理导致 Server Actions 失败
 ```
 `x-forwarded-host` header with value `zyg2024.top:443` does not match `origin` header with value `zyg2024.top`
 ```
 
-**解决方案**：已在 `next.config.ts` 中添加 `trustHost: true`
+**原因**：Nginx 默认会添加端口号到 `x-forwarded-host`，但 Server Actions 需要精确匹配。
+
+**解决方案**：修改 Nginx 配置，确保 `X-Forwarded-Host` 不包含端口。
 
 ### 0. 快速诊断 - 数据库连接测试
 
@@ -194,9 +196,11 @@ pm2 restart your-app --update-env
 - 确保 NEXTAUTH_URL 与访问域名一致
 - 检查反向代理配置
 
-### 11. 反向代理配置（Nginx 示例） - 重要！
+### 11. 反向代理配置（Nginx） - 重要！
 
-如果使用 Nginx，必须正确配置以支持 Server Actions：
+如果使用 Nginx，**必须**正确配置以支持 Server Actions：
+
+**完整的 Nginx 配置示例**：
 
 ```nginx
 server {
@@ -218,16 +222,22 @@ server {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
 
-        # 关键配置：正确传递代理头
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;  # 不要包含端口
+        # === 关键配置：修复 Server Actions ===
+        # Host 头：不要包含端口！
+        proxy_set_header Host $host;
+
+        # X-Forwarded-Host：不要包含端口！
+        # 这是最重要的配置，否则会导致 Server Actions 失败
+        proxy_set_header X-Forwarded-Host $host;
+
+        # X-Forwarded-Proto：必须是 https
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 其他标准代理头
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;  # 重要：不包含端口
-
-        # 缓存配置
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
         proxy_cache_bypass $http_upgrade;
 
         # 超时配置
@@ -244,22 +254,27 @@ server {
 }
 ```
 
-**关键点**：
-- `X-Forwarded-Host` 必须设置为 `$host`（不包含端口）
-- `X-Forwarded-Proto` 必须设置为 `$scheme`（https）
-- `Host` 必须设置为 `$host`（不包含端口）
-- 不要设置 `X-Forwarded-Port`，避免端口冲突
+**关键点**（必须遵守）：
+1. ✅ `proxy_set_header Host $host;` - 不包含端口
+2. ✅ `proxy_set_header X-Forwarded-Host $host;` - **不包含端口**
+3. ✅ `proxy_set_header X-Forwarded-Proto $scheme;` - 必须是 https
+4. ❌ **不要**设置 `X-Forwarded-Port` - 这会导致端口冲突
+5. ❌ **不要**使用 `$host:$server_port` - 这会导致端口冲突
 
-**重启 Nginx**：
+**如何应用配置**：
+
 ```bash
-# 测试配置
+# 1. 编辑 Nginx 配置文件
+sudo nano /etc/nginx/sites-available/forum
+
+# 2. 测试配置是否正确
 sudo nginx -t
 
-# 重新加载配置
-sudo systemctl reload nginx
-
-# 或重启
+# 3. 如果测试通过，重启 Nginx
 sudo systemctl restart nginx
+
+# 4. 重启 Next.js 应用
+pm2 restart your-app
 ```
 
 ### 12. 构建和部署命令

@@ -4,10 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
-  // 配置 trustHost 以支持反向代理
-  // 这允许 Next.js 信任来自反向代理的 x-forwarded-* 头
-  trustHost: true,
-
   async headers() {
     return [
       {
