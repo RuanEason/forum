@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在此仓库中工作时提供指导。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
 
@@ -14,6 +14,7 @@
 - **Markdown**: react-markdown + remark-gfm + rehype-slug
 - **图片处理**: sharp
 - **密码加密**: bcryptjs
+- **编译优化**: React Compiler (通过 `reactCompiler: true` 启用)
 
 ## 开发命令
 
@@ -33,6 +34,30 @@ npx prisma studio    # 打开 Prisma Studio GUI
 # 代码检查
 npm run lint         # 运行 ESLint
 ```
+
+## 开发环境配置
+
+### 环境说明
+
+**重要**: 本项目使用 Git 进行版本控制，`.env` 文件**不会被提交到仓库**。
+
+- **开发环境**: 本地 Next.js 开发服务器连接到**云端生产数据库**
+- **生产环境**: 部署在云服务器上，具有独立的环境配置
+- 两者的 `.env` 文件内容不同，但是数据库链接相同
+### 开发时的已知行为
+
+由于开发环境连接的是生产数据库，而图片存储在不同位置：
+
+1. **图片 404 是正常现象**: 用户上传的图片存储在云端生产环境，本地开发时访问这些图片会出现 404 错误
+2. **数据库数据共享**: 开发和生产环境共享同一个数据库，可以直接看到生产数据
+3. **不要在生产数据库上执行危险操作**: 避免在开发时执行 `DELETE`、`DROP` 或批量更新操作
+
+### 环境变量
+
+- `DATABASE_URL`: MySQL 连接字符串（指向云端生产数据库）
+- `NEXTAUTH_SECRET`: NextAuth JWT 签名密钥
+
+**注意**: 如需修改环境变量，请编辑本地 `.env` 文件，该文件已被 Git 忽略。
 
 ## 任务完成通知
 
@@ -77,20 +102,26 @@ powershell -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Window
 src/
 ├── app/                    # Next.js App Router
 │   ├── api/                # API 路由
-│   │   ├── auth/           # 认证与用户管理
+│   │   ├── auth/           # 认证与用户管理 (register, [...nextauth], me, delete-account)
 │   │   ├── post/           # 帖子 CRUD 操作
 │   │   ├── comment/        # 评论与回复
 │   │   ├── like/           # 点赞/取消点赞
-│   │   ├── notifications/  # 通知系统
+│   │   ├── notifications/  # 通知系统 (GET, PUT [id], unread-count)
 │   │   ├── upload/         # 图片上传 (sharp)
+│   │   ├── uploads/[filename]/  # 动态图片访问路由
 │   │   ├── repost/         # 转发功能
 │   │   ├── topic/          # 话题管理
-│   │   └── admin/          # 仅管理员端点
+│   │   └── admin/          # 仅管理员端点 (data, user/ban)
 │   ├── (auth)/             # 认证相关页面组
 │   ├── admin/              # 管理员面板
-│   ├── post/               # 帖子创建与详情页
+│   ├── auth/               # 登录/注册/完善资料页面
+│   ├── notifications/      # 通知列表页
+│   ├── post/               # 帖子创建与详情页 (create, [id])
 │   ├── profile/            # 用户资料页
-│   └── settings/           # 用户设置
+│   ├── search/             # 搜索页面
+│   ├── settings/           # 用户设置
+│   ├── topic/[id]/         # 话题详情页
+│   └── user/[id]/          # 用户主页
 ├── components/             # React 组件
 │   └── ui/                 # 可复用 UI 组件
 ├── lib/                    # 核心工具与业务逻辑
@@ -127,10 +158,14 @@ src/
 
 **User**: `id`, `email`, `password`, `name`, `role` (user/admin), `banned`, `avatar`, `bio`, `postViewMode` (title/content/both)
 **Post**: `id`, `title` (可选), `content`, `authorId`, `topicId`, `viewCount`
+**PostImage**: `id`, `url`, `postId` - 帖子关联图片
 **Comment**: `id`, `content`, `postId`, `authorId`, `parentId` (用于嵌套回复)
 **Topic**: `id`, `name`, `description`, `icon`, `creatorId`
 **PostLike/CommentLike**: 在 `[postId, userId]` 或 `[commentId, userId]` 上有唯一约束
+**Repost**: `id`, `postId`, `userId` - 帖子转发/ repost
 **Notification**: 类型: `REPLY_POST`, `REPLY_COMMENT`, `LIKE_POST`, `LIKE_COMMENT`
+  - 包含复合索引用于通知去重: `[senderId, receiverId, type, postId, isRead]` 和 `[senderId, receiverId, type, commentId, isRead]`
+  - 这允许系统过滤重复通知（如同一人多次点赞同一帖子）
 
 ## 重要约束
 
@@ -159,11 +194,13 @@ src/
 - API 函数**必须添加 JSDoc** 并包含完整文档
 - **双语注释**: 代码注释和 JSDoc 使用中文（项目约定）
 - **组件组织**: 可复用 UI 组件放在 `components/ui/`
+- **ESLint**: 使用 `eslint.config.mjs` 配置，忽略 `src/generated/**` 自动生成文件
 
 ## 图片处理
 
 - 上传端点: `POST /api/upload`
-- 图片本地存储在 `public/uploads/`
+- 图片本地存储在 `public/uploads/`（仅限本地/生产环境各自存储）
+- **开发环境注意**: 生产环境的图片存储在云端服务器，本地开发时访问这些图片会返回 404（正常现象）
 - 使用 sharp 库处理图片
 - 浏览追踪组件增加帖子浏览计数
 - 通过 `react-zoom-pan-pinch` 实现图片缩放
@@ -176,6 +213,16 @@ src/
 - 所有 API 端点进行输入验证（类型、长度、格式）
 - 被禁用用户收到通用 "Invalid credentials" 错误以防用户枚举
 - Prisma schema 中配置了级联删除
+- **安全响应头**: `next.config.ts` 配置了严格的安全头（HSTS, X-Frame-Options, CSP 等）
+
+### 数据库操作警告
+
+⚠️ **由于开发环境直接连接生产数据库**:
+
+- 执行 `npx prisma db push` 会直接修改生产数据库 schema
+- 避免在开发时运行可能导致数据丢失的操作（DELETE、DROP、批量更新）
+- 建议在生产环境维护窗口期间执行 schema 变更
+- 如需测试危险操作，请先在本地创建测试数据库
 
 ## 常用模式
 
@@ -208,10 +255,37 @@ if (resource.authorId !== session.user.id && session.user.role !== "admin") {
 }
 ```
 
-## 环境变量
+### Prisma 查询模式
+```typescript
+// 获取列表 - 使用 select 精确控制返回字段
+export async function getPosts(topicId?: string) {
+  return prisma.post.findMany({
+    where: topicId ? { topicId } : undefined,
+    select: {
+      id: true,
+      title: true,
+      author: { select: { id: true, name: true, avatar: true } },
+      // ...其他关联
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
 
-- `DATABASE_URL`: MySQL 连接字符串
-- `NEXTAUTH_SECRET`: NextAuth JWT 签名密钥
+// 嵌套评论查询 - 使用 include 和 where 过滤顶层评论
+export async function getPostById(id: string) {
+  return prisma.post.findUnique({
+    where: { id },
+    include: {
+      comments: {
+        where: { parentId: null }, // 只获取顶层评论
+        include: {
+          replies: { /* 嵌套回复 */ },
+        },
+      },
+    },
+  });
+}
+```
 
 ## TypeScript 类型
 

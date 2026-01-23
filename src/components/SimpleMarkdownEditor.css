@@ -4,13 +4,10 @@
   border-radius: 0.75rem;
   overflow: hidden;
   background-color: #ffffff;
-  transition: all 0.2s ease-in-out;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.simple-md-editor:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Dark mode support */
@@ -18,11 +15,6 @@
   .simple-md-editor {
     border-color: #374151;
     background-color: #1f2937;
-  }
-
-  .simple-md-editor:focus-within {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
   }
 }
 
@@ -35,6 +27,7 @@
   padding: 8px 12px;
   background: linear-gradient(to bottom, #fafafa, #f5f5f5);
   border-bottom: 1px solid #e5e7eb;
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,15 +97,20 @@
   display: block;
   width: 100%;
   padding: 16px 20px;
+  padding-bottom: 60px; /* 为底部工具栏留出空间 */
   border: none;
   outline: none;
   resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #374151;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1f2937;
   background-color: #ffffff;
   box-sizing: border-box;
+  /* 保持换行符，自动换行 */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .simple-md-editor-textarea::placeholder {
@@ -135,6 +133,129 @@
 
   .simple-md-editor-textarea:focus {
     background-color: #111827;
+  }
+}
+
+/* Footer Toolbar */
+.simple-md-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-top: 1px solid #f3f4f6;
+  pointer-events: none; /* 让点击穿透到下面的元素 */
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.simple-md-editor-footer > * {
+  pointer-events: auto; /* 恢复按钮的可点击性 */
+}
+
+@media (prefers-color-scheme: dark) {
+  .simple-md-editor-footer {
+    background-color: #1f2937;
+    border-top-color: #374151;
+  }
+}
+
+/* Footer Action Buttons (图片按钮和Markdown切换按钮) */
+.footer-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.footer-action-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.footer-action-btn.active {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.footer-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer-action-btn {
+    background-color: #374151;
+    color: #9ca3af;
+    border-color: #4b5563;
+  }
+
+  .footer-action-btn:hover:not(:disabled) {
+    background-color: #4b5563;
+    color: #e5e7eb;
+  }
+
+  .footer-action-btn.active {
+    background-color: #4338ca;
+    color: #e0e7ff;
+    border-color: #6366f1;
+  }
+}
+
+/* Toolbar Toggle Button (兼容旧样式) */
+.toolbar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+}
+
+.toolbar-toggle-btn:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.toolbar-toggle-btn.active {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+  border-color: #c7d2fe;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .toolbar-toggle-btn {
+    background-color: #374151;
+    color: #9ca3af;
+    border-color: #4b5563;
+  }
+
+  .toolbar-toggle-btn:hover {
+    background-color: #4b5563;
+    color: #e5e7eb;
+  }
+
+  .toolbar-toggle-btn.active {
+    background-color: #4338ca;
+    color: #e0e7ff;
+    border-color: #6366f1;
   }
 }
 
@@ -198,8 +319,13 @@
 
   .simple-md-editor-textarea {
     padding: 14px 16px;
+    padding-bottom: 60px;
     font-size: 16px; /* Prevent iOS zoom on focus */
-    line-height: 1.8;
+    line-height: 1.6;
+  }
+
+  .simple-md-editor-footer {
+    padding: 10px 12px;
   }
 }
 
