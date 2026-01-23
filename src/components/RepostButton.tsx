@@ -103,13 +103,13 @@ export default function RepostButton({
           e.stopPropagation();
           setShowMenu(!showMenu);
         }}
-        className="flex items-center space-x-1 group text-gray-500 hover:text-indigo-500 p-2 rounded-full hover:bg-indigo-50 transition-colors"
+        className="flex items-center group text-gray-500 hover:text-indigo-500 p-1 sm:p-2 rounded-full hover:bg-indigo-50 transition-colors"
         title="分享帖子"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -122,7 +122,9 @@ export default function RepostButton({
           <polyline points="16 6 12 2 8 6" />
           <line x1="12" y1="2" x2="12" y2="15" />
         </svg>
-        <span className="text-sm font-medium">分享</span>
+        <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-1">
+          分享
+        </span>
       </button>
 
       {showMenu && (

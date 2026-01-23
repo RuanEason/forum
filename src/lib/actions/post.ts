@@ -46,11 +46,15 @@ export async function incrementViewCount(
     });
 
     // 设置 Cookie，标记用户已阅读此帖子
+    // 在生产环境（HTTPS）必须设置 secure: true
+    const isProduction = process.env.NODE_ENV === "production";
     cookieStore.set(cookieName, "true", {
       maxAge: VIEW_COOLDOWN_SECONDS,
       httpOnly: true,
-      sameSite: "lax",
+      secure: isProduction,  // 生产环境必须为 true
+      sameSite: isProduction ? "none" : "lax",  // 跨域场景使用 none
       path: "/",
+      // 不设置 domain，使用默认值（自动适配当前域名）
     });
 
     revalidatePath(`/post/${postId}`);
@@ -60,7 +64,14 @@ export async function incrementViewCount(
       message: "View count incremented",
     };
   } catch (error) {
-    console.error("Failed to increment view count:", error);
+    // 详细记录错误信息，方便生产环境调试
+    console.error("Failed to increment view count:", {
+      postId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      env: process.env.NODE_ENV,
+      databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set",
+    });
     return {
       success: false,
       message: "Failed to increment view count",

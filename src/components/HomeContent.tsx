@@ -235,46 +235,59 @@ export default function HomeContent({
                             )}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-8 pt-2 border-t border-gray-50">
-                          <div className="flex items-center space-x-1 text-gray-400 p-2">
+                        <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-6 pt-2 border-t border-gray-50">
+                          {/* 浏览量 */}
+                          <div className="flex items-center text-gray-400 p-1 sm:p-2">
                             <Eye className="w-4 h-4" />
-                            <span className="text-sm">
+                            <span className="text-xs sm:text-sm ml-1 tabular-nums">
                               {post.viewCount ?? 0}
                             </span>
                           </div>
-                          <LikeButton
-                            targetType="post"
-                            targetId={post.id}
-                            initialLikesCount={post.likes.length}
-                            initialLikedByUser={
-                              currentUserId || (session?.user as any)?.id
-                                ? post.likes.some(
-                                    (like) =>
-                                      like.userId ===
-                                      (currentUserId || (session?.user as any)?.id)
-                                  )
-                                : false
-                            }
-                          />
+                          {/* 点赞按钮 */}
+                          <div className="flex items-center">
+                            <LikeButton
+                              targetType="post"
+                              targetId={post.id}
+                              initialLikesCount={post.likes.length}
+                              initialLikedByUser={
+                                currentUserId || (session?.user as any)?.id
+                                  ? post.likes.some(
+                                      (like) =>
+                                        like.userId ===
+                                        (currentUserId || (session?.user as any)?.id)
+                                    )
+                                  : false
+                              }
+                            />
+                          </div>
+                          {/* 评论按钮 */}
                           <Link
                             href={`/post/${post.id}`}
-                            className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 group p-2 rounded-full hover:bg-blue-50 transition-colors"
+                            className="flex items-center text-gray-500 hover:text-blue-500 group p-1 sm:p-2 rounded-full hover:bg-blue-50 transition-colors"
                           >
-                            <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                            <span className="text-sm font-medium">
-                              {post.comments.length > 0
-                                ? post.comments.length
-                                : "评论"}
+                            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200" />
+                            <span className="text-xs sm:text-sm font-medium ml-1 tabular-nums">
+                              {post.comments.length > 0 ? post.comments.length : null}
+                            </span>
+                            <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-0.5">
+                              {post.comments.length > 0 ? "评论" : "评论"}
                             </span>
                           </Link>
-                          <RepostButton postId={post.id} />
+                          {/* 分享按钮 */}
+                          <div className="flex items-center">
+                            <RepostButton postId={post.id} />
+                          </div>
+                          {/* 删除按钮 */}
                           {(session?.user as any)?.id &&
                             (session?.user as any)?.id === post.author.id && (
                               <button
                                 onClick={() => handleDeletePost(post.id)}
-                                className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"
+                                className="text-red-500 hover:text-red-700 text-xs sm:text-sm p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
                               >
-                                删除
+                                <span className="hidden sm:inline">删除</span>
+                                <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                               </button>
                             )}
                         </div>
