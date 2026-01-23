@@ -21,10 +21,21 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
     hasTracked.current = true;
 
     // 调用 Server Action 增加阅读量
-    incrementViewCount(postId).catch((error) => {
-      // 静默处理错误，不影响用户体验
-      console.error("Failed to track view:", error);
-    });
+    incrementViewCount(postId)
+      .then((result) => {
+        // 在开发环境显示调试信息
+        if (process.env.NODE_ENV === "development") {
+          console.log("View tracker result:", result);
+        }
+        // 生产环境也显示简单的成功信息
+        if (result.success && result.debug) {
+          console.log("View tracked:", result.debug);
+        }
+      })
+      .catch((error) => {
+        // 静默处理错误，不影响用户体验
+        console.error("Failed to track view:", error);
+      });
   }, [postId]);
 
   // 不渲染任何 UI

@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
+  // 启用 Server Actions
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000", process.env.NEXTAUTH_URL || ""].filter(Boolean) as string[],
+    },
+  },
+
   async headers() {
     return [
       {
@@ -35,7 +42,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; img-src 'self' data: blob: https://*.githubusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;"
+            value: "default-src 'self'; img-src 'self' data: blob: https://*.githubusercontent.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;"
           }
         ],
       },

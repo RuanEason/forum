@@ -2,6 +2,28 @@
 
 ## ViewTracker 500 错误排查步骤
 
+### 0. 快速诊断 - 数据库连接测试
+
+首先访问测试端点检查数据库连接：
+```
+https://你的域名.com/api/test-db
+```
+
+**预期结果**：
+```json
+{
+  "success": true,
+  "message": "Database connection successful",
+  "data": {
+    "postCount": 100,
+    "userCount": 10,
+    "responseTime": "50ms"
+  }
+}
+```
+
+**如果返回 500 错误**，说明数据库连接有问题，请先解决数据库问题。
+
 ### 1. 环境变量检查
 
 确保生产服务器设置了以下环境变量：
