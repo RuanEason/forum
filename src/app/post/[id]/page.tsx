@@ -17,6 +17,7 @@ import { extractHeadings } from "@/lib/markdown";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
+import remarkBreaks from 'remark-breaks';
 
 interface AuthorProps {
   id: string;
@@ -211,7 +212,7 @@ export default async function PostDetailPage({
                 <div className="mt-4">
                   <div className="prose prose-sm sm:prose-base max-w-none break-words">
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
                       rehypePlugins={[rehypeSlug]}
                     >
                       {post.content}
