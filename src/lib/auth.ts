@@ -60,7 +60,8 @@ export const authOptions: any = {
       if (trigger === "update" && session?.user) {
         token.name = session.user.name;
         token.avatar = session.user.avatar;
-        if (session.user.postViewMode) {
+        // 确保 postViewMode 被更新，即使它是 undefined
+        if ('postViewMode' in session.user) {
           token.postViewMode = session.user.postViewMode;
         }
       }

@@ -17,7 +17,10 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
-  const [postViewMode, setPostViewMode] = useState("both");
+  // 从 session 中获取初始值，避免页面刷新时显示错误的值
+  const [postViewMode, setPostViewMode] = useState(
+    (session?.user as any)?.postViewMode || "both"
+  );
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
