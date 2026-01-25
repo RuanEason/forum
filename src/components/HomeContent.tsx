@@ -87,6 +87,9 @@ export default function HomeContent({
   }, []);
 
   const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
+  useEffect(() => {
+    console.log("组件挂载 - 视图模式:", viewMode);
+  }, []);
 
   /**
    * 处理删除帖子
@@ -205,9 +208,9 @@ export default function HomeContent({
                             {(viewMode === "title" ||
                               viewMode === "titleAndContent" ||
                               (viewMode === "both" && post.title)) &&
-                              post.title && (
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
-                                  {post.title}
+                               (
+                                <h3 className={`text-lg font-bold ${post.title ? "text-gray-900" : "text-gray-400 italic"} mb-2 line-clamp-2`}>
+                                  {post.title || "无标题"}
                                 </h3>
                               )}
 

@@ -43,6 +43,9 @@ export default function SettingsPage() {
       fetchUserData();
     }
   }, [status, router, session]);
+  useEffect(() => {
+    console.log("组件挂载 - 视图模式:", postViewMode);
+  }, [postViewMode]);
 
   const fetchUserData = async () => {
     try {

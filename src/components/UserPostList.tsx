@@ -47,6 +47,9 @@ export default function UserPostList({
   }, []);
 
   const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
+  useEffect(() => {
+    console.log("组件挂载 - 视图模式:", viewMode);
+  }, []);
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("确定要删除这条帖子吗？")) return;
