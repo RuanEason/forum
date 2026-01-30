@@ -1,16 +1,30 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import { uploadToCOS } from "@/lib/cos";
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 // Allowed image types
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
+/**
+ * 上传图片接口
+ * 支持格式: JPEG, PNG, WebP, GIF
+ * 处理流程:
+ * - 文件 ≤10MB: 保持原图质量，直接上传到腾讯云 COS
+ * - 文件 >10MB: 同时上传原图和缩略图（压缩图）
+ * 返回格式: { url: string, thumbnailUrl?: string }
+ *
+ * @example
+ * ```bash
+ * curl -X POST http://localhost:3000/api/upload \
+ *   -H "Authorization: Bearer <token>" \
+ *   -F "file=@image.jpg"
+ * ```
+ */
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions) as any;
 
@@ -25,15 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   }
 
-  // Validate file size
-  if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json(
-      { error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` },
-      { status: 400 }
-    );
-  }
-
-  // Validate file type (specific check)
+  // Validate file type
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return NextResponse.json(
       { error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}` },
@@ -44,35 +50,50 @@ export async function POST(request: Request) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // Generate unique filename
-  // Always use .webp for optimized images
-  const filename = `${uuidv4()}.webp`;
-  const uploadDir = path.join(process.cwd(), "public/uploads");
-  const filepath = path.join(uploadDir, filename);
+  // Generate unique filenames
+  const filename = `images/${uuidv4()}`;
+  const originalExt = file.type.split('/')[1]; // 保留原始文件扩展名
+  const originalFilename = `${filename}.${originalExt}`;
+  const thumbnailFilename = `${filename}_thumbnail.webp`;
 
   try {
-    // Ensure the directory exists
-    await mkdir(uploadDir, { recursive: true });
-    
-    // Process image with sharp
-    // 1. Resize if too large (max width 1920px)
-    // 2. Convert to WebP
-    // 3. Compress (quality 80)
-    await sharp(buffer)
-      .resize(1920, 1920, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .webp({ quality: 80 })
-      .toFile(filepath);
+    if (file.size <= MAX_FILE_SIZE) {
+      // 文件 ≤10MB: 直接上传原图
+      let uploadBuffer = buffer;
+      let uploadFilename = originalFilename;
 
-    // Ensure the URL is absolute or relative to the root, but consistent.
-    // Using a relative path starting with / is correct for Next.js public folder.
-    // Use the API route to serve the file to avoid caching issues in production
-    const fileUrl = `/api/uploads/${filename}`;
-    return NextResponse.json({ url: fileUrl });
+      // 对于非WebP格式，保持原始格式上传
+      // 这里可以根据需要调整，现在保持原始格式
+
+      const cdnUrl = await uploadToCOS(uploadBuffer, uploadFilename);
+      return NextResponse.json({ url: cdnUrl });
+    } else {
+      // 文件 >10MB: 上传原图 + 缩略图
+
+      // 1. 上传原图
+      const originalUrl = await uploadToCOS(buffer, originalFilename);
+
+      // 2. 生成并上传缩略图（压缩至80%质量，最大宽度1920px）
+      const thumbnailBuffer = await sharp(buffer)
+        .resize(1920, 1920, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({ quality: 80 })
+        .toBuffer();
+
+      const thumbnailUrl = await uploadToCOS(thumbnailBuffer, thumbnailFilename);
+
+      return NextResponse.json({
+        url: originalUrl,
+        thumbnailUrl: thumbnailUrl
+      });
+    }
   } catch (error) {
-    console.error("Error saving file:", error);
-    return NextResponse.json({ error: "Error saving file" }, { status: 500 });
+    console.error("Error uploading file:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Error uploading file" },
+      { status: 500 }
+    );
   }
 }

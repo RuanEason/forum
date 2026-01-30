@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **前端**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, lucide-react 图标
 - **后端**: Next.js API Routes, NextAuth.js 4 (credentials 提供者)
 - **数据库**: MySQL + Prisma 5 ORM
+- **对象存储**: 腾讯云 COS (Cloud Object Storage) + CDN
 - **Markdown**: react-markdown + remark-gfm + rehype-slug
 - **图片处理**: sharp
 - **密码加密**: bcryptjs
@@ -48,14 +49,23 @@ npm run lint         # 运行 ESLint
 
 由于开发环境连接的是生产数据库，而图片存储在不同位置：
 
-1. **图片 404 是正常现象**: 用户上传的图片存储在云端生产环境，本地开发时访问这些图片会出现 404 错误
+1. **图片 404 是正常现象**: 用户上传的图片存储在云端 COS + CDN，本地开发时访问历史本地图片（`/api/uploads/` 路径）会出现 404 错误
 2. **数据库数据共享**: 开发和生产环境共享同一个数据库，可以直接看到生产数据
-3. **不要在生产数据库上执行危险操作**: 避免在开发时执行 `DELETE`、`DROP` 或批量更新操作
+3. **COS/CDN 配置差异**: 开发和生产环境可能使用不同的 CDN 域名或 COS 存储桶
+4. **不要在生产数据库上执行危险操作**: 避免在开发时执行 `DELETE`、`DROP` 或批量更新操作
 
 ### 环境变量
 
 - `DATABASE_URL`: MySQL 连接字符串（指向云端生产数据库）
 - `NEXTAUTH_SECRET`: NextAuth JWT 签名密钥
+- `NEXTAUTH_URL`: 应用访问地址（如 `http://localhost:3000`）
+
+**腾讯云 COS 配置** (用于图片存储):
+- `TENCENT_COS_SECRET_ID`: 腾讯云密钥 ID（服务端变量，不要加 `NEXT_PUBLIC_` 前缀）
+- `TENCENT_COS_SECRET_KEY`: 腾讯云密钥（服务端变量，不要加 `NEXT_PUBLIC_` 前缀）
+- `TENCENT_COS_BUCKET`: COS 存储桶名称（如 `forum-1398498368`）
+- `TENCENT_COS_REGION`: COS 区域（如 `ap-guangzhou`）
+- `NEXT_PUBLIC_CDN_DOMAIN`: CDN 域名（前端需要访问，必须加 `NEXT_PUBLIC_` 前缀）
 
 **注意**: 如需修改环境变量，请编辑本地 `.env` 文件，该文件已被 Git 忽略。
 
@@ -127,6 +137,7 @@ src/
 ├── lib/                    # 核心工具与业务逻辑
 │   ├── auth.ts             # NextAuth 配置
 │   ├── prisma.ts           # Prisma 客户端单例
+│   ├── cos.ts              # 腾讯云 COS 客户端封装
 │   ├── session.ts          # Session 辅助函数
 │   ├── post.ts             # 帖子业务逻辑
 │   ├── markdown.ts         # Markdown 处理
@@ -198,12 +209,49 @@ src/
 
 ## 图片处理
 
-- 上传端点: `POST /api/upload`
-- 图片本地存储在 `public/uploads/`（仅限本地/生产环境各自存储）
-- **开发环境注意**: 生产环境的图片存储在云端服务器，本地开发时访问这些图片会返回 404（正常现象）
-- 使用 sharp 库处理图片
-- 浏览追踪组件增加帖子浏览计数
-- 通过 `react-zoom-pan-pinch` 实现图片缩放
+### 存储架构
+
+项目支持两种图片存储方式：
+
+| 存储方式 | URL 格式 | 说明 |
+|---------|---------|------|
+| **COS + CDN** | `https://cdn.example.com/images/xxx.webp` | 新上传图片，通过腾讯云 COS + CDN 加速 |
+| **历史本地图片** | `/api/uploads/xxx.webp` | 迁移前的历史数据，通过 API 路由访问（可能 404） |
+
+### 上传流程
+
+```
+用户上传图片 → /api/upload → sharp 处理（WebP 转换、压缩） → 上传到腾讯云 COS → 返回 CDN URL
+```
+
+### 配置说明
+
+**环境变量**（参见上文"腾讯云 COS 配置"）：
+- `TENCENT_COS_SECRET_ID/KEY`: COS 访问凭证（仅服务端）
+- `TENCENT_COS_BUCKET/REGION`: 存储桶配置
+- `NEXT_PUBLIC_CDN_DOMAIN`: CDN 域名（前端可访问）
+
+**COS 客户端**（`src/lib/cos.ts`）：
+- 使用 `cos-nodejs-sdk-v5` SDK
+- 单例模式，从环境变量读取配置
+
+### 前端图片展示
+
+前端组件需自动判断图片来源：
+
+```typescript
+// URL 以 http 开头为 CDN 图片，否则为历史本地图片
+const imageUrl = post.image.url.startsWith('http')
+  ? post.image.url  // CDN URL（如 https://cdn.zyg2024.top/images/xxx.webp）
+  : `${API_BASE_URL}${post.image.url}`;  // 本地 API 路由（可能 404）
+```
+
+### 其他特性
+
+- **图片处理**: 使用 sharp 库（WebP 转换、压缩、最大宽度 1920px）
+- **最大文件大小**: 10MB
+- **支持格式**: JPEG, PNG, WebP, GIF
+- **图片缩放**: 通过 `react-zoom-pan-pinch` 实现
 
 ## 安全注意事项
 
@@ -214,6 +262,14 @@ src/
 - 被禁用用户收到通用 "Invalid credentials" 错误以防用户枚举
 - Prisma schema 中配置了级联删除
 - **安全响应头**: `next.config.ts` 配置了严格的安全头（HSTS, X-Frame-Options, CSP 等）
+
+### 腾讯云密钥安全
+
+⚠️ **重要**:
+- `TENCENT_COS_SECRET_ID` 和 `TENCENT_COS_SECRET_KEY` **绝对不能**添加 `NEXT_PUBLIC_` 前缀
+- 带有 `NEXT_PUBLIC_` 前缀的环境变量会被 Next.js 暴露到浏览器端
+- 仅 `NEXT_PUBLIC_CDN_DOMAIN` 需要 `NEXT_PUBLIC_` 前缀，因为前端需要直接访问 CDN URL
+- `.env` 文件已在 `.gitignore` 中，不会被提交到仓库
 
 ### 数据库操作警告
 
@@ -283,6 +339,36 @@ export async function getPostById(id: string) {
         },
       },
     },
+  });
+}
+```
+
+### COS 上传模式
+```typescript
+import { cos } from '@/lib/cos';
+
+/**
+ * 上传图片到腾讯云 COS
+ * @param fileBuffer - 图片文件的 Buffer
+ * @param filename - 文件名（含路径，如 images/xxx.webp）
+ * @returns CDN 访问 URL
+ */
+async function uploadToCOS(fileBuffer: Buffer, filename: string): Promise<string> {
+  const bucket = process.env.TENCENT_COS_BUCKET!;
+  const region = process.env.TENCENT_COS_REGION!;
+  const cdnDomain = process.env.NEXT_PUBLIC_CDN_DOMAIN!;
+
+  return new Promise((resolve, reject) => {
+    cos.putObject({
+      Bucket: bucket,
+      Region: region,
+      Key: filename,
+      Body: fileBuffer,
+      ContentType: 'image/webp',
+    }, (err, data) => {
+      if (err) reject(err);
+      else resolve(`${cdnDomain}/${filename}`);
+    });
   });
 }
 ```
