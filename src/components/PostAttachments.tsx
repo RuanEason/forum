@@ -72,7 +72,12 @@ export default function PostAttachments({ attachments, postId, authorId }: PostA
     }
   };
 
-  const canDelete = session && (session.user?.id === authorId || (session.user as any)?.role === "admin");
+  // Robust delete permission check to avoid TS type issues with session.user
+  type UserLike = { id?: string | number; role?: string };
+  const user = (session?.user as UserLike) ?? null;
+  const isAuthor = !!user?.id && String(user.id) === String(authorId);
+  const isAdmin = !!user?.role && user.role === "admin";
+  const canDelete = !!(session && (isAuthor || isAdmin));
 
   return (
     <div className="my-6">
