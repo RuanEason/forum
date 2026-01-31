@@ -39,10 +39,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   }
 
+  console.log("Upload image:", {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+  });
+
   // Validate file type
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}` },
+      { error: `Invalid file type: ${file.type}. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}` },
+      { status: 400 }
+    );
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      { error: `File size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum of ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
       { status: 400 }
     );
   }

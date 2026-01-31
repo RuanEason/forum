@@ -36,6 +36,16 @@ export async function getPosts(topicId?: string) {
           url: true,
         },
       },
+      attachments: {
+        select: {
+          id: true,
+          url: true,
+          fileName: true,
+          fileSize: true,
+          mimeType: true,
+          downloadCount: true,
+        },
+      },
       topic: {
         select: {
           id: true,
@@ -54,7 +64,8 @@ export async function createPost(
   content: string,
   authorId: string,
   images: string[] = [],
-  topicId: string | null = null
+  topicId: string | null = null,
+  attachments: Array<{ url: string; fileName: string; fileSize: number; mimeType: string }> = []
 ) {
   return prisma.post.create({
     data: {
@@ -63,6 +74,14 @@ export async function createPost(
       authorId,
       images: {
         create: images.map((url) => ({ url })),
+      },
+      attachments: {
+        create: attachments.map((att) => ({
+          url: att.url,
+          fileName: att.fileName,
+          fileSize: att.fileSize,
+          mimeType: att.mimeType,
+        })),
       },
       topicId: topicId,
     },
@@ -93,6 +112,16 @@ export async function getPostById(id: string) {
       images: {
         select: {
           url: true,
+        },
+      },
+      attachments: {
+        select: {
+          id: true,
+          url: true,
+          fileName: true,
+          fileSize: true,
+          mimeType: true,
+          downloadCount: true,
         },
       },
       topic: {
@@ -136,7 +165,7 @@ export async function getPostById(id: string) {
           },
         },
         where: {
-          parentId: null, // 只获取顶层评论
+          parentId: null,
         },
         orderBy: {
           createdAt: "desc",

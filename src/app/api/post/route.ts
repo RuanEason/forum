@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPost, updatePost, deletePost, getPosts } from "@/lib/post";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma"; // 导入 prisma 实例
+import { prisma } from "@/lib/prisma";
+import { deleteFromCOS } from "@/lib/cos";
 
 /**
  * 帖子字段最大长度限制
@@ -10,10 +11,9 @@ import { prisma } from "@/lib/prisma"; // 导入 prisma 实例
 // Maximum field lengths
 /** @type {const} 帖子标题最大长度（字符数） */
 const MAX_TITLE_LENGTH = 200;
-/** @type {const} 帖子内容最大长度（字符数） */
 const MAX_CONTENT_LENGTH = 10000;
-/** @type {const} 帖子图片最大数量 */
 const MAX_IMAGES = 10;
+const MAX_ATTACHMENTS = 5;
 
 /**
  * 获取帖子列表
@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
  * @param {string} [request.body.title] - 帖子标题（可选）
  * @param {string} request.body.content - 帖子内容
  * @param {string[]} [request.body.images] - 图片 URL 数组（最多 10 张）
+ * @param {Array<{url: string, fileName: string, fileSize: number, mimeType: string}>} [request.body.attachments] - 附件数组（最多 5 个）
  * @param {string} [request.body.topicId] - 关联话题 ID
  * @returns {Promise<NextResponse>} 201 创建成功，包含创建的帖子数据
  * @throws {401} Unauthorized - 用户未登录
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images, topicId } = await request.json();
+    const { title, content, images, attachments, topicId } = await request.json();
 
     // Validate title (optional)
     if (title !== undefined && title !== null) {
@@ -125,16 +126,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Require either content or images
-    if ((!content || content.trim() === '') && (!images || images.length === 0)) {
+    // Validate attachments (optional array of objects)
+    if (attachments !== undefined && attachments !== null) {
+      if (!Array.isArray(attachments)) {
+        return NextResponse.json({ error: "Attachments must be an array" }, { status: 400 });
+      }
+      if (attachments.length > MAX_ATTACHMENTS) {
+        return NextResponse.json(
+          { error: `Maximum ${MAX_ATTACHMENTS} attachments allowed` },
+          { status: 400 }
+        );
+      }
+      for (const att of attachments) {
+        if (typeof att !== 'object' || att === null) {
+          return NextResponse.json({ error: "Each attachment must be an object" }, { status: 400 });
+        }
+        if (typeof att.url !== 'string') {
+          return NextResponse.json({ error: "Attachment url must be a string" }, { status: 400 });
+        }
+        if (typeof att.fileName !== 'string') {
+          return NextResponse.json({ error: "Attachment fileName must be a string" }, { status: 400 });
+        }
+        if (typeof att.fileSize !== 'number') {
+          return NextResponse.json({ error: "Attachment fileSize must be a number" }, { status: 400 });
+        }
+        if (typeof att.mimeType !== 'string') {
+          return NextResponse.json({ error: "Attachment mimeType must be a string" }, { status: 400 });
+        }
+      }
+    }
+
+    // Require either content, images, or attachments
+    if ((!content || content.trim() === '') && (!images || images.length === 0) && (!attachments || attachments.length === 0)) {
       return NextResponse.json(
-        { error: "Content or images are required" },
+        { error: "Content, images, or attachments are required" },
         { status: 400 }
       );
     }
 
     // 传入 title
-    const post = await createPost(title, content, session.user.id, images, topicId);
+    const post = await createPost(title, content, session.user.id, images, topicId, attachments);
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
   } catch (error) {
@@ -242,6 +273,10 @@ export async function DELETE(request: NextRequest) {
 
     const existingPost = await prisma.post.findUnique({
       where: { id: id },
+      include: {
+        attachments: true,
+        images: true,
+      },
     });
 
     if (!existingPost) {
@@ -251,6 +286,32 @@ export async function DELETE(request: NextRequest) {
     // 只有作者或管理员才能删除帖子
     if (existingPost.authorId !== session.user.id && session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // 删除COS中的附件文件
+    if (existingPost.attachments.length > 0) {
+      for (const attachment of existingPost.attachments) {
+        try {
+          const url = new URL(attachment.url);
+          const filename = url.pathname.slice(1);
+          await deleteFromCOS(filename);
+        } catch (error) {
+          console.error(`Failed to delete attachment from COS: ${attachment.url}`, error);
+        }
+      }
+    }
+
+    // 删除COS中的图片文件
+    if (existingPost.images.length > 0) {
+      for (const image of existingPost.images) {
+        try {
+          const url = new URL(image.url);
+          const filename = url.pathname.slice(1);
+          await deleteFromCOS(filename);
+        } catch (error) {
+          console.error(`Failed to delete image from COS: ${image.url}`, error);
+        }
+      }
     }
 
     await deletePost(id);

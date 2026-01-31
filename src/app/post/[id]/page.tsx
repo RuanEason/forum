@@ -18,6 +18,7 @@ import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
 import remarkBreaks from 'remark-breaks';
+import PostAttachments from "@/components/PostAttachments";
 
 interface AuthorProps {
   id: string;
@@ -36,6 +37,14 @@ interface PostDetailProps {
   reposts: { userId: string }[];
   comments: CommentProps[];
   images: { url: string }[];
+  attachments: Array<{
+    id: string;
+    url: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    downloadCount: number;
+  }>;
   topic?: { id: string; name: string } | null;
 }
 
@@ -122,6 +131,13 @@ export default async function PostDetailPage({
         userInteractionCount: post.comments.length,
       },
     ],
+    hasPart: post.attachments.map((att) => ({
+      "@type": "MediaObject",
+      name: att.fileName,
+      contentUrl: att.url,
+      fileSize: att.fileSize,
+      encodingFormat: att.mimeType,
+    })),
   };
 
   // 提取标题用于生成目录
@@ -222,6 +238,13 @@ export default async function PostDetailPage({
                     <PostImages
                       images={post.images.map((img) => img.url)}
                       isDetail={true}
+                    />
+                  )}
+                  {(post.attachments && post.attachments.length > 0) && (
+                    <PostAttachments
+                      attachments={post.attachments}
+                      postId={post.id}
+                      authorId={post.author.id}
                     />
                   )}
                 </div>

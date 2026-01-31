@@ -38,21 +38,22 @@ model User {
 }
 
 model Post {
-  id        String     @id @default(cuid())
-  title     String?
-  content   String     @db.Text
-  authorId  String
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  reposts   Repost[]
-  likes     PostLike[]
-  images    PostImage[]
+  id          String           @id @default(cuid())
+  title       String?
+  content     String           @db.Text
+  authorId    String
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  reposts     Repost[]
+  likes       PostLike[]
+  images      PostImage[]
+  attachments PostAttachment[]
   notifications Notification[]
-  topicId   String?
-  topic     Topic?     @relation(fields: [topicId], references: [id])
-  viewCount Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  topicId     String?
+  topic       Topic?           @relation(fields: [topicId], references: [id])
+  viewCount   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([authorId])
   @@index([createdAt])
@@ -78,6 +79,18 @@ model PostImage {
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model PostAttachment {
+  id            String   @id @default(cuid())
+  url           String
+  fileName      String
+  fileSize      Int
+  mimeType      String
+  downloadCount Int      @default(0)
+  postId        String
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
 }
 
 model Comment {

@@ -34,6 +34,11 @@ export type Topic = $Result.DefaultSelection<Prisma.$TopicPayload>
  */
 export type PostImage = $Result.DefaultSelection<Prisma.$PostImagePayload>
 /**
+ * Model PostAttachment
+ * 
+ */
+export type PostAttachment = $Result.DefaultSelection<Prisma.$PostAttachmentPayload>
+/**
  * Model Comment
  * 
  */
@@ -239,6 +244,16 @@ export class PrismaClient<
     * ```
     */
   get postImage(): Prisma.PostImageDelegate<ExtArgs>;
+
+  /**
+   * `prisma.postAttachment`: Exposes CRUD operations for the **PostAttachment** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PostAttachments
+    * const postAttachments = await prisma.postAttachment.findMany()
+    * ```
+    */
+  get postAttachment(): Prisma.PostAttachmentDelegate<ExtArgs>;
 
   /**
    * `prisma.comment`: Exposes CRUD operations for the **Comment** model.
@@ -555,7 +570,7 @@ export namespace Prisma {
   ? False
   : T extends Uint8Array
   ? False
-  : T extends bigint
+  : T extends BigInt
   ? False
   : T extends object
   ? True
@@ -763,6 +778,7 @@ export namespace Prisma {
     Post: 'Post',
     Topic: 'Topic',
     PostImage: 'PostImage',
+    PostAttachment: 'PostAttachment',
     Comment: 'Comment',
     PostLike: 'PostLike',
     Notification: 'Notification',
@@ -784,7 +800,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     meta: {
-      modelProps: 'user' | 'post' | 'topic' | 'postImage' | 'comment' | 'postLike' | 'notification' | 'commentLike' | 'repost'
+      modelProps: 'user' | 'post' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'commentLike' | 'repost'
       txIsolationLevel: Prisma.TransactionIsolationLevel
     },
     model: {
@@ -1049,6 +1065,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PostImageCountArgs<ExtArgs>,
             result: $Utils.Optional<PostImageCountAggregateOutputType> | number
+          }
+        }
+      }
+      PostAttachment: {
+        payload: Prisma.$PostAttachmentPayload<ExtArgs>
+        fields: Prisma.PostAttachmentFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PostAttachmentFindUniqueArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PostAttachmentFindUniqueOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          findFirst: {
+            args: Prisma.PostAttachmentFindFirstArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PostAttachmentFindFirstOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          findMany: {
+            args: Prisma.PostAttachmentFindManyArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>[]
+          }
+          create: {
+            args: Prisma.PostAttachmentCreateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          createMany: {
+            args: Prisma.PostAttachmentCreateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          delete: {
+            args: Prisma.PostAttachmentDeleteArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          update: {
+            args: Prisma.PostAttachmentUpdateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          deleteMany: {
+            args: Prisma.PostAttachmentDeleteManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PostAttachmentUpdateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          upsert: {
+            args: Prisma.PostAttachmentUpsertArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PostAttachmentPayload>
+          }
+          aggregate: {
+            args: Prisma.PostAttachmentAggregateArgs<ExtArgs>,
+            result: $Utils.Optional<AggregatePostAttachment>
+          }
+          groupBy: {
+            args: Prisma.PostAttachmentGroupByArgs<ExtArgs>,
+            result: $Utils.Optional<PostAttachmentGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PostAttachmentCountArgs<ExtArgs>,
+            result: $Utils.Optional<PostAttachmentCountAggregateOutputType> | number
           }
         }
       }
@@ -1659,6 +1741,7 @@ export namespace Prisma {
     reposts: number
     likes: number
     images: number
+    attachments: number
     notifications: number
   }
 
@@ -1667,6 +1750,7 @@ export namespace Prisma {
     reposts?: boolean | PostCountOutputTypeCountRepostsArgs
     likes?: boolean | PostCountOutputTypeCountLikesArgs
     images?: boolean | PostCountOutputTypeCountImagesArgs
+    attachments?: boolean | PostCountOutputTypeCountAttachmentsArgs
     notifications?: boolean | PostCountOutputTypeCountNotificationsArgs
   }
 
@@ -1712,6 +1796,14 @@ export namespace Prisma {
    */
   export type PostCountOutputTypeCountImagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PostImageWhereInput
+  }
+
+
+  /**
+   * PostCountOutputType without action
+   */
+  export type PostCountOutputTypeCountAttachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PostAttachmentWhereInput
   }
 
 
@@ -3258,6 +3350,7 @@ export namespace Prisma {
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
     images?: boolean | Post$imagesArgs<ExtArgs>
+    attachments?: boolean | Post$attachmentsArgs<ExtArgs>
     notifications?: boolean | Post$notificationsArgs<ExtArgs>
     topic?: boolean | Post$topicArgs<ExtArgs>
     _count?: boolean | PostCountOutputTypeDefaultArgs<ExtArgs>
@@ -3280,6 +3373,7 @@ export namespace Prisma {
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
     images?: boolean | Post$imagesArgs<ExtArgs>
+    attachments?: boolean | Post$attachmentsArgs<ExtArgs>
     notifications?: boolean | Post$notificationsArgs<ExtArgs>
     topic?: boolean | Post$topicArgs<ExtArgs>
     _count?: boolean | PostCountOutputTypeDefaultArgs<ExtArgs>
@@ -3294,6 +3388,7 @@ export namespace Prisma {
       reposts: Prisma.$RepostPayload<ExtArgs>[]
       likes: Prisma.$PostLikePayload<ExtArgs>[]
       images: Prisma.$PostImagePayload<ExtArgs>[]
+      attachments: Prisma.$PostAttachmentPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       topic: Prisma.$TopicPayload<ExtArgs> | null
     }
@@ -3680,6 +3775,8 @@ export namespace Prisma {
     likes<T extends Post$likesArgs<ExtArgs> = {}>(args?: Subset<T, Post$likesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostLikePayload<ExtArgs>, T, 'findMany'> | Null>;
 
     images<T extends Post$imagesArgs<ExtArgs> = {}>(args?: Subset<T, Post$imagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostImagePayload<ExtArgs>, T, 'findMany'> | Null>;
+
+    attachments<T extends Post$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, Post$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     notifications<T extends Post$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, Post$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, 'findMany'> | Null>;
 
@@ -4113,6 +4210,27 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PostImageScalarFieldEnum | PostImageScalarFieldEnum[]
+  }
+
+
+  /**
+   * Post.attachments
+   */
+  export type Post$attachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    where?: PostAttachmentWhereInput
+    orderBy?: PostAttachmentOrderByWithRelationInput | PostAttachmentOrderByWithRelationInput[]
+    cursor?: PostAttachmentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PostAttachmentScalarFieldEnum | PostAttachmentScalarFieldEnum[]
   }
 
 
@@ -6082,6 +6200,995 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well.
      */
     include?: PostImageInclude<ExtArgs> | null
+  }
+
+
+
+  /**
+   * Model PostAttachment
+   */
+
+  export type AggregatePostAttachment = {
+    _count: PostAttachmentCountAggregateOutputType | null
+    _avg: PostAttachmentAvgAggregateOutputType | null
+    _sum: PostAttachmentSumAggregateOutputType | null
+    _min: PostAttachmentMinAggregateOutputType | null
+    _max: PostAttachmentMaxAggregateOutputType | null
+  }
+
+  export type PostAttachmentAvgAggregateOutputType = {
+    fileSize: number | null
+    downloadCount: number | null
+  }
+
+  export type PostAttachmentSumAggregateOutputType = {
+    fileSize: number | null
+    downloadCount: number | null
+  }
+
+  export type PostAttachmentMinAggregateOutputType = {
+    id: string | null
+    url: string | null
+    fileName: string | null
+    fileSize: number | null
+    mimeType: string | null
+    downloadCount: number | null
+    postId: string | null
+    createdAt: Date | null
+  }
+
+  export type PostAttachmentMaxAggregateOutputType = {
+    id: string | null
+    url: string | null
+    fileName: string | null
+    fileSize: number | null
+    mimeType: string | null
+    downloadCount: number | null
+    postId: string | null
+    createdAt: Date | null
+  }
+
+  export type PostAttachmentCountAggregateOutputType = {
+    id: number
+    url: number
+    fileName: number
+    fileSize: number
+    mimeType: number
+    downloadCount: number
+    postId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type PostAttachmentAvgAggregateInputType = {
+    fileSize?: true
+    downloadCount?: true
+  }
+
+  export type PostAttachmentSumAggregateInputType = {
+    fileSize?: true
+    downloadCount?: true
+  }
+
+  export type PostAttachmentMinAggregateInputType = {
+    id?: true
+    url?: true
+    fileName?: true
+    fileSize?: true
+    mimeType?: true
+    downloadCount?: true
+    postId?: true
+    createdAt?: true
+  }
+
+  export type PostAttachmentMaxAggregateInputType = {
+    id?: true
+    url?: true
+    fileName?: true
+    fileSize?: true
+    mimeType?: true
+    downloadCount?: true
+    postId?: true
+    createdAt?: true
+  }
+
+  export type PostAttachmentCountAggregateInputType = {
+    id?: true
+    url?: true
+    fileName?: true
+    fileSize?: true
+    mimeType?: true
+    downloadCount?: true
+    postId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type PostAttachmentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PostAttachment to aggregate.
+     */
+    where?: PostAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PostAttachments to fetch.
+     */
+    orderBy?: PostAttachmentOrderByWithRelationInput | PostAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PostAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PostAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PostAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PostAttachments
+    **/
+    _count?: true | PostAttachmentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PostAttachmentAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PostAttachmentSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PostAttachmentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PostAttachmentMaxAggregateInputType
+  }
+
+  export type GetPostAttachmentAggregateType<T extends PostAttachmentAggregateArgs> = {
+        [P in keyof T & keyof AggregatePostAttachment]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePostAttachment[P]>
+      : GetScalarType<T[P], AggregatePostAttachment[P]>
+  }
+
+
+
+
+  export type PostAttachmentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PostAttachmentWhereInput
+    orderBy?: PostAttachmentOrderByWithAggregationInput | PostAttachmentOrderByWithAggregationInput[]
+    by: PostAttachmentScalarFieldEnum[] | PostAttachmentScalarFieldEnum
+    having?: PostAttachmentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PostAttachmentCountAggregateInputType | true
+    _avg?: PostAttachmentAvgAggregateInputType
+    _sum?: PostAttachmentSumAggregateInputType
+    _min?: PostAttachmentMinAggregateInputType
+    _max?: PostAttachmentMaxAggregateInputType
+  }
+
+  export type PostAttachmentGroupByOutputType = {
+    id: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount: number
+    postId: string
+    createdAt: Date
+    _count: PostAttachmentCountAggregateOutputType | null
+    _avg: PostAttachmentAvgAggregateOutputType | null
+    _sum: PostAttachmentSumAggregateOutputType | null
+    _min: PostAttachmentMinAggregateOutputType | null
+    _max: PostAttachmentMaxAggregateOutputType | null
+  }
+
+  type GetPostAttachmentGroupByPayload<T extends PostAttachmentGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PostAttachmentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PostAttachmentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PostAttachmentGroupByOutputType[P]>
+            : GetScalarType<T[P], PostAttachmentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PostAttachmentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    url?: boolean
+    fileName?: boolean
+    fileSize?: boolean
+    mimeType?: boolean
+    downloadCount?: boolean
+    postId?: boolean
+    createdAt?: boolean
+    post?: boolean | PostDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["postAttachment"]>
+
+  export type PostAttachmentSelectScalar = {
+    id?: boolean
+    url?: boolean
+    fileName?: boolean
+    fileSize?: boolean
+    mimeType?: boolean
+    downloadCount?: boolean
+    postId?: boolean
+    createdAt?: boolean
+  }
+
+  export type PostAttachmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    post?: boolean | PostDefaultArgs<ExtArgs>
+  }
+
+
+  export type $PostAttachmentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PostAttachment"
+    objects: {
+      post: Prisma.$PostPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      url: string
+      fileName: string
+      fileSize: number
+      mimeType: string
+      downloadCount: number
+      postId: string
+      createdAt: Date
+    }, ExtArgs["result"]["postAttachment"]>
+    composites: {}
+  }
+
+
+  type PostAttachmentGetPayload<S extends boolean | null | undefined | PostAttachmentDefaultArgs> = $Result.GetResult<Prisma.$PostAttachmentPayload, S>
+
+  type PostAttachmentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<PostAttachmentFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: PostAttachmentCountAggregateInputType | true
+    }
+
+  export interface PostAttachmentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PostAttachment'], meta: { name: 'PostAttachment' } }
+    /**
+     * Find zero or one PostAttachment that matches the filter.
+     * @param {PostAttachmentFindUniqueArgs} args - Arguments to find a PostAttachment
+     * @example
+     * // Get one PostAttachment
+     * const postAttachment = await prisma.postAttachment.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends PostAttachmentFindUniqueArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentFindUniqueArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findUnique'> | null, null, ExtArgs>
+
+    /**
+     * Find one PostAttachment that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {PostAttachmentFindUniqueOrThrowArgs} args - Arguments to find a PostAttachment
+     * @example
+     * // Get one PostAttachment
+     * const postAttachment = await prisma.postAttachment.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends PostAttachmentFindUniqueOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentFindUniqueOrThrowArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findUniqueOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find the first PostAttachment that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentFindFirstArgs} args - Arguments to find a PostAttachment
+     * @example
+     * // Get one PostAttachment
+     * const postAttachment = await prisma.postAttachment.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends PostAttachmentFindFirstArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentFindFirstArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findFirst'> | null, null, ExtArgs>
+
+    /**
+     * Find the first PostAttachment that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentFindFirstOrThrowArgs} args - Arguments to find a PostAttachment
+     * @example
+     * // Get one PostAttachment
+     * const postAttachment = await prisma.postAttachment.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends PostAttachmentFindFirstOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentFindFirstOrThrowArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findFirstOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find zero or more PostAttachments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PostAttachments
+     * const postAttachments = await prisma.postAttachment.findMany()
+     * 
+     * // Get first 10 PostAttachments
+     * const postAttachments = await prisma.postAttachment.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const postAttachmentWithIdOnly = await prisma.postAttachment.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends PostAttachmentFindManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentFindManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'findMany'>>
+
+    /**
+     * Create a PostAttachment.
+     * @param {PostAttachmentCreateArgs} args - Arguments to create a PostAttachment.
+     * @example
+     * // Create one PostAttachment
+     * const PostAttachment = await prisma.postAttachment.create({
+     *   data: {
+     *     // ... data to create a PostAttachment
+     *   }
+     * })
+     * 
+    **/
+    create<T extends PostAttachmentCreateArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentCreateArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'create'>, never, ExtArgs>
+
+    /**
+     * Create many PostAttachments.
+     *     @param {PostAttachmentCreateManyArgs} args - Arguments to create many PostAttachments.
+     *     @example
+     *     // Create many PostAttachments
+     *     const postAttachment = await prisma.postAttachment.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends PostAttachmentCreateManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentCreateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PostAttachment.
+     * @param {PostAttachmentDeleteArgs} args - Arguments to delete one PostAttachment.
+     * @example
+     * // Delete one PostAttachment
+     * const PostAttachment = await prisma.postAttachment.delete({
+     *   where: {
+     *     // ... filter to delete one PostAttachment
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends PostAttachmentDeleteArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentDeleteArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'delete'>, never, ExtArgs>
+
+    /**
+     * Update one PostAttachment.
+     * @param {PostAttachmentUpdateArgs} args - Arguments to update one PostAttachment.
+     * @example
+     * // Update one PostAttachment
+     * const postAttachment = await prisma.postAttachment.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends PostAttachmentUpdateArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentUpdateArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'update'>, never, ExtArgs>
+
+    /**
+     * Delete zero or more PostAttachments.
+     * @param {PostAttachmentDeleteManyArgs} args - Arguments to filter PostAttachments to delete.
+     * @example
+     * // Delete a few PostAttachments
+     * const { count } = await prisma.postAttachment.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends PostAttachmentDeleteManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PostAttachmentDeleteManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PostAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PostAttachments
+     * const postAttachment = await prisma.postAttachment.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends PostAttachmentUpdateManyArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentUpdateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PostAttachment.
+     * @param {PostAttachmentUpsertArgs} args - Arguments to update or create a PostAttachment.
+     * @example
+     * // Update or create a PostAttachment
+     * const postAttachment = await prisma.postAttachment.upsert({
+     *   create: {
+     *     // ... data to create a PostAttachment
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PostAttachment we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends PostAttachmentUpsertArgs<ExtArgs>>(
+      args: SelectSubset<T, PostAttachmentUpsertArgs<ExtArgs>>
+    ): Prisma__PostAttachmentClient<$Result.GetResult<Prisma.$PostAttachmentPayload<ExtArgs>, T, 'upsert'>, never, ExtArgs>
+
+    /**
+     * Count the number of PostAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentCountArgs} args - Arguments to filter PostAttachments to count.
+     * @example
+     * // Count the number of PostAttachments
+     * const count = await prisma.postAttachment.count({
+     *   where: {
+     *     // ... the filter for the PostAttachments we want to count
+     *   }
+     * })
+    **/
+    count<T extends PostAttachmentCountArgs>(
+      args?: Subset<T, PostAttachmentCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PostAttachmentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PostAttachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PostAttachmentAggregateArgs>(args: Subset<T, PostAttachmentAggregateArgs>): Prisma.PrismaPromise<GetPostAttachmentAggregateType<T>>
+
+    /**
+     * Group by PostAttachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PostAttachmentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PostAttachmentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PostAttachmentGroupByArgs['orderBy'] }
+        : { orderBy?: PostAttachmentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PostAttachmentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPostAttachmentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PostAttachment model
+   */
+  readonly fields: PostAttachmentFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PostAttachment.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PostAttachmentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise';
+
+    post<T extends PostDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PostDefaultArgs<ExtArgs>>): Prisma__PostClient<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+
+
+  /**
+   * Fields of the PostAttachment model
+   */ 
+  interface PostAttachmentFieldRefs {
+    readonly id: FieldRef<"PostAttachment", 'String'>
+    readonly url: FieldRef<"PostAttachment", 'String'>
+    readonly fileName: FieldRef<"PostAttachment", 'String'>
+    readonly fileSize: FieldRef<"PostAttachment", 'Int'>
+    readonly mimeType: FieldRef<"PostAttachment", 'String'>
+    readonly downloadCount: FieldRef<"PostAttachment", 'Int'>
+    readonly postId: FieldRef<"PostAttachment", 'String'>
+    readonly createdAt: FieldRef<"PostAttachment", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+
+  /**
+   * PostAttachment findUnique
+   */
+  export type PostAttachmentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which PostAttachment to fetch.
+     */
+    where: PostAttachmentWhereUniqueInput
+  }
+
+
+  /**
+   * PostAttachment findUniqueOrThrow
+   */
+  export type PostAttachmentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which PostAttachment to fetch.
+     */
+    where: PostAttachmentWhereUniqueInput
+  }
+
+
+  /**
+   * PostAttachment findFirst
+   */
+  export type PostAttachmentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which PostAttachment to fetch.
+     */
+    where?: PostAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PostAttachments to fetch.
+     */
+    orderBy?: PostAttachmentOrderByWithRelationInput | PostAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PostAttachments.
+     */
+    cursor?: PostAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PostAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PostAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PostAttachments.
+     */
+    distinct?: PostAttachmentScalarFieldEnum | PostAttachmentScalarFieldEnum[]
+  }
+
+
+  /**
+   * PostAttachment findFirstOrThrow
+   */
+  export type PostAttachmentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which PostAttachment to fetch.
+     */
+    where?: PostAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PostAttachments to fetch.
+     */
+    orderBy?: PostAttachmentOrderByWithRelationInput | PostAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PostAttachments.
+     */
+    cursor?: PostAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PostAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PostAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PostAttachments.
+     */
+    distinct?: PostAttachmentScalarFieldEnum | PostAttachmentScalarFieldEnum[]
+  }
+
+
+  /**
+   * PostAttachment findMany
+   */
+  export type PostAttachmentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which PostAttachments to fetch.
+     */
+    where?: PostAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PostAttachments to fetch.
+     */
+    orderBy?: PostAttachmentOrderByWithRelationInput | PostAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PostAttachments.
+     */
+    cursor?: PostAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PostAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PostAttachments.
+     */
+    skip?: number
+    distinct?: PostAttachmentScalarFieldEnum | PostAttachmentScalarFieldEnum[]
+  }
+
+
+  /**
+   * PostAttachment create
+   */
+  export type PostAttachmentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PostAttachment.
+     */
+    data: XOR<PostAttachmentCreateInput, PostAttachmentUncheckedCreateInput>
+  }
+
+
+  /**
+   * PostAttachment createMany
+   */
+  export type PostAttachmentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PostAttachments.
+     */
+    data: PostAttachmentCreateManyInput | PostAttachmentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * PostAttachment update
+   */
+  export type PostAttachmentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PostAttachment.
+     */
+    data: XOR<PostAttachmentUpdateInput, PostAttachmentUncheckedUpdateInput>
+    /**
+     * Choose, which PostAttachment to update.
+     */
+    where: PostAttachmentWhereUniqueInput
+  }
+
+
+  /**
+   * PostAttachment updateMany
+   */
+  export type PostAttachmentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PostAttachments.
+     */
+    data: XOR<PostAttachmentUpdateManyMutationInput, PostAttachmentUncheckedUpdateManyInput>
+    /**
+     * Filter which PostAttachments to update
+     */
+    where?: PostAttachmentWhereInput
+  }
+
+
+  /**
+   * PostAttachment upsert
+   */
+  export type PostAttachmentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PostAttachment to update in case it exists.
+     */
+    where: PostAttachmentWhereUniqueInput
+    /**
+     * In case the PostAttachment found by the `where` argument doesn't exist, create a new PostAttachment with this data.
+     */
+    create: XOR<PostAttachmentCreateInput, PostAttachmentUncheckedCreateInput>
+    /**
+     * In case the PostAttachment was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PostAttachmentUpdateInput, PostAttachmentUncheckedUpdateInput>
+  }
+
+
+  /**
+   * PostAttachment delete
+   */
+  export type PostAttachmentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter which PostAttachment to delete.
+     */
+    where: PostAttachmentWhereUniqueInput
+  }
+
+
+  /**
+   * PostAttachment deleteMany
+   */
+  export type PostAttachmentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PostAttachments to delete
+     */
+    where?: PostAttachmentWhereInput
+  }
+
+
+  /**
+   * PostAttachment without action
+   */
+  export type PostAttachmentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PostAttachment
+     */
+    select?: PostAttachmentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostAttachmentInclude<ExtArgs> | null
   }
 
 
@@ -10865,6 +11972,20 @@ export namespace Prisma {
   export type PostImageScalarFieldEnum = (typeof PostImageScalarFieldEnum)[keyof typeof PostImageScalarFieldEnum]
 
 
+  export const PostAttachmentScalarFieldEnum: {
+    id: 'id',
+    url: 'url',
+    fileName: 'fileName',
+    fileSize: 'fileSize',
+    mimeType: 'mimeType',
+    downloadCount: 'downloadCount',
+    postId: 'postId',
+    createdAt: 'createdAt'
+  };
+
+  export type PostAttachmentScalarFieldEnum = (typeof PostAttachmentScalarFieldEnum)[keyof typeof PostAttachmentScalarFieldEnum]
+
+
   export const CommentScalarFieldEnum: {
     id: 'id',
     content: 'content',
@@ -11112,6 +12233,7 @@ export namespace Prisma {
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
     images?: PostImageListRelationFilter
+    attachments?: PostAttachmentListRelationFilter
     notifications?: NotificationListRelationFilter
     topic?: XOR<TopicNullableRelationFilter, TopicWhereInput> | null
   }
@@ -11130,6 +12252,7 @@ export namespace Prisma {
     reposts?: RepostOrderByRelationAggregateInput
     likes?: PostLikeOrderByRelationAggregateInput
     images?: PostImageOrderByRelationAggregateInput
+    attachments?: PostAttachmentOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     topic?: TopicOrderByWithRelationInput
   }
@@ -11151,6 +12274,7 @@ export namespace Prisma {
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
     images?: PostImageListRelationFilter
+    attachments?: PostAttachmentListRelationFilter
     notifications?: NotificationListRelationFilter
     topic?: XOR<TopicNullableRelationFilter, TopicWhereInput> | null
   }, "id">
@@ -11304,6 +12428,78 @@ export namespace Prisma {
     url?: StringWithAggregatesFilter<"PostImage"> | string
     postId?: StringWithAggregatesFilter<"PostImage"> | string
     createdAt?: DateTimeWithAggregatesFilter<"PostImage"> | Date | string
+  }
+
+  export type PostAttachmentWhereInput = {
+    AND?: PostAttachmentWhereInput | PostAttachmentWhereInput[]
+    OR?: PostAttachmentWhereInput[]
+    NOT?: PostAttachmentWhereInput | PostAttachmentWhereInput[]
+    id?: StringFilter<"PostAttachment"> | string
+    url?: StringFilter<"PostAttachment"> | string
+    fileName?: StringFilter<"PostAttachment"> | string
+    fileSize?: IntFilter<"PostAttachment"> | number
+    mimeType?: StringFilter<"PostAttachment"> | string
+    downloadCount?: IntFilter<"PostAttachment"> | number
+    postId?: StringFilter<"PostAttachment"> | string
+    createdAt?: DateTimeFilter<"PostAttachment"> | Date | string
+    post?: XOR<PostRelationFilter, PostWhereInput>
+  }
+
+  export type PostAttachmentOrderByWithRelationInput = {
+    id?: SortOrder
+    url?: SortOrder
+    fileName?: SortOrder
+    fileSize?: SortOrder
+    mimeType?: SortOrder
+    downloadCount?: SortOrder
+    postId?: SortOrder
+    createdAt?: SortOrder
+    post?: PostOrderByWithRelationInput
+  }
+
+  export type PostAttachmentWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: PostAttachmentWhereInput | PostAttachmentWhereInput[]
+    OR?: PostAttachmentWhereInput[]
+    NOT?: PostAttachmentWhereInput | PostAttachmentWhereInput[]
+    url?: StringFilter<"PostAttachment"> | string
+    fileName?: StringFilter<"PostAttachment"> | string
+    fileSize?: IntFilter<"PostAttachment"> | number
+    mimeType?: StringFilter<"PostAttachment"> | string
+    downloadCount?: IntFilter<"PostAttachment"> | number
+    postId?: StringFilter<"PostAttachment"> | string
+    createdAt?: DateTimeFilter<"PostAttachment"> | Date | string
+    post?: XOR<PostRelationFilter, PostWhereInput>
+  }, "id">
+
+  export type PostAttachmentOrderByWithAggregationInput = {
+    id?: SortOrder
+    url?: SortOrder
+    fileName?: SortOrder
+    fileSize?: SortOrder
+    mimeType?: SortOrder
+    downloadCount?: SortOrder
+    postId?: SortOrder
+    createdAt?: SortOrder
+    _count?: PostAttachmentCountOrderByAggregateInput
+    _avg?: PostAttachmentAvgOrderByAggregateInput
+    _max?: PostAttachmentMaxOrderByAggregateInput
+    _min?: PostAttachmentMinOrderByAggregateInput
+    _sum?: PostAttachmentSumOrderByAggregateInput
+  }
+
+  export type PostAttachmentScalarWhereWithAggregatesInput = {
+    AND?: PostAttachmentScalarWhereWithAggregatesInput | PostAttachmentScalarWhereWithAggregatesInput[]
+    OR?: PostAttachmentScalarWhereWithAggregatesInput[]
+    NOT?: PostAttachmentScalarWhereWithAggregatesInput | PostAttachmentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PostAttachment"> | string
+    url?: StringWithAggregatesFilter<"PostAttachment"> | string
+    fileName?: StringWithAggregatesFilter<"PostAttachment"> | string
+    fileSize?: IntWithAggregatesFilter<"PostAttachment"> | number
+    mimeType?: StringWithAggregatesFilter<"PostAttachment"> | string
+    downloadCount?: IntWithAggregatesFilter<"PostAttachment"> | number
+    postId?: StringWithAggregatesFilter<"PostAttachment"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"PostAttachment"> | Date | string
   }
 
   export type CommentWhereInput = {
@@ -11757,6 +12953,7 @@ export namespace Prisma {
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -11774,6 +12971,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -11789,6 +12987,7 @@ export namespace Prisma {
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -11806,6 +13005,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -11961,6 +13161,82 @@ export namespace Prisma {
   export type PostImageUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PostAttachmentCreateInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    createdAt?: Date | string
+    post: PostCreateNestedOneWithoutAttachmentsInput
+  }
+
+  export type PostAttachmentUncheckedCreateInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    postId: string
+    createdAt?: Date | string
+  }
+
+  export type PostAttachmentUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneRequiredWithoutAttachmentsNestedInput
+  }
+
+  export type PostAttachmentUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    postId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PostAttachmentCreateManyInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    postId: string
+    createdAt?: Date | string
+  }
+
+  export type PostAttachmentUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PostAttachmentUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
     postId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -12480,12 +13756,22 @@ export namespace Prisma {
     none?: PostImageWhereInput
   }
 
+  export type PostAttachmentListRelationFilter = {
+    every?: PostAttachmentWhereInput
+    some?: PostAttachmentWhereInput
+    none?: PostAttachmentWhereInput
+  }
+
   export type TopicNullableRelationFilter = {
     is?: TopicWhereInput | null
     isNot?: TopicWhereInput | null
   }
 
   export type PostImageOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type PostAttachmentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -12615,6 +13901,49 @@ export namespace Prisma {
     url?: SortOrder
     postId?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type PostAttachmentCountOrderByAggregateInput = {
+    id?: SortOrder
+    url?: SortOrder
+    fileName?: SortOrder
+    fileSize?: SortOrder
+    mimeType?: SortOrder
+    downloadCount?: SortOrder
+    postId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PostAttachmentAvgOrderByAggregateInput = {
+    fileSize?: SortOrder
+    downloadCount?: SortOrder
+  }
+
+  export type PostAttachmentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    url?: SortOrder
+    fileName?: SortOrder
+    fileSize?: SortOrder
+    mimeType?: SortOrder
+    downloadCount?: SortOrder
+    postId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PostAttachmentMinOrderByAggregateInput = {
+    id?: SortOrder
+    url?: SortOrder
+    fileName?: SortOrder
+    fileSize?: SortOrder
+    mimeType?: SortOrder
+    downloadCount?: SortOrder
+    postId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PostAttachmentSumOrderByAggregateInput = {
+    fileSize?: SortOrder
+    downloadCount?: SortOrder
   }
 
   export type CommentNullableRelationFilter = {
@@ -13208,6 +14537,13 @@ export namespace Prisma {
     connect?: PostImageWhereUniqueInput | PostImageWhereUniqueInput[]
   }
 
+  export type PostAttachmentCreateNestedManyWithoutPostInput = {
+    create?: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput> | PostAttachmentCreateWithoutPostInput[] | PostAttachmentUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: PostAttachmentCreateOrConnectWithoutPostInput | PostAttachmentCreateOrConnectWithoutPostInput[]
+    createMany?: PostAttachmentCreateManyPostInputEnvelope
+    connect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+  }
+
   export type NotificationCreateNestedManyWithoutPostInput = {
     create?: XOR<NotificationCreateWithoutPostInput, NotificationUncheckedCreateWithoutPostInput> | NotificationCreateWithoutPostInput[] | NotificationUncheckedCreateWithoutPostInput[]
     connectOrCreate?: NotificationCreateOrConnectWithoutPostInput | NotificationCreateOrConnectWithoutPostInput[]
@@ -13247,6 +14583,13 @@ export namespace Prisma {
     connectOrCreate?: PostImageCreateOrConnectWithoutPostInput | PostImageCreateOrConnectWithoutPostInput[]
     createMany?: PostImageCreateManyPostInputEnvelope
     connect?: PostImageWhereUniqueInput | PostImageWhereUniqueInput[]
+  }
+
+  export type PostAttachmentUncheckedCreateNestedManyWithoutPostInput = {
+    create?: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput> | PostAttachmentCreateWithoutPostInput[] | PostAttachmentUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: PostAttachmentCreateOrConnectWithoutPostInput | PostAttachmentCreateOrConnectWithoutPostInput[]
+    createMany?: PostAttachmentCreateManyPostInputEnvelope
+    connect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
   }
 
   export type NotificationUncheckedCreateNestedManyWithoutPostInput = {
@@ -13328,6 +14671,20 @@ export namespace Prisma {
     deleteMany?: PostImageScalarWhereInput | PostImageScalarWhereInput[]
   }
 
+  export type PostAttachmentUpdateManyWithoutPostNestedInput = {
+    create?: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput> | PostAttachmentCreateWithoutPostInput[] | PostAttachmentUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: PostAttachmentCreateOrConnectWithoutPostInput | PostAttachmentCreateOrConnectWithoutPostInput[]
+    upsert?: PostAttachmentUpsertWithWhereUniqueWithoutPostInput | PostAttachmentUpsertWithWhereUniqueWithoutPostInput[]
+    createMany?: PostAttachmentCreateManyPostInputEnvelope
+    set?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    disconnect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    delete?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    connect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    update?: PostAttachmentUpdateWithWhereUniqueWithoutPostInput | PostAttachmentUpdateWithWhereUniqueWithoutPostInput[]
+    updateMany?: PostAttachmentUpdateManyWithWhereWithoutPostInput | PostAttachmentUpdateManyWithWhereWithoutPostInput[]
+    deleteMany?: PostAttachmentScalarWhereInput | PostAttachmentScalarWhereInput[]
+  }
+
   export type NotificationUpdateManyWithoutPostNestedInput = {
     create?: XOR<NotificationCreateWithoutPostInput, NotificationUncheckedCreateWithoutPostInput> | NotificationCreateWithoutPostInput[] | NotificationUncheckedCreateWithoutPostInput[]
     connectOrCreate?: NotificationCreateOrConnectWithoutPostInput | NotificationCreateOrConnectWithoutPostInput[]
@@ -13406,6 +14763,20 @@ export namespace Prisma {
     update?: PostImageUpdateWithWhereUniqueWithoutPostInput | PostImageUpdateWithWhereUniqueWithoutPostInput[]
     updateMany?: PostImageUpdateManyWithWhereWithoutPostInput | PostImageUpdateManyWithWhereWithoutPostInput[]
     deleteMany?: PostImageScalarWhereInput | PostImageScalarWhereInput[]
+  }
+
+  export type PostAttachmentUncheckedUpdateManyWithoutPostNestedInput = {
+    create?: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput> | PostAttachmentCreateWithoutPostInput[] | PostAttachmentUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: PostAttachmentCreateOrConnectWithoutPostInput | PostAttachmentCreateOrConnectWithoutPostInput[]
+    upsert?: PostAttachmentUpsertWithWhereUniqueWithoutPostInput | PostAttachmentUpsertWithWhereUniqueWithoutPostInput[]
+    createMany?: PostAttachmentCreateManyPostInputEnvelope
+    set?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    disconnect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    delete?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    connect?: PostAttachmentWhereUniqueInput | PostAttachmentWhereUniqueInput[]
+    update?: PostAttachmentUpdateWithWhereUniqueWithoutPostInput | PostAttachmentUpdateWithWhereUniqueWithoutPostInput[]
+    updateMany?: PostAttachmentUpdateManyWithWhereWithoutPostInput | PostAttachmentUpdateManyWithWhereWithoutPostInput[]
+    deleteMany?: PostAttachmentScalarWhereInput | PostAttachmentScalarWhereInput[]
   }
 
   export type NotificationUncheckedUpdateManyWithoutPostNestedInput = {
@@ -13530,6 +14901,20 @@ export namespace Prisma {
     upsert?: PostUpsertWithoutImagesInput
     connect?: PostWhereUniqueInput
     update?: XOR<XOR<PostUpdateToOneWithWhereWithoutImagesInput, PostUpdateWithoutImagesInput>, PostUncheckedUpdateWithoutImagesInput>
+  }
+
+  export type PostCreateNestedOneWithoutAttachmentsInput = {
+    create?: XOR<PostCreateWithoutAttachmentsInput, PostUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: PostCreateOrConnectWithoutAttachmentsInput
+    connect?: PostWhereUniqueInput
+  }
+
+  export type PostUpdateOneRequiredWithoutAttachmentsNestedInput = {
+    create?: XOR<PostCreateWithoutAttachmentsInput, PostUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: PostCreateOrConnectWithoutAttachmentsInput
+    upsert?: PostUpsertWithoutAttachmentsInput
+    connect?: PostWhereUniqueInput
+    update?: XOR<XOR<PostUpdateToOneWithWhereWithoutAttachmentsInput, PostUpdateWithoutAttachmentsInput>, PostUncheckedUpdateWithoutAttachmentsInput>
   }
 
   export type PostCreateNestedOneWithoutCommentsInput = {
@@ -13969,6 +15354,7 @@ export namespace Prisma {
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -13985,6 +15371,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -14580,6 +15967,36 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PostAttachmentCreateWithoutPostInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    createdAt?: Date | string
+  }
+
+  export type PostAttachmentUncheckedCreateWithoutPostInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    createdAt?: Date | string
+  }
+
+  export type PostAttachmentCreateOrConnectWithoutPostInput = {
+    where: PostAttachmentWhereUniqueInput
+    create: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput>
+  }
+
+  export type PostAttachmentCreateManyPostInputEnvelope = {
+    data: PostAttachmentCreateManyPostInput | PostAttachmentCreateManyPostInput[]
+    skipDuplicates?: boolean
+  }
+
   export type NotificationCreateWithoutPostInput = {
     id?: string
     type: $Enums.NotificationType
@@ -14766,6 +16183,36 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"PostImage"> | Date | string
   }
 
+  export type PostAttachmentUpsertWithWhereUniqueWithoutPostInput = {
+    where: PostAttachmentWhereUniqueInput
+    update: XOR<PostAttachmentUpdateWithoutPostInput, PostAttachmentUncheckedUpdateWithoutPostInput>
+    create: XOR<PostAttachmentCreateWithoutPostInput, PostAttachmentUncheckedCreateWithoutPostInput>
+  }
+
+  export type PostAttachmentUpdateWithWhereUniqueWithoutPostInput = {
+    where: PostAttachmentWhereUniqueInput
+    data: XOR<PostAttachmentUpdateWithoutPostInput, PostAttachmentUncheckedUpdateWithoutPostInput>
+  }
+
+  export type PostAttachmentUpdateManyWithWhereWithoutPostInput = {
+    where: PostAttachmentScalarWhereInput
+    data: XOR<PostAttachmentUpdateManyMutationInput, PostAttachmentUncheckedUpdateManyWithoutPostInput>
+  }
+
+  export type PostAttachmentScalarWhereInput = {
+    AND?: PostAttachmentScalarWhereInput | PostAttachmentScalarWhereInput[]
+    OR?: PostAttachmentScalarWhereInput[]
+    NOT?: PostAttachmentScalarWhereInput | PostAttachmentScalarWhereInput[]
+    id?: StringFilter<"PostAttachment"> | string
+    url?: StringFilter<"PostAttachment"> | string
+    fileName?: StringFilter<"PostAttachment"> | string
+    fileSize?: IntFilter<"PostAttachment"> | number
+    mimeType?: StringFilter<"PostAttachment"> | string
+    downloadCount?: IntFilter<"PostAttachment"> | number
+    postId?: StringFilter<"PostAttachment"> | string
+    createdAt?: DateTimeFilter<"PostAttachment"> | Date | string
+  }
+
   export type NotificationUpsertWithWhereUniqueWithoutPostInput = {
     where: NotificationWhereUniqueInput
     update: XOR<NotificationUpdateWithoutPostInput, NotificationUncheckedUpdateWithoutPostInput>
@@ -14827,6 +16274,7 @@ export namespace Prisma {
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
   }
 
@@ -14842,6 +16290,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -15068,6 +16517,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -15084,6 +16534,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -15114,6 +16565,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -15130,6 +16582,87 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
+  }
+
+  export type PostCreateWithoutAttachmentsInput = {
+    id?: string
+    title?: string | null
+    content: string
+    viewCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    author: UserCreateNestedOneWithoutPostsInput
+    comments?: CommentCreateNestedManyWithoutPostInput
+    reposts?: RepostCreateNestedManyWithoutPostInput
+    likes?: PostLikeCreateNestedManyWithoutPostInput
+    images?: PostImageCreateNestedManyWithoutPostInput
+    notifications?: NotificationCreateNestedManyWithoutPostInput
+    topic?: TopicCreateNestedOneWithoutPostsInput
+  }
+
+  export type PostUncheckedCreateWithoutAttachmentsInput = {
+    id?: string
+    title?: string | null
+    content: string
+    authorId: string
+    topicId?: string | null
+    viewCount?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutPostInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
+    likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
+  }
+
+  export type PostCreateOrConnectWithoutAttachmentsInput = {
+    where: PostWhereUniqueInput
+    create: XOR<PostCreateWithoutAttachmentsInput, PostUncheckedCreateWithoutAttachmentsInput>
+  }
+
+  export type PostUpsertWithoutAttachmentsInput = {
+    update: XOR<PostUpdateWithoutAttachmentsInput, PostUncheckedUpdateWithoutAttachmentsInput>
+    create: XOR<PostCreateWithoutAttachmentsInput, PostUncheckedCreateWithoutAttachmentsInput>
+    where?: PostWhereInput
+  }
+
+  export type PostUpdateToOneWithWhereWithoutAttachmentsInput = {
+    where?: PostWhereInput
+    data: XOR<PostUpdateWithoutAttachmentsInput, PostUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type PostUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    viewCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    comments?: CommentUpdateManyWithoutPostNestedInput
+    reposts?: RepostUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUpdateManyWithoutPostNestedInput
+    images?: PostImageUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUpdateManyWithoutPostNestedInput
+    topic?: TopicUpdateOneWithoutPostsNestedInput
+  }
+
+  export type PostUncheckedUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    authorId?: StringFieldUpdateOperationsInput | string
+    topicId?: NullableStringFieldUpdateOperationsInput | string | null
+    viewCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -15144,6 +16677,7 @@ export namespace Prisma {
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -15160,6 +16694,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -15316,6 +16851,7 @@ export namespace Prisma {
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -15332,6 +16868,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -15464,6 +17001,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -15480,6 +17018,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -15559,6 +17098,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -15575,6 +17115,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -15743,6 +17284,7 @@ export namespace Prisma {
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
 
@@ -15759,6 +17301,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
   }
 
   export type PostCreateOrConnectWithoutNotificationsInput = {
@@ -15899,6 +17442,7 @@ export namespace Prisma {
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
 
@@ -15915,6 +17459,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
   }
 
   export type CommentCreateWithoutLikesInput = {
@@ -16088,6 +17633,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
   }
@@ -16104,6 +17650,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
 
@@ -16183,6 +17730,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -16199,6 +17747,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -16332,6 +17881,7 @@ export namespace Prisma {
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
   }
@@ -16348,6 +17898,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -16588,6 +18139,16 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type PostAttachmentCreateManyPostInput = {
+    id?: string
+    url: string
+    fileName: string
+    fileSize: number
+    mimeType: string
+    downloadCount?: number
+    createdAt?: Date | string
+  }
+
   export type NotificationCreateManyPostInput = {
     id?: string
     type: $Enums.NotificationType
@@ -16677,6 +18238,36 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PostAttachmentUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PostAttachmentUncheckedUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PostAttachmentUncheckedUpdateManyWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    url?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    fileSize?: IntFieldUpdateOperationsInput | number
+    mimeType?: StringFieldUpdateOperationsInput | string
+    downloadCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type NotificationUpdateWithoutPostInput = {
     id?: StringFieldUpdateOperationsInput | string
     type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
@@ -16729,6 +18320,7 @@ export namespace Prisma {
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
   }
 
@@ -16744,6 +18336,7 @@ export namespace Prisma {
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
 
@@ -16912,6 +18505,10 @@ export namespace Prisma {
      * @deprecated Use PostImageDefaultArgs instead
      */
     export type PostImageArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PostImageDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use PostAttachmentDefaultArgs instead
+     */
+    export type PostAttachmentArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PostAttachmentDefaultArgs<ExtArgs>
     /**
      * @deprecated Use CommentDefaultArgs instead
      */

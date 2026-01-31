@@ -149,6 +149,17 @@ exports.Prisma.PostImageScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PostAttachmentScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  fileName: 'fileName',
+  fileSize: 'fileSize',
+  mimeType: 'mimeType',
+  downloadCount: 'downloadCount',
+  postId: 'postId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.CommentScalarFieldEnum = {
   id: 'id',
   content: 'content',
@@ -210,6 +221,7 @@ exports.Prisma.ModelName = {
   Post: 'Post',
   Topic: 'Topic',
   PostImage: 'PostImage',
+  PostAttachment: 'PostAttachment',
   Comment: 'Comment',
   PostLike: 'PostLike',
   Notification: 'Notification',

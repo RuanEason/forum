@@ -8,12 +8,18 @@ interface SimpleMarkdownEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   minHeight?: number;
-  showToolbarToggle?: boolean; // 是否显示toolbar切换按钮
-  onImageClick?: () => void; // 图片按钮点击回调
-  imageCount?: number; // 已上传图片数量
-  maxImages?: number; // 最大图片数量
-  isUploading?: boolean; // 是否正在上传
-  topicSelector?: React.ReactNode; // 话题选择器组件
+  showToolbarToggle?: boolean;
+  onImageClick?: () => void;
+  imageCount?: number;
+  maxImages?: number;
+  isUploading?: boolean;
+  onAttachmentClick?: () => void;
+  attachmentCount?: number;
+  maxAttachments?: number;
+  topicSelector?: React.ReactNode;
+  onCancelUpload?: () => void;
+  uploadProgress?: number;
+  uploadStatus?: string;
 }
 
 interface ToolbarButton {
@@ -32,7 +38,13 @@ export default function SimpleMarkdownEditor({
   imageCount = 0,
   maxImages = 9,
   isUploading = false,
+  onAttachmentClick,
+  attachmentCount = 0,
+  maxAttachments = 5,
   topicSelector,
+  onCancelUpload,
+  uploadProgress = 0,
+  uploadStatus = "",
 }: SimpleMarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showToolbar, setShowToolbar] = useState(false);
@@ -260,56 +272,113 @@ export default function SimpleMarkdownEditor({
         style={{ minHeight: `${minHeight}px` }}
       />
 
-      {/* 底部工具栏 - 图片按钮、Markdown切换按钮、话题选择器 */}
+      {/* 底部工具栏 - 图片按钮、附件按钮、Markdown切换按钮、话题选择器 */}
       {showToolbarToggle && (
-        <div className="simple-md-editor-footer">
-          <div className="flex items-center justify-between w-full">
-            {/* 左侧：图片按钮和Markdown切换按钮 */}
-            <div className="flex items-center gap-2">
-              {/* 图片按钮 */}
-              {onImageClick && (
+        <>
+          <div className="simple-md-editor-footer">
+            <div className="flex items-center justify-between w-full">
+              {/* 左侧：图片按钮、附件按钮、Markdown切换按钮 */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* 图片按钮 */}
+                {onImageClick && (
+                  <button
+                    type="button"
+                    onClick={onImageClick}
+                    disabled={imageCount >= maxImages || isUploading}
+                    className="footer-action-btn"
+                    title={`添加图片 (${imageCount}/${maxImages})`}
+                  >
+                    {isUploading && uploadProgress > 0 ? (
+                      <span className="text-xs font-bold">{uploadProgress}%</span>
+                    ) : isUploading ? (
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+
+                {/* 附件按钮 */}
+                {onAttachmentClick && (
+                  <button
+                    type="button"
+                    onClick={onAttachmentClick}
+                    disabled={attachmentCount >= maxAttachments || isUploading}
+                    className="footer-action-btn"
+                    title={`添加附件 (${attachmentCount}/${maxAttachments})`}
+                  >
+                    {isUploading && uploadProgress > 0 ? (
+                      <span className="text-xs font-bold">{uploadProgress}%</span>
+                    ) : isUploading ? (
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+
+                {/* 取消上传按钮 */}
+                {isUploading && onCancelUpload && (
+                  <button
+                    type="button"
+                    onClick={onCancelUpload}
+                    className="footer-action-btn text-red-600"
+                    title="取消上传"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Markdown 工具栏切换按钮 */}
                 <button
                   type="button"
-                  onClick={onImageClick}
-                  disabled={imageCount >= maxImages || isUploading}
-                  className="footer-action-btn"
-                  title={`添加图片 (${imageCount}/${maxImages})`}
+                  onClick={() => setShowToolbar(!showToolbar)}
+                  className={`footer-action-btn ${showToolbar ? "active" : ""}`}
+                  title={showToolbar ? "隐藏 Markdown 工具栏" : "显示 Markdown 工具栏"}
                 >
-                  {isUploading ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  )}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span className="text-xs font-bold">T</span>
                 </button>
-              )}
-
-              {/* Markdown 工具栏切换按钮 */}
-              <button
-                type="button"
-                onClick={() => setShowToolbar(!showToolbar)}
-                className={`footer-action-btn ${showToolbar ? "active" : ""}`}
-                title={showToolbar ? "隐藏 Markdown 工具栏" : "显示 Markdown 工具栏"}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span className="text-xs font-bold">T</span>
-              </button>
-            </div>
-
-            {/* 右侧：话题选择器 */}
-            {topicSelector && (
-              <div className="pointer-events-auto">
-                {topicSelector}
               </div>
-            )}
+
+              {/* 右侧：话题选择器 */}
+              {topicSelector && (
+                <div className="pointer-events-auto flex-shrink-0 ml-2">
+                  {topicSelector}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+
+          {/* 上传进度条 - 独立显示在 footer 下方 */}
+          {isUploading && uploadProgress > 0 && (
+            <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+              {uploadStatus && (
+                <div className="text-xs text-gray-600 mb-1 truncate">{uploadStatus}</div>
+              )}
+              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-300 ease-out rounded-full"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

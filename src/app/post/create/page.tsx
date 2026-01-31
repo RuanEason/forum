@@ -6,16 +6,23 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
-import { X, Loader2, ChevronDown, ChevronUp, Settings } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronUp, Settings, Paperclip, FileText } from "lucide-react";
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedAttachments, setSelectedAttachments] = useState<Array<{ url: string; fileName: string; fileSize: number; mimeType: string }>>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [cancelRequested, setCancelRequested] = useState(false);
   const [error, setError] = useState("");
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -28,39 +35,129 @@ export default function CreatePostPage() {
     }
   }, [status, router]);
 
+  const uploadFile = async (file: File, endpoint: string, onProgress: (percent: number, status: string) => void) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      let uploadComplete = false;
+      let processingStartTime = 0;
+      const PROCESSING_DURATION = 30000;
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable && !cancelRequested) {
+          const uploadPercent = Math.round((e.loaded / e.total) * 70);
+          onProgress(uploadPercent, "正在上传...");
+          
+          if (e.loaded >= e.total && !uploadComplete) {
+            uploadComplete = true;
+            processingStartTime = Date.now();
+            onProgress(70, "服务器正在处理文件，请稍候...");
+            simulateProcessingProgress();
+          }
+        }
+      });
+
+      const simulateProcessingProgress = () => {
+        if (!uploadComplete || xhr.readyState === 4) return;
+        
+        const elapsed = Date.now() - processingStartTime;
+        const processingProgress = Math.min(29, Math.round((elapsed / PROCESSING_DURATION) * 29));
+        const totalProgress = 70 + processingProgress;
+        
+        if (totalProgress < 99) {
+          onProgress(totalProgress, "服务器正在处理文件，请稍候...");
+          setTimeout(simulateProcessingProgress, 500);
+        }
+      };
+
+      xhr.addEventListener("loadstart", () => {
+        onProgress(0, "开始上传...");
+      });
+
+      xhr.addEventListener("load", () => {
+        uploadComplete = true;
+        if (cancelRequested) {
+          reject(new Error("Upload cancelled"));
+          return;
+        }
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            onProgress(100, "上传完成！");
+            resolve(response);
+          } catch (e) {
+            reject(new Error("Invalid response"));
+          }
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Network error")));
+      xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+
+      xhr.open("POST", endpoint);
+      xhr.send(formData);
+    });
+  };
+
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStatus("");
+    setCancelRequested(false);
     setError("");
 
     try {
       const files = Array.from(e.target.files);
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
+      const uploadedUrls: string[] = [];
+      const totalFiles = files.length;
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Upload failed");
+      for (let i = 0; i < totalFiles; i++) {
+        if (cancelRequested) {
+          throw new Error("Upload cancelled");
         }
 
-        const data = await response.json();
-        return data.url;
-      });
+        const file = files[i];
+        setUploadStatus(`正在上传第 ${i + 1}/${totalFiles} 张图片...`);
 
-      const uploadedUrls = await Promise.all(uploadPromises);
+        const result = await uploadFile(
+          file,
+          "/api/upload",
+          (percent, statusMsg) => {
+            const overallProgress = ((i + percent / 100) / totalFiles) * 100;
+            setUploadProgress(Math.round(overallProgress));
+            setUploadStatus(`第 ${i + 1}/${totalFiles} 张图片: ${statusMsg}`);
+          }
+        ) as { url: string };
+
+        uploadedUrls.push(result.url);
+      }
+
       setSelectedImages((prev) => [...prev, ...uploadedUrls]);
+      setUploadStatus("上传完成！");
     } catch (err) {
-      console.error("Upload error:", err);
-      setError("图片上传失败，请重试");
+      if (err instanceof Error) {
+        if (err.message === "Upload cancelled") {
+          setError("上传已取消");
+          setUploadStatus("已取消");
+        } else {
+          console.error("Upload error:", err);
+          setError(`图片上传失败: ${err.message}`);
+        }
+      }
     } finally {
       setIsUploading(false);
-      // Reset input value to allow selecting the same file again
+      setUploadProgress(0);
+      setUploadStatus("");
+      setCancelRequested(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -77,6 +174,91 @@ export default function CreatePostPage() {
     );
   };
 
+  const handleAttachmentSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStatus("");
+    setCancelRequested(false);
+    setError("");
+
+    try {
+      const files = Array.from(e.target.files);
+      const uploadedFiles: Array<{ url: string; fileName: string; fileSize: number; mimeType: string }> = [];
+      const totalFiles = files.length;
+
+      for (let i = 0; i < totalFiles; i++) {
+        if (cancelRequested) {
+          throw new Error("Upload cancelled");
+        }
+
+        const file = files[i];
+        setUploadStatus(`正在上传第 ${i + 1}/${totalFiles} 个附件...`);
+
+        const result = await uploadFile(
+          file,
+          "/api/upload/attachment",
+          (percent, statusMsg) => {
+            const overallProgress = ((i + percent / 100) / totalFiles) * 100;
+            setUploadProgress(Math.round(overallProgress));
+            setUploadStatus(`第 ${i + 1}/${totalFiles} 个附件: ${statusMsg}`);
+          }
+        ) as any;
+
+        uploadedFiles.push(result);
+      }
+
+      setSelectedAttachments((prev) => [...prev, ...uploadedFiles]);
+      setUploadStatus("上传完成！");
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message === "Upload cancelled") {
+          setError("上传已取消");
+          setUploadStatus("已取消");
+        } else {
+          console.error("Attachment upload error:", err);
+          const errorMsg = err.message;
+          if (errorMsg.includes("is not allowed")) {
+            setError(`附件上传失败: ${errorMsg}\n\n当前系统不支持上传可执行文件，请压缩成ZIP或RAR后再上传。`);
+          } else if (errorMsg.includes("exceeds maximum")) {
+            setError(`附件上传失败: ${errorMsg}`);
+          } else {
+            setError(`附件上传失败: ${errorMsg}`);
+          }
+        }
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setUploadStatus("");
+      setCancelRequested(false);
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = "";
+      }
+    }
+  };
+
+  const triggerAttachmentUpload = () => {
+    attachmentInputRef.current?.click();
+  };
+
+  const removeAttachment = (indexToRemove: number) => {
+    setSelectedAttachments((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const cancelUpload = () => {
+    setCancelRequested(true);
+    setUploadStatus("正在取消上传...");
+    
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+    }
+  };
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -84,8 +266,13 @@ export default function CreatePostPage() {
       setError("请先登录才能发布帖子");
       return;
     }
-    if (!content.trim() && selectedImages.length === 0) {
-      setError("帖子内容或图片不能为空");
+    if (!content.trim() && selectedImages.length === 0 && selectedAttachments.length === 0) {
+      setError("帖子内容、图片或附件不能为空");
+      return;
+    }
+
+    if (selectedAttachments.length > 5) {
+      setError("最多只能上传 5 个附件");
       return;
     }
 
@@ -107,6 +294,7 @@ export default function CreatePostPage() {
           content: content,
           authorId: (session as any)?.user?.id,
           images: selectedImages,
+          attachments: selectedAttachments,
           topicId: selectedTopicId,
         }),
       });
@@ -175,6 +363,12 @@ export default function CreatePostPage() {
               imageCount={selectedImages.length}
               maxImages={9}
               isUploading={isUploading}
+              onAttachmentClick={triggerAttachmentUpload}
+              attachmentCount={selectedAttachments.length}
+              maxAttachments={5}
+              onCancelUpload={cancelUpload}
+              uploadProgress={uploadProgress}
+              uploadStatus={uploadStatus}
               topicSelector={
                 <TopicSelector
                   selectedTopicId={selectedTopicId}
@@ -192,6 +386,16 @@ export default function CreatePostPage() {
               className="hidden"
               onChange={handleImageSelect}
               disabled={loading || isUploading || selectedImages.length >= 9}
+            />
+
+            {/* 隐藏的附件输入 */}
+            <input
+              ref={attachmentInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleAttachmentSelect}
+              disabled={loading || isUploading || selectedAttachments.length >= 5}
             />
 
             {/* 图片上传区域 */}
@@ -212,6 +416,39 @@ export default function CreatePostPage() {
                         className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
                       >
                         <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 附件上传区域 */}
+            {selectedAttachments.length > 0 && (
+              <div className="px-4 pb-4 border-t border-gray-100">
+                <div className="space-y-2 pt-3">
+                  {selectedAttachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-shrink-0 text-gray-500">
+                        <Paperclip className="h-5 w-5" />
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {attachment.fileName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   ))}
