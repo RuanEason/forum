@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface LikeButtonProps {
   targetType: "post" | "comment";
@@ -19,6 +19,7 @@ export default function LikeButton({
 }: LikeButtonProps) {
   const { status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [likedByUser, setLikedByUser] = useState(initialLikedByUser);
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ export default function LikeButton({
   const handleLikeToggle = async () => {
     setError("");
     if (status !== "authenticated") {
-      router.push("/auth/signin");
+      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`);
       return;
     }
 

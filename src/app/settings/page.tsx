@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import BackButton from "@/components/BackButton";
 import Button from "@/components/ui/Button";
@@ -14,6 +14,7 @@ import Dropdown from "@/components/ui/Dropdown";
 export default function SettingsPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -30,7 +31,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin");
+      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
     }
     if (session?.user) {
       const user = session.user as any;
@@ -42,7 +43,7 @@ export default function SettingsPage() {
       // Ideally, we should fetch the latest user data from an API.
       fetchUserData();
     }
-  }, [status, router, session]);
+  }, [status, router, session, pathname]);
   useEffect(() => {
     console.log("组件挂载 - 视图模式:", postViewMode);
   }, [postViewMode]);

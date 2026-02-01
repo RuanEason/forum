@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
@@ -13,6 +13,8 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +45,8 @@ export default function SignUp() {
 
       if (response.ok) {
         // 注册成功，跳转到完善信息页面
-        router.push("/auth/complete-profile");
+        const redirectUrl = redirect !== "/" ? `/auth/complete-profile?redirect=${encodeURIComponent(redirect)}` : "/auth/complete-profile";
+        router.push(redirectUrl);
       } else {
         setError(data.error || "注册失败");
       }

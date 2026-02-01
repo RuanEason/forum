@@ -257,13 +257,13 @@ export default function Navbar() {
                 </button>
 
                 <Link
-                  href="/auth/signin"
+                  href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
                   className="text-sm font-medium text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md hover:bg-gray-50 transition-all"
                 >
                   登录
                 </Link>
                 <Link
-                  href="/auth/signup"
+                  href={`/auth/signup?redirect=${encodeURIComponent(pathname || "/")}`}
                   className="text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 shadow-sm hover:shadow transition-all"
                 >
                   注册

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
@@ -107,6 +108,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +150,10 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   if (!session) {
     return (
       <p className="text-center text-gray-500 mt-4">
-        <Link href="/auth/signin" className="text-blue-600 hover:underline">
+        <Link
+          href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
+          className="text-blue-600 hover:underline"
+        >
           登录
         </Link>{" "}
         后发表评论

@@ -29,11 +29,15 @@ npm run lint         # Run ESLint
 - Use `@/*` path aliases for src imports: `import { prisma } from "@/lib/prisma"`
 - Order: external libraries (next, react) → internal libraries (lib/) → components → types
 - Absolute imports for external dependencies, relative (`./`) for local files in same directory
+- Client components must include `"use client"` at the top of the file
+- Server actions must include `"use server"` at the top of the file
 
 ### Formatting
 - No Prettier configured - follow existing patterns in the codebase
-- 2-space indentation (check existing files to confirm)
+- 2-space indentation
 - Use `cn()` utility from `@/lib/utils` for conditional Tailwind classes
+- Use Chinese for all user-facing text and comments
+- Component interfaces should be exported
 
 ### TypeScript
 - Strict mode enabled
@@ -41,6 +45,7 @@ npm run lint         # Run ESLint
 - Use Chinese for code comments and JSDoc descriptions (project convention)
 - Prisma types are generated in `src/generated` - use inferred types from schema
 - Use `as any` sparingly (only for NextAuth sessions where types are complex)
+- Type definitions for external modules go in `src/types/` (e.g., `next-auth.d.ts`)
 
 ### Naming Conventions
 - Components: PascalCase (`Button.tsx`, `HomeContent.tsx`)
@@ -88,10 +93,41 @@ export async function POST(request: NextRequest) {
 - Export interfaces for props
 - Add `displayName` for forwardRef components
 
+### Server Actions Pattern
+Server actions go in `src/lib/actions/` and must start with `"use server"`:
+```typescript
+"use server";
+
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+
+export async function someServerAction(param: string): Promise<{ success: boolean; message: string }> {
+  try {
+    // Validate input
+    if (!param) {
+      return { success: false, message: "Invalid input" };
+    }
+
+    // Database operation
+    await prisma.someModel.create({ data: { field: param } });
+
+    // Revalidate cache
+    revalidatePath("/some-path");
+
+    return { success: true, message: "Success" };
+  } catch (error) {
+    console.error("Action error:", error);
+    return { success: false, message: "Internal server error" };
+  }
+}
+```
+
 ### Important Constraints
 - Post title max: 200 chars (optional)
 - Post content max: 10,000 chars
 - Max images per post: 10
+- Max attachments per post: 5
 - Password hashing: bcryptjs
 - Image uploads go to Tencent Cloud COS + CDN
 - Development environment connects to production database - use caution

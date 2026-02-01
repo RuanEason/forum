@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
 
 export default function CompleteProfile() {
@@ -15,6 +15,8 @@ export default function CompleteProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: session, status, update } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -90,7 +92,7 @@ export default function CompleteProfile() {
             avatar: avatar,
           },
         });
-        router.push("/");
+        router.push(redirect);
         router.refresh();
       } else {
         setError(data.error || "更新失败");

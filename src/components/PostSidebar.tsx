@@ -23,8 +23,25 @@ interface PostSidebarProps {
 type SidebarMode = "toc" | "timeline";
 
 export default function PostSidebar({ headings, comments }: PostSidebarProps) {
+  // 基本数据判断（必须在 hooks 和 callbacks 之前定义）
+  const hasToc = headings.length > 0;
+  const hasComments = comments.length > 0;
+
+  // 根据内容情况确定初始模式
+  const getInitialMode = (): SidebarMode => {
+    if (!hasToc && hasComments) return "timeline"; // 只有评论
+    if (hasToc && !hasComments) return "toc";     // 只有目录
+    return "toc"; // 默认目录（都有或都没有的情况）
+  };
+
+  const getInitialTimelineExpanded = (): boolean => {
+    if (!hasToc && hasComments) return true;  // 只有评论时始终展开
+    if (hasToc && !hasComments) return false; // 只有目录时不展开
+    return false; // 默认不展开
+  };
+
   // 当前显示模式
-  const [mode, setMode] = useState<SidebarMode>("toc");
+  const [mode, setMode] = useState<SidebarMode>(getInitialMode());
   // 是否为手动切换（手动切换后暂时禁用自动切换）
   const [isManualOverride, setIsManualOverride] = useState(false);
   // 当前激活的评论 ID
@@ -32,7 +49,7 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
   // 用于追踪自动切换的锁定计时器
   const manualOverrideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 时间轴悬停展开状态（仅桌面端）
-  const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
+  const [isTimelineExpanded, setIsTimelineExpanded] = useState(getInitialTimelineExpanded());
   // 检测是否为移动端（无悬停能力）
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
@@ -73,8 +90,11 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
             // 评论区进入视口，切换到时间轴
             setMode("timeline");
           } else {
-            // 评论区离开视口，切换回目录
-            setMode("toc");
+            // 评论区离开视口，切换回目录（仅当目录存在时）
+            const currentHasToc = headings.length > 0;
+            if (currentHasToc) {
+              setMode("toc");
+            }
           }
         });
       },
@@ -90,7 +110,7 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
     return () => {
       observer.disconnect();
     };
-  }, [isManualOverride]);
+  }, [isManualOverride, headings]);
 
   // 监听评论可见性，更新激活的评论
   useEffect(() => {
@@ -165,16 +185,18 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
 
   // 悬停事件处理 - 移到条件返回之前
   const handleMouseEnter = useCallback(() => {
-    if (!isTouchDevice && mode === "timeline") {
+    // 只有在同时有目录和评论时，才启用悬停收缩/展开功能
+    if (!isTouchDevice && mode === "timeline" && hasToc && hasComments) {
       setIsTimelineExpanded(true);
     }
-  }, [isTouchDevice, mode]);
+  }, [isTouchDevice, mode, hasToc, hasComments]);
 
   const handleMouseLeave = useCallback(() => {
-    if (!isTouchDevice) {
+    // 只有在同时有目录和评论时，才启用悬停收缩功能
+    if (!isTouchDevice && hasToc && hasComments) {
       setIsTimelineExpanded(false);
     }
-  }, [isTouchDevice]);
+  }, [isTouchDevice, hasToc, hasComments]);
 
   // 清理计时器
   useEffect(() => {
@@ -185,8 +207,7 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
     };
   }, []);
 
-  const hasToc = headings.length > 0;
-  const hasComments = comments.length > 0;
+  // 自动切换逻辑已经通过初始状态函数处理，不需要额外的 useEffect
 
   // 如果既没有目录也没有评论，不显示侧边栏
   if (!hasToc && !hasComments) {
@@ -199,7 +220,7 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
   return (
     <div
       className={`post-sidebar ${
-        mode === "timeline" && !shouldTimelineExpand && hasComments
+        mode === "timeline" && !shouldTimelineExpand && hasComments && hasToc
           ? "post-sidebar-collapsed"
           : ""
       }`}
@@ -248,16 +269,16 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
 
       {/* 切换控制区域 */}
       <div
-        className={`sidebar-controls ${
-          mode === "timeline" && !shouldTimelineExpand && hasComments
+        className={`${
+          mode === "timeline" && !shouldTimelineExpand && hasComments && hasToc
             ? "sidebar-controls-collapsed"
             : ""
-        }`}
+        } ${hasComments && hasToc ? "sidebar-controls" : "hidden"}`}
       >
         {/* 模式切换按钮 */}
         <button
           onClick={handleManualSwitch}
-          className="sidebar-toggle-btn"
+          className={`${hasComments && hasToc ? "block sidebar-toggle-btn" : "hidden"}`}
           title={mode === "toc" ? "切换到评论时间轴" : "切换到文章目录"}
         >
           {mode === "toc" ? (
@@ -299,6 +320,47 @@ export default function PostSidebar({ headings, comments }: PostSidebarProps) {
           )}
         </button>
       </div>
+
+      {/* 固定位置的切换按钮（相对于屏幕） */}
+      {(hasComments && hasToc) && (
+        <button
+          onClick={handleManualSwitch}
+          className="sidebar-fixed-toggle"
+          title={mode === "toc" ? "切换到评论时间轴" : "切换到文章目录"}
+        >
+          {mode === "toc" ? (
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          ) : (
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 10h16M4 14h16M4 18h16"
+              />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
   );
 }

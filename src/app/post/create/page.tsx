@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
@@ -11,6 +11,7 @@ import { X, Loader2, ChevronDown, ChevronUp, Settings, Paperclip, FileText } fro
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
@@ -31,9 +32,9 @@ export default function CreatePostPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin?callbackUrl=/post/create");
+      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [status, router]);
+  }, [status, router, pathname]);
 
   const uploadFile = async (file: File, endpoint: string, onProgress: (percent: number, status: string) => void) => {
     const formData = new FormData();
