@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 
-export default function SignUp() {
+function SignUpContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -128,5 +128,28 @@ export default function SignUp() {
         </form>
       </Card>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="max-w-md w-full space-y-8 p-8">
+        <div className="text-center">
+          <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
+            注册同学论坛账号
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">加载中...</p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <SignUpContent />
+    </Suspense>
   );
 }

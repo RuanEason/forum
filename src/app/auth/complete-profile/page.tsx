@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
 
-export default function CompleteProfile() {
+function CompleteProfileContent() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -195,5 +195,28 @@ export default function CompleteProfile() {
         </form>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            完善个人信息
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">加载中...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CompleteProfile() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CompleteProfileContent />
+    </Suspense>
   );
 }
