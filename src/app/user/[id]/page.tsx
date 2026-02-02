@@ -19,7 +19,14 @@ interface UserStats {
 async function getUserProfile(id: string) {
   return prisma.user.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatar: true,
+      bio: true,
+      coverImage: true,
+      createdAt: true,
       posts: {
         include: {
           author: {
@@ -105,7 +112,7 @@ export async function generateMetadata({
   const { id } = await params;
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { name: true, bio: true, avatar: true },
+    select: { name: true, bio: true, avatar: true, coverImage: true },
   });
 
   if (!user) {

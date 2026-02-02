@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
-  // 从 session 中获取初始值，避免页面刷新时显示错误的值
+  const [coverImage, setCoverImage] = useState("");
   const [postViewMode, setPostViewMode] = useState(
     (session?.user as any)?.postViewMode || "both"
   );
@@ -26,8 +26,10 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -37,10 +39,8 @@ export default function SettingsPage() {
       const user = session.user as any;
       setName(user.name || "");
       setAvatar(user.avatar || "");
+      setCoverImage(user.coverImage || "");
       setPostViewMode(user.postViewMode || "both");
-      // Bio is not in session by default, we might need to fetch it or just rely on what we have.
-      // For now, let's assume we update what's in session.
-      // Ideally, we should fetch the latest user data from an API.
       fetchUserData();
     }
   }, [status, router, session, pathname]);
@@ -50,12 +50,13 @@ export default function SettingsPage() {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch("/api/auth/me"); // We need this endpoint
+      const response = await fetch("/api/auth/me");
       if (response.ok) {
         const data = await response.json();
         setName(data.name || "");
         setBio(data.bio || "");
         setAvatar(data.avatar || "");
+        setCoverImage(data.coverImage || "");
         setPostViewMode(data.postViewMode || "both");
       }
     } catch (err) {
@@ -98,6 +99,45 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("请上传图片文件");
+      return;
+    }
+
+    setUploadingCover(true);
+    setError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/upload/background", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCoverImage(data.url);
+      } else {
+        setError(data.error || "背景图上传失败");
+      }
+    } catch {
+      setError("网络错误，背景图上传失败");
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleRemoveCover = () => {
+    setCoverImage("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -106,12 +146,11 @@ export default function SettingsPage() {
 
     try {
       const response = await fetch("/api/auth/complete-profile", {
-        // Reusing this endpoint as it updates user
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, bio, avatar, postViewMode }),
+        body: JSON.stringify({ name, bio, avatar, postViewMode, coverImage }),
       });
 
       const data = await response.json();
@@ -124,6 +163,7 @@ export default function SettingsPage() {
             name: name,
             avatar: avatar,
             postViewMode: postViewMode,
+            coverImage: coverImage,
           },
         });
         setSuccess("个人信息更新成功！");
@@ -252,6 +292,56 @@ export default function SettingsPage() {
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    个人简介背景图
+                  </label>
+                  <div className="space-y-3">
+                    <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-200 relative">
+                      {coverImage ? (
+                        <img
+                          src={coverImage}
+                          alt="背景图预览"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                          暂无背景图
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => coverInputRef.current?.click()}
+                        disabled={uploadingCover}
+                      >
+                        {uploadingCover ? "上传中..." : "更换背景图"}
+                      </Button>
+                      <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleCoverChange}
+                      />
+                      {coverImage && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={handleRemoveCover}
+                        >
+                          移除背景图
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      背景图会显示在您的个人主页顶部，建议使用宽图（建议尺寸 1920x500 像素）。上传后会自动优化尺寸。
+                    </p>
+                  </div>
+                </div>
 
                 <div>
                   <label

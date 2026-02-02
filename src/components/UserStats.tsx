@@ -33,7 +33,7 @@ export default function UserStats({
   };
 
   return (
-    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
+    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200 mt-8">
       <div className="p-4 sm:p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-4">用户统计</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

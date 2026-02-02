@@ -29,9 +29,12 @@ interface User {
   email: string;
   avatar: string | null;
   bio: string | null;
+  coverImage: string | null;
   createdAt: string;
   posts: Post[];
 }
+
+const DEFAULT_COVER_IMAGE = "/Default-user-background-image.png";
 
 interface UserProfileClientProps {
   user: User;
@@ -46,7 +49,6 @@ export default function UserProfileClient({
 }: UserProfileClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Close on ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsModalOpen(false);
@@ -55,85 +57,103 @@ export default function UserProfileClient({
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-  // Close on click outside
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setIsModalOpen(false);
     }
   };
 
+  const coverUrl = user.coverImage || DEFAULT_COVER_IMAGE;
+  const hasCover = !!coverUrl;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-4 sm:px-0">
-          {/* User Info Card */}
-          <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
-            <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between">
+          {hasCover && (
+            <div
+              className="w-full h-48 sm:h-64 rounded-t-lg relative overflow-hidden"
+              style={{
+                backgroundImage: `url(${coverUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+          )}
+          <div
+            className={`bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-200 ${hasCover ? "rounded-t-none" : ""}`}
+          >
+            <div className="p-4 sm:p-6 relative">
               <div className="sm:hidden mb-4">
                 <BackButton />
               </div>
-              <div className="flex items-center relative">
-                <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
-                  <BackButton />
+              {isCurrentUser && (
+                <div className="absolute top-4 right-4 flex gap-2 z-20">
+                  <Link href="/settings" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M4 18v-8v.325V6zM4 8h16V6H4zm7.575 12H2V4h20v7.325q-.875-.625-1.912-.975T17.9 10q-1.425 0-2.687.538T13 12H4v6h6.975q.075.525.225 1.025t.375.975m5.325 2l-.3-1.5q-.3-.125-.562-.262T15.5 19.9l-1.45.45l-1-1.7l1.15-1q-.05-.325-.05-.65t.05-.65l-1.15-1l1-1.7l1.45.45q.275-.2.538-.337t.562-.263l.3-1.5h2l.3 1.5q.3.125.563.263t.537.337l1.45-.45l1 1.7l-1.15 1q.05.325.05.65t-.05.65l1.15 1l-1 1.7l-1.45-.45q-.275.2-.537.338t-.563.262l-.3 1.5zm1-3q.825 0 1.413-.587T19.9 17t-.587-1.412T17.9 15t-1.412.588T15.9 17t.588 1.413T17.9 19"/></svg>
+                  </Link>
+                  <button onClick={() => setIsModalOpen(true)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </button>
                 </div>
-                <Avatar src={user.avatar} name={user.name} size="xl" />
-                <div className="ml-4 sm:ml-6">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              )}
+              <div className="hidden sm:block absolute left-4 top-4 z-10">
+                <BackButton />
+              </div>
+              {hasCover && (
+                <div className="h-16 sm:h-20"></div>
+              )}
+              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                <div className={`${hasCover ? "-mt-16 sm:-mt-20" : ""} flex-shrink-0`}>
+                  <Avatar src={user.avatar} name={user.name} size="xl" />
+                </div>
+                <div className="flex-1 flex flex-col justify-end">
+                  <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
                     {user.name || "匿名用户"}
                   </h1>
-                  <p className="text-gray-500 text-xs sm:text-sm mt-1">
+                  <p className="text-gray-500 text-xs sm:text-sm">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}
                   </p>
                   {user.bio && (
-                    <p className="mt-2 sm:mt-4 text-sm sm:text-base text-gray-700">
+                    <p className="mt-2 text-sm sm:text-base text-gray-700">
                       {user.bio}
                     </p>
                   )}
                 </div>
               </div>
-              {isCurrentUser && (
-                <div className="mt-4 sm:mt-0 flex justify-end gap-2">
-                  <Link
-                    href="/settings"
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    编辑资料
-                  </Link>
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn btn-danger"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                      <polyline points="16 17 21 12 16 7"></polyline>
-                      <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    退出登录
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* User Stats Grid */}
-          <UserStats
-            daysJoined={stats.daysJoined}
-            postsPublished={stats.postsPublished}
-            totalViews={stats.totalViews}
-            likesReceived={stats.likesReceived}
-            likesGiven={stats.likesGiven}
-          />
+          <div
+            className={`-mt-8 sm:-mt-8 mb-6 sm:mb-8  z-10 relative ${
+              hasCover ? "" : "hidden"
+            }`}
+          >
+            <UserStats
+              daysJoined={stats.daysJoined}
+              postsPublished={stats.postsPublished}
+              totalViews={stats.totalViews}
+              likesReceived={stats.likesReceived}
+              likesGiven={stats.likesGiven}
+            />
+          </div>
 
-          {/* User Posts */}
+          {!hasCover && (
+            <div className="mb-6">
+              <UserStats
+                daysJoined={stats.daysJoined}
+                postsPublished={stats.postsPublished}
+                totalViews={stats.totalViews}
+                likesReceived={stats.likesReceived}
+                likesGiven={stats.likesGiven}
+              />
+            </div>
+          )}
+
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0">
             发布的帖子 ({user.posts.length})
           </h2>
@@ -141,7 +161,6 @@ export default function UserProfileClient({
         </div>
       </div>
 
-      {/* Logout Modal */}
       <div
         className={`modal-overlay ${isModalOpen ? "open" : ""}`}
         onClick={handleOverlayClick}

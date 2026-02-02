@@ -16,9 +16,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, avatar, bio, postViewMode } = await request.json();
+    const { name, avatar, bio, postViewMode, coverImage } = await request.json();
 
-    // Validate name
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate avatar (optional)
     if (avatar !== undefined && avatar !== null) {
       if (typeof avatar !== 'string') {
         return NextResponse.json({ error: "Avatar must be a string" }, { status: 400 });
@@ -42,7 +40,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate bio (optional)
     if (bio !== undefined && bio !== null) {
       if (typeof bio !== 'string') {
         return NextResponse.json({ error: "Bio must be a string" }, { status: 400 });
@@ -55,12 +52,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate postViewMode (optional)
     if (postViewMode !== undefined && postViewMode !== null) {
       const validModes = ['both', 'title', 'content', 'titleAndContent'];
       if (!validModes.includes(postViewMode)) {
         return NextResponse.json(
           { error: `postViewMode must be one of: ${validModes.join(', ')}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (coverImage !== undefined && coverImage !== null) {
+      if (typeof coverImage !== 'string') {
+        return NextResponse.json({ error: "Cover image must be a string" }, { status: 400 });
+      }
+      if (coverImage.length > MAX_URL_LENGTH) {
+        return NextResponse.json(
+          { error: `Cover image URL must be less than ${MAX_URL_LENGTH} characters` },
           { status: 400 }
         );
       }
@@ -73,6 +81,7 @@ export async function POST(request: NextRequest) {
         avatar,
         bio,
         postViewMode,
+        coverImage,
       }
     });
 

@@ -24,6 +24,7 @@ model User {
   avatar       String?
   bio          String?
   postViewMode String        @default("both") // title, content, both
+  coverImage   String?
   posts        Post[]
   createdTopics Topic[]      @relation("TopicCreator")
   topics       Topic[]       @relation("TopicFollows")
