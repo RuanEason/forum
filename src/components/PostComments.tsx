@@ -173,7 +173,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
           placeholder={
             parentId
               ? "在这里输入你的回复..."
-              : "在这里输入你的评论 (支持 Markdown)..."
+              : "在这里输入你的评论..."
           }
           value={content}
           onChange={(e) => setContent(e.target.value)}
