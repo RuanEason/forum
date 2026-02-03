@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@ffmpeg-installer/linux-x64": "^4.1.0",
-    "@ffmpeg-installer/win32-x64": "^4.1.0",
     "@prisma/client": "^5.10.2",
     "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^2.4.6",
