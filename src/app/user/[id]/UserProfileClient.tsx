@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import Avatar from "@/components/Avatar";
@@ -48,6 +48,14 @@ export default function UserProfileClient({
   stats,
 }: UserProfileClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const coverUrl = user.coverImage || DEFAULT_COVER_IMAGE;
+  const hasCover = !!coverUrl;
+  const isVideo = coverUrl?.includes('backgrounds') && coverUrl?.includes('.mp4');
+  const previewUrl = isVideo ? coverUrl.replace('.mp4', '_preview.webp') : coverUrl;
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -57,28 +65,88 @@ export default function UserProfileClient({
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
+  useEffect(() => {
+    if (isVideo && !videoLoaded && !videoError) {
+      const timeout = setTimeout(() => {
+        console.log('Video load timeout, force showing');
+        setVideoLoaded(true);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [isVideo, videoLoaded, videoError]);
+
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setIsModalOpen(false);
     }
   };
 
-  const coverUrl = user.coverImage || DEFAULT_COVER_IMAGE;
-  const hasCover = !!coverUrl;
-
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <div className="px-4 sm:px-0">
           {hasCover && (
-            <div
-              className="w-full h-48 sm:h-64 rounded-t-lg relative overflow-hidden"
-              style={{
-                backgroundImage: `url(${coverUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
+            <div className="w-full h-48 sm:h-64 rounded-t-lg relative overflow-hidden">
+              {isVideo ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={coverUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    onLoadedData={() => {
+                      console.log('Video loaded data');
+                      setVideoLoaded(true);
+                    }}
+                    onCanPlay={() => {
+                      console.log('Video can play');
+                      setVideoLoaded(true);
+                      const video = videoRef.current;
+                      if (video) {
+                        video.play().catch(err => {
+                          console.warn('Video play error:', err);
+                        });
+                      }
+                    }}
+                    onPlay={() => {
+                      console.log('Video play event fired');
+                    }}
+                    onPlaying={() => {
+                      console.log('Video is now playing');
+                    }}
+                    onError={(e) => {
+                      console.error('Video load error:', e);
+                      setVideoError(true);
+                      setTimeout(() => setVideoLoaded(true), 1000);
+                    }}
+                    onLoadStart={() => console.log('Video load started')}
+                    onWaiting={() => console.log('Video waiting')}
+                    onStalled={() => console.log('Video stalled')}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                      videoLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                  <img
+                    src={previewUrl}
+                    alt="背景预览"
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                      videoLoaded ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  />
+                </>
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(${coverUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                />
+              )}
+            </div>
           )}
           <div
             className={`bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-200 ${hasCover ? "rounded-t-none" : ""}`}

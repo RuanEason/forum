@@ -31,6 +31,9 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  const isVideo = coverImage?.includes('backgrounds') && coverImage?.includes('.mp4');
+  const previewUrl = isVideo ? coverImage.replace('.mp4', '_preview.webp') : coverImage;
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
@@ -103,8 +106,11 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("请上传图片文件");
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      setError("请上传图片或视频文件");
       return;
     }
 
@@ -300,11 +306,31 @@ export default function SettingsPage() {
                   <div className="space-y-3">
                     <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-200 relative">
                       {coverImage ? (
-                        <img
-                          src={coverImage}
-                          alt="背景图预览"
-                          className="w-full h-full object-cover"
-                        />
+                        isVideo ? (
+                          <>
+                            <video
+                              src={coverImage}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              onError={(e) => console.error('Preview video error:', e)}
+                              onLoadStart={() => console.log('Preview video load started')}
+                              className="w-full h-full object-cover"
+                            />
+                            <img
+                              src={previewUrl}
+                              alt="背景预览"
+                              className="w-full h-full object-cover"
+                            />
+                          </>
+                        ) : (
+                          <img
+                            src={coverImage}
+                            alt="背景图预览"
+                            className="w-full h-full object-cover"
+                          />
+                        )
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                           暂无背景图
@@ -318,12 +344,12 @@ export default function SettingsPage() {
                         onClick={() => coverInputRef.current?.click()}
                         disabled={uploadingCover}
                       >
-                        {uploadingCover ? "上传中..." : "更换背景图"}
+                        {uploadingCover ? "处理中..." : "更换背景图"}
                       </Button>
                       <input
                         ref={coverInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/*,video/*"
                         className="hidden"
                         onChange={handleCoverChange}
                       />
@@ -338,7 +364,7 @@ export default function SettingsPage() {
                       )}
                     </div>
                     <p className="text-xs text-gray-500">
-                      背景图会显示在您的个人主页顶部，建议使用宽图（建议尺寸 1920x500 像素）。上传后会自动优化尺寸。
+                      支持上传图片（JPEG、PNG、WebP、GIF）或视频（MP4、MOV）。视频会自动转换为 MP4 格式并压缩，最大支持 100MB。建议尺寸 1920x500 像素。
                     </p>
                   </div>
                 </div>

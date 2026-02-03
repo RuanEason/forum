@@ -43,6 +43,12 @@ export async function uploadToCOS(fileBuffer: Buffer, filename: string): Promise
     contentType = 'image/webp';
   } else if (ext === 'gif') {
     contentType = 'image/gif';
+  } else if (ext === 'mp4') {
+    contentType = 'video/mp4';
+  } else if (ext === 'mov') {
+    contentType = 'video/quicktime';
+  } else if (ext === 'avi') {
+    contentType = 'video/x-msvideo';
   }
 
   return new Promise((resolve, reject) => {
