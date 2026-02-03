@@ -4,12 +4,17 @@ import { useRouter } from "next/navigation";
 
 interface BackButtonProps {
   href?: string;
+  onBeforeNavigate?: () => boolean;
 }
 
-export default function BackButton({ href }: BackButtonProps) {
+export default function BackButton({ href, onBeforeNavigate }: BackButtonProps) {
   const router = useRouter();
 
   const handleClick = () => {
+    if (onBeforeNavigate && onBeforeNavigate()) {
+      return;
+    }
+
     if (href) {
       router.push(href);
     } else {

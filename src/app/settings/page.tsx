@@ -28,11 +28,50 @@ export default function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChangesRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  const initialDataRef = useRef({
+    name: "",
+    bio: "",
+    avatar: "",
+    coverImage: "",
+    postViewMode: "both"
+  });
+
   const isVideo = coverImage?.includes('backgrounds') && coverImage?.includes('.mp4');
   const previewUrl = isVideo ? coverImage.replace('.mp4', '_preview.webp') : coverImage;
+
+  const checkHasChanges = () => {
+    return (
+      name !== initialDataRef.current.name ||
+      bio !== initialDataRef.current.bio ||
+      avatar !== initialDataRef.current.avatar ||
+      coverImage !== initialDataRef.current.coverImage ||
+      postViewMode !== initialDataRef.current.postViewMode
+    );
+  };
+
+  const updateUnsavedChanges = () => {
+    const hasChanges = checkHasChanges();
+    setHasUnsavedChanges(hasChanges);
+    hasUnsavedChangesRef.current = hasChanges;
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = "您的更改可能未保存。";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -61,6 +100,14 @@ export default function SettingsPage() {
         setAvatar(data.avatar || "");
         setCoverImage(data.coverImage || "");
         setPostViewMode(data.postViewMode || "both");
+        initialDataRef.current = {
+          name: data.name || "",
+          bio: data.bio || "",
+          avatar: data.avatar || "",
+          coverImage: data.coverImage || "",
+          postViewMode: data.postViewMode || "both"
+        };
+        setHasUnsavedChanges(false);
       }
     } catch (err) {
       console.error("Failed to fetch user data", err);
@@ -92,6 +139,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         setAvatar(data.url);
+        updateUnsavedChanges();
       } else {
         setError(data.error || "图片上传失败");
       }
@@ -130,6 +178,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         setCoverImage(data.url);
+        updateUnsavedChanges();
       } else {
         setError(data.error || "背景图上传失败");
       }
@@ -142,6 +191,7 @@ export default function SettingsPage() {
 
   const handleRemoveCover = () => {
     setCoverImage("");
+    updateUnsavedChanges();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,6 +223,14 @@ export default function SettingsPage() {
           },
         });
         setSuccess("个人信息更新成功！");
+        initialDataRef.current = {
+          name,
+          bio,
+          avatar,
+          coverImage,
+          postViewMode
+        };
+        setHasUnsavedChanges(false);
         router.refresh();
       } else {
         setError(data.error || "更新失败");
@@ -235,11 +293,27 @@ export default function SettingsPage() {
         <Card>
           <div className="px-4 py-5 sm:p-6">
             <div className="sm:hidden mb-4">
-              <BackButton href="/" />
+                <BackButton
+                  href="/"
+                  onBeforeNavigate={() => {
+                    if (hasUnsavedChanges) {
+                      return !confirm("您有未保存的更改，确定要离开吗？");
+                    }
+                    return false;
+                  }}
+                />
             </div>
             <div className="relative">
               <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
-                <BackButton href="/" />
+              <BackButton
+                href="/"
+                onBeforeNavigate={() => {
+                  if (hasUnsavedChanges) {
+                    return !confirm("您有未保存的更改，确定要离开吗？");
+                  }
+                  return false;
+                }}
+              />
               </div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 编辑个人资料
@@ -287,7 +361,10 @@ export default function SettingsPage() {
                   type="text"
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    updateUnsavedChanges();
+                  }}
                 />
 
                 <Textarea
@@ -296,7 +373,10 @@ export default function SettingsPage() {
                   label="个人简介"
                   rows={3}
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  onChange={(e) => {
+                    setBio(e.target.value);
+                    updateUnsavedChanges();
+                  }}
                 />
 
                 <div>
@@ -378,7 +458,10 @@ export default function SettingsPage() {
                   </label>
                   <Dropdown
                     value={postViewMode}
-                    onChange={(value) => setPostViewMode(value)}
+                    onChange={(value) => {
+                      setPostViewMode(value);
+                      updateUnsavedChanges();
+                    }}
                     options={[
                       { value: "both", label: "智能显示标题或正文" },
                       { value: "title", label: "仅显示标题" },
