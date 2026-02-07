@@ -53,12 +53,15 @@ model Post {
   topicId     String?
   topic       Topic?           @relation(fields: [topicId], references: [id])
   viewCount   Int              @default(0)
+  pinned      Boolean          @default(false)
+  pinnedAt    DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   @@index([authorId])
   @@index([createdAt])
   @@index([topicId])
+  @@index([pinned, pinnedAt])
 }
 
 model Topic {
