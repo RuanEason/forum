@@ -9,7 +9,6 @@ import UserStats from "@/components/UserStats";
 import FollowButton from "@/components/FollowButton";
 import { signOut } from "next-auth/react";
 import BackButton from "@/components/BackButton";
-import { Users } from "lucide-react";
 
 interface UserStatsData {
   daysJoined: number;
@@ -20,7 +19,6 @@ interface UserStatsData {
   followersCount: number;
   followingCount: number;
   experience: number;
-  level: number;
 }
 
 interface Post {
@@ -43,12 +41,51 @@ interface User {
 
 const DEFAULT_COVER_IMAGE = "/Default-user-background-image.png";
 
+const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
+
+const getLevelProgress = (experience: number) => {
+  const safeExperience =
+    Number.isFinite(experience) && experience > 0 ? Math.floor(experience) : 0;
+
+  const displayLevel = LEVEL_THRESHOLDS.reduce((level, requiredExperience) => {
+    if (safeExperience >= requiredExperience) {
+      return level + 1;
+    }
+    return level;
+  }, 0);
+
+  const currentLevelBase = displayLevel === 0 ? 0 : LEVEL_THRESHOLDS[displayLevel - 1];
+  const nextLevelRequired = LEVEL_THRESHOLDS[displayLevel] ?? currentLevelBase;
+
+  if (nextLevelRequired === currentLevelBase) {
+    const maxLevelProgress = Math.max(safeExperience - currentLevelBase, 1);
+    return {
+      displayLevel,
+      progressCurrent: maxLevelProgress,
+      progressTarget: maxLevelProgress,
+      progressPercent: 100,
+    };
+  }
+
+  const progressTarget = nextLevelRequired - currentLevelBase;
+  const progressCurrent = Math.max(safeExperience - currentLevelBase, 0);
+
+  return {
+    displayLevel,
+    progressCurrent,
+    progressTarget,
+    progressPercent: Math.min((progressCurrent / progressTarget) * 100, 100),
+  };
+};
+
 interface UserProfileClientProps {
   user: User;
   isCurrentUser: boolean;
   stats: UserStatsData;
   isFollowing?: boolean;
 }
+
+type UserPostListProps = Parameters<typeof UserPostList>[0]["initialPosts"];
 
 export default function UserProfileClient({
   user,
@@ -60,6 +97,7 @@ export default function UserProfileClient({
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const levelProgress = getLevelProgress(stats.experience);
 
   const coverUrl = user.coverImage || DEFAULT_COVER_IMAGE;
   const hasCover = !!coverUrl;
@@ -202,7 +240,7 @@ export default function UserProfileClient({
                     {user.name || "匿名用户"}
                   </h1>
                   {(isCurrentUser || user.showUserData !== false) && (
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                       <Link
                         href={`/user/${user.id}/connections?tab=following`}
                         className="hover:text-indigo-600 transition-colors"
@@ -216,6 +254,21 @@ export default function UserProfileClient({
                       >
                         <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
                       </Link>
+                      <span>·</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
+                        <div className="w-32 sm:w-36 flex items-center gap-2">
+                          <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-indigo-500 transition-all"
+                              style={{ width: `${levelProgress.progressPercent}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
+                            {levelProgress.progressCurrent}/{levelProgress.progressTarget}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                   <p className="text-gray-500 text-xs sm:text-sm mt-1">
@@ -244,8 +297,6 @@ export default function UserProfileClient({
                   totalViews={stats.totalViews}
                   likesReceived={stats.likesReceived}
                   likesGiven={stats.likesGiven}
-                  experience={stats.experience}
-                  level={stats.level}
                 />
               </div>
 
@@ -257,8 +308,6 @@ export default function UserProfileClient({
                     totalViews={stats.totalViews}
                     likesReceived={stats.likesReceived}
                     likesGiven={stats.likesGiven}
-                    experience={stats.experience}
-                    level={stats.level}
                   />
                 </div>
               )}
@@ -268,7 +317,7 @@ export default function UserProfileClient({
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0">
             发布的帖子 ({user.posts.length})
           </h2>
-          <UserPostList initialPosts={user.posts as any} />
+          <UserPostList initialPosts={user.posts as unknown as UserPostListProps} />
         </div>
       </div>
 

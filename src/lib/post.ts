@@ -16,6 +16,7 @@ export async function getPosts(topicId?: string) {
           id: true,
           name: true,
           avatar: true,
+          experience: true,
         },
       },
       likes: {

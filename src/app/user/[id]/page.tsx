@@ -113,14 +113,14 @@ async function getUserProfileWithStats(id: string) {
 
   const stats = {
     daysJoined: Math.max(daysJoined, 1),
-    postsPublished,
-    totalViews,
-    likesReceived,
-    likesGiven,
-    followersCount,
-    followingCount,
-    experience: user.experience,
-    level: getUserLevel(user.experience),
+    postsPublished: postsPublished ?? 0,
+    totalViews: totalViews ?? 0,
+    likesReceived: likesReceived ?? 0,
+    likesGiven: likesGiven ?? 0,
+    followersCount: followersCount ?? 0,
+    followingCount: followingCount ?? 0,
+    experience: user.experience ?? 0,
+    level: getUserLevel(user.experience ?? 0),
   };
 
   return { user, stats };

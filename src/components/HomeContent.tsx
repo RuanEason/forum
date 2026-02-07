@@ -11,10 +11,19 @@ import RepostButton from "@/components/RepostButton";
 import PinButton from "@/components/PinButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { Eye, MessageCircle, Plus, Pin } from "lucide-react";
+
+const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
+
+const getUserLevel = (experience: number) =>
+  LEVEL_THRESHOLDS.reduce((level, requiredExperience) => {
+    if (experience >= requiredExperience) {
+      return level + 1;
+    }
+    return level;
+  }, 0);
 
 interface PostProps {
   id: string;
@@ -27,6 +36,7 @@ interface PostProps {
     id: string;
     name: string | null;
     avatar: string | null;
+    experience?: number | null;
   };
   likes: {
     userId: string;
@@ -73,11 +83,13 @@ export default function HomeContent({
   hideCreateButton = false,
   onPostDeleted,
   currentUserId,
+  showAuthorLevel = false,
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
   onPostDeleted?: () => void;
   currentUserId?: string;
+  showAuthorLevel?: boolean;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -184,6 +196,11 @@ export default function HomeContent({
                             >
                               {post.author.name || "匿名用户"}
                             </Link>
+                            {showAuthorLevel && (
+                              <span className="text-xs font-medium text-indigo-600">
+                                lv.{getUserLevel(post.author.experience ?? 0)}
+                              </span>
+                            )}
                             {post.topic && (
                               <Link href={`/topic/${post.topic.id}`}>
                                 <Badge variant="primary" size="sm">

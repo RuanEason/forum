@@ -16,5 +16,11 @@ export default async function Home() {
     pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
   }));
 
-  return <HomeContent initialPosts={serializedPosts} currentUserId={session?.user?.id} />;
+  return (
+    <HomeContent
+      initialPosts={serializedPosts}
+      currentUserId={session?.user?.id}
+      showAuthorLevel
+    />
+  );
 }

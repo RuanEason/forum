@@ -115,6 +115,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             id: true,
             name: true,
             avatar: true,
+            experience: true,
           },
         },
         likes: {
