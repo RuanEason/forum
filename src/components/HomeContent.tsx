@@ -8,18 +8,21 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PinButton from "@/components/PinButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { Eye, MessageCircle, Plus } from "lucide-react";
+import { Eye, MessageCircle, Plus, Pin } from "lucide-react";
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
   viewCount?: number;
+  pinned?: boolean;
+  pinnedAt?: string | null;
   author: {
     id: string;
     name: string | null;
@@ -196,6 +199,13 @@ export default function HomeContent({
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
+                          {/* 置顶标识 */}
+                          {post.pinned && (
+                            <div className="flex items-center gap-1 text-orange-500 text-xs font-medium mb-2">
+                              <Pin className="w-4 h-4" />
+                              <span>已置顶</span>
+                            </div>
+                          )}
                           <div
                             onClick={(e) => {
                               if ((e.target as HTMLElement).closest("a"))
@@ -277,6 +287,12 @@ export default function HomeContent({
                           <div className="flex items-center">
                             <RepostButton postId={post.id} />
                           </div>
+                          {/* 置顶按钮 - 仅管理员可见 */}
+                          {(session?.user as any)?.role === "admin" && (
+                            <div className="flex items-center">
+                              <PinButton postId={post.id} isPinned={post.pinned || false} />
+                            </div>
+                          )}
                           {/* 删除按钮 */}
                           {(session?.user as any)?.id &&
                             (session?.user as any)?.id === post.author.id && (
@@ -285,7 +301,7 @@ export default function HomeContent({
                                 className="text-red-500 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-"                                  <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
+                                  <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
                                 </svg>
                               </button>
                             )}

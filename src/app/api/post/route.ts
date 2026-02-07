@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteFromCOS } from "@/lib/cos";
+import { addUserExperience, EXPERIENCE_REWARDS } from "@/lib/experience";
 
 /**
  * 帖子字段最大长度限制
@@ -166,6 +167,12 @@ export async function POST(request: NextRequest) {
 
     // 传入 title
     const post = await createPost(title, content, session.user.id, images, topicId, attachments);
+
+    try {
+      await addUserExperience(session.user.id, EXPERIENCE_REWARDS.post);
+    } catch (error) {
+      console.error("Failed to reward post experience:", error);
+    }
 
     return NextResponse.json({ message: "Post created successfully", post }, { status: 201 });
   } catch (error) {

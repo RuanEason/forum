@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { addUserExperience, EXPERIENCE_REWARDS } from "@/lib/experience";
 
 /**
  * 创建评论或回复
@@ -82,6 +83,12 @@ export async function POST(request: NextRequest) {
         replies: true,
       }
     });
+
+    try {
+      await addUserExperience(authorId, EXPERIENCE_REWARDS.comment);
+    } catch (error) {
+      console.error("Failed to reward comment experience:", error);
+    }
 
     // Notification Logic
     // 1. If reply to comment (parentId exists), notify comment author

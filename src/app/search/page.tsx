@@ -187,6 +187,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ...post,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
+    pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
   }));
 
   const hasUsers = users.length > 0;

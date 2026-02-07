@@ -6,8 +6,10 @@ import { format } from "date-fns";
 import Avatar from "@/components/Avatar";
 import UserPostList from "@/components/UserPostList";
 import UserStats from "@/components/UserStats";
+import FollowButton from "@/components/FollowButton";
 import { signOut } from "next-auth/react";
 import BackButton from "@/components/BackButton";
+import { Users } from "lucide-react";
 
 interface UserStatsData {
   daysJoined: number;
@@ -15,6 +17,10 @@ interface UserStatsData {
   totalViews: number;
   likesReceived: number;
   likesGiven: number;
+  followersCount: number;
+  followingCount: number;
+  experience: number;
+  level: number;
 }
 
 interface Post {
@@ -32,6 +38,7 @@ interface User {
   coverImage: string | null;
   createdAt: string;
   posts: Post[];
+  showUserData?: boolean;
 }
 
 const DEFAULT_COVER_IMAGE = "/Default-user-background-image.png";
@@ -40,12 +47,14 @@ interface UserProfileClientProps {
   user: User;
   isCurrentUser: boolean;
   stats: UserStatsData;
+  isFollowing?: boolean;
 }
 
 export default function UserProfileClient({
   user,
   isCurrentUser,
   stats,
+  isFollowing = false,
 }: UserProfileClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -155,20 +164,29 @@ export default function UserProfileClient({
               <div className="sm:hidden mb-4">
                 <BackButton />
               </div>
-              {isCurrentUser && (
-                <div className="absolute top-4 right-4 flex gap-2 z-20">
-                  <Link href="/settings" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M4 18v-8v.325V6zM4 8h16V6H4zm7.575 12H2V4h20v7.325q-.875-.625-1.912-.975T17.9 10q-1.425 0-2.687.538T13 12H4v6h6.975q.075.525.225 1.025t.375.975m5.325 2l-.3-1.5q-.3-.125-.562-.262T15.5 19.9l-1.45.45l-1-1.7l1.15-1q-.05-.325-.05-.65t.05-.65l-1.15-1l1-1.7l1.45.45q.275-.2.538-.337t.562-.263l.3-1.5h2l.3 1.5q.3.125.563.263t.537.337l1.45-.45l1 1.7l-1.15 1q.05.325.05.65t-.05.65l1.15 1l-1 1.7l-1.45-.45q-.275.2-.537.338t-.563.262l-.3 1.5zm1-3q.825 0 1.413-.587T19.9 17t-.587-1.412T17.9 15t-1.412.588T15.9 17t.588 1.413T17.9 19"/></svg>
-                  </Link>
-                  <button onClick={() => setIsModalOpen(true)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                      <polyline points="16 17 21 12 16 7"></polyline>
-                      <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                  </button>
-                </div>
-              )}
+              <div className="absolute top-4 right-4 flex gap-2 z-20">
+                {!isCurrentUser && (
+                  <FollowButton
+                    userId={user.id}
+                    userName={user.name}
+                    initialFollowing={isFollowing}
+                  />
+                )}
+                {isCurrentUser && (
+                  <>
+                    <Link href="/settings" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M4 18v-8v.325V6zM4 8h16V6H4zm7.575 12H2V4h20v7.325q-.875-.625-1.912-.975T17.9 10q-1.425 0-2.687.538T13 12H4v6h6.975q.075.525.225 1.025t.375.975m5.325 2l-.3-1.5q-.3-.125-.562-.262T15.5 19.9l-1.45.45l-1-1.7l1.15-1q-.05-.325-.05-.65t.05-.65l-1.15-1l1-1.7l1.45.45q.275-.2.538-.337t.562-.263l.3-1.5h2l.3 1.5q.3.125.563.263t.537.337l1.45-.45l1 1.7l-1.15 1q.05.325.05.65t-.05.65l1.15 1l-1 1.7l-1.45-.45q-.275.2-.537.338t-.563.262l-.3 1.5zm1-3q.825 0 1.413-.587T19.9 17t-.587-1.412T17.9 15t-1.412.588TRE.9 17t.588 1.413T17.9 19"/></svg>
+                    </Link>
+                    <button onClick={() => setIsModalOpen(true)} className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
               <div className="hidden sm:block absolute left-4 top-4 z-10">
                 <BackButton />
               </div>
@@ -183,7 +201,24 @@ export default function UserProfileClient({
                   <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
                     {user.name || "匿名用户"}
                   </h1>
-                  <p className="text-gray-500 text-xs sm:text-sm">
+                  {(isCurrentUser || user.showUserData !== false) && (
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <Link
+                        href={`/user/${user.id}/connections?tab=following`}
+                        className="hover:text-indigo-600 transition-colors"
+                      >
+                        <span className="font-semibold">{stats.followingCount || 0}</span> 关注
+                      </Link>
+                      <span>·</span>
+                      <Link
+                        href={`/user/${user.id}/connections?tab=followers`}
+                        className="hover:text-indigo-600 transition-colors"
+                      >
+                        <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
+                      </Link>
+                    </div>
+                  )}
+                  <p className="text-gray-500 text-xs sm:text-sm mt-1">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}
                   </p>
                   {user.bio && (
@@ -196,30 +231,38 @@ export default function UserProfileClient({
             </div>
           </div>
 
-          <div
-            className={`-mt-8 sm:-mt-8 mb-6 sm:mb-8  z-10 relative ${
-              hasCover ? "" : "hidden"
-            }`}
-          >
-            <UserStats
-              daysJoined={stats.daysJoined}
-              postsPublished={stats.postsPublished}
-              totalViews={stats.totalViews}
-              likesReceived={stats.likesReceived}
-              likesGiven={stats.likesGiven}
-            />
-          </div>
+          {(isCurrentUser || user.showUserData !== false) && (
+            <>
+              <div
+                className={`-mt-8 sm:-mt-8 mb-6 sm:mb-8  z-10 relative ${
+                  hasCover ? "" : "hidden"
+                }`}
+              >
+                <UserStats
+                  daysJoined={stats.daysJoined}
+                  postsPublished={stats.postsPublished}
+                  totalViews={stats.totalViews}
+                  likesReceived={stats.likesReceived}
+                  likesGiven={stats.likesGiven}
+                  experience={stats.experience}
+                  level={stats.level}
+                />
+              </div>
 
-          {!hasCover && (
-            <div className="mb-6">
-              <UserStats
-                daysJoined={stats.daysJoined}
-                postsPublished={stats.postsPublished}
-                totalViews={stats.totalViews}
-                likesReceived={stats.likesReceived}
-                likesGiven={stats.likesGiven}
-              />
-            </div>
+              {!hasCover && (
+                <div className="mb-6">
+                  <UserStats
+                    daysJoined={stats.daysJoined}
+                    postsPublished={stats.postsPublished}
+                    totalViews={stats.totalViews}
+                    likesReceived={stats.likesReceived}
+                    likesGiven={stats.likesGiven}
+                    experience={stats.experience}
+                    level={stats.level}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0">

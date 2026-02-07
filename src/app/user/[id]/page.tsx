@@ -3,6 +3,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import UserProfileClient from "./UserProfileClient";
+import { getUserLevel } from "@/lib/experience";
+
+interface UserProfileProps {
+  params: Promise<{ id: string }>;
+}
 
 interface UserProfileProps {
   params: Promise<{ id: string }>;
@@ -14,6 +19,10 @@ interface UserStats {
   totalViews: number;
   likesReceived: number;
   likesGiven: number;
+  followersCount: number;
+  followingCount: number;
+  experience: number;
+  level: number;
 }
 
 // 获取用户基本信息（（用于 metadata 和页面）
@@ -35,7 +44,9 @@ async function getUserProfileWithStats(id: string) {
       avatar: true,
       bio: true,
       coverImage: true,
+      experience: true,
       createdAt: true,
+      showUserData: true,
       posts: {
         include: {
           author: {
@@ -96,12 +107,22 @@ async function getUserProfileWithStats(id: string) {
     where: { userId: id },
   });
 
+  // 获取关注和粉丝数
+  const [followersCount, followingCount] = await Promise.all([
+    prisma.follow.count({ where: { followingId: id } }),
+    prisma.follow.count({ where: { followerId: id } }),
+  ]);
+
   const stats = {
     daysJoined: Math.max(daysJoined, 1),
     postsPublished,
     totalViews,
     likesReceived,
     likesGiven,
+    followersCount,
+    followingCount,
+    experience: user.experience,
+    level: getUserLevel(user.experience),
   };
 
   return { user, stats };
@@ -159,12 +180,28 @@ export default async function UserProfile({ params }: UserProfileProps) {
 
   const { user, stats } = result;
   const isCurrentUser = session?.user?.id === user.id;
+  const currentUserId = session?.user?.id;
+
+  // 检查当前用户是否已关注该用户
+  let isFollowing = false;
+  if (currentUserId && currentUserId !== user.id) {
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: currentUserId,
+          followingId: user.id,
+        },
+      },
+    });
+    isFollowing = !!follow;
+  }
 
   return (
     <UserProfileClient
       user={user as any}
       isCurrentUser={isCurrentUser}
       stats={stats}
+      isFollowing={isFollowing}
     />
   );
 }

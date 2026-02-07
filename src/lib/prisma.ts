@@ -18,11 +18,30 @@ const prismaClientSingleton = () => {
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
+const hasFollowDelegate = (client: PrismaClientSingleton) => {
+  const followDelegate = (client as unknown as { follow?: { count?: unknown } }).follow;
+  return typeof followDelegate?.count === "function";
+};
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientSingleton | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+const getPrismaClient = () => {
+  const existingClient = globalForPrisma.prisma;
+
+  if (existingClient && hasFollowDelegate(existingClient)) {
+    return existingClient;
+  }
+
+  if (existingClient && !hasFollowDelegate(existingClient)) {
+    void existingClient.$disconnect().catch(() => undefined);
+  }
+
+  return prismaClientSingleton();
+};
+
+export const prisma = getPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

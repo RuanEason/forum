@@ -2,12 +2,15 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getPostById } from "@/lib/post";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { isValidElement, type ReactNode } from "react";
 
 import Link from "next/link";
 import { format } from "date-fns";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PinButton from "@/components/PinButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
@@ -15,8 +18,15 @@ import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
-import remarkBreaks from 'remark-breaks';
+import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
+import PostToc from "@/components/PostToc";
+import MobilePostToc from "@/components/MobilePostToc";
+import {
+  createHeadingIdGenerator,
+  extractMarkdownHeadings,
+} from "@/lib/markdown";
+import { cn } from "@/lib/utils";
 
 interface AuthorProps {
   id: string;
@@ -31,6 +41,8 @@ interface PostDetailProps {
   author: AuthorProps;
   createdAt: Date;
   viewCount: number;
+  pinned?: boolean;
+  pinnedAt?: Date | null;
   likes: { userId: string }[];
   reposts: { userId: string }[];
   comments: CommentProps[];
@@ -44,6 +56,22 @@ interface PostDetailProps {
     downloadCount: number;
   }>;
   topic?: { id: string; name: string } | null;
+}
+
+function getTextFromReactNode(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child) => getTextFromReactNode(child)).join("");
+  }
+
+  if (isValidElement(node)) {
+    return getTextFromReactNode((node.props as { children?: ReactNode }).children);
+  }
+
+  return "";
 }
 
 export async function generateMetadata({
@@ -93,7 +121,9 @@ export default async function PostDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions) as any;
+  const session = (await getServerSession(authOptions)) as {
+    user?: { id?: string; role?: string };
+  } | null;
   const postId = id;
   const post = (await getPostById(postId)) as unknown as PostDetailProps | null;
 
@@ -104,6 +134,72 @@ export default async function PostDetailPage({
       </div>
     );
   }
+
+  const markdownHeadings = extractMarkdownHeadings(post.content);
+  const showToc = markdownHeadings.length > 0;
+  const generateHeadingId = createHeadingIdGenerator();
+  const markdownComponents: Components = {
+    h1: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h1 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h1>
+      );
+    },
+    h2: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h2 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h2>
+      );
+    },
+    h3: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h3 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h3>
+      );
+    },
+    h4: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h4 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h4>
+      );
+    },
+    h5: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h5 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h5>
+      );
+    },
+    h6: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h6 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h6>
+      );
+    },
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -146,11 +242,16 @@ export default async function PostDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {showToc && <MobilePostToc headings={markdownHeadings} />}
 
-      {/* 单栏布局容器 */}
-      <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
-        {/* 主内容区域 */}
-        <div className="px-0">
+      <div
+        className={
+          showToc
+            ? "post-detail-layout"
+            : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0"
+        }
+      >
+        <div className={showToc ? "post-detail-main px-0" : "px-0"}>
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
@@ -202,6 +303,7 @@ export default async function PostDetailPage({
                   <div className="prose prose-sm sm:prose-base max-w-none break-words">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkBreaks]}
+                      components={markdownComponents}
                     >
                       {post.content}
                     </ReactMarkdown>
@@ -234,19 +336,28 @@ export default async function PostDetailPage({
                     initialLikedByUser={
                       session?.user?.id
                         ? post.likes.some(
-                            (like) => like.userId === session.user.id
+                            (like) => like.userId === (session.user?.id ?? '')
                           )
                         : false
                     }
                   />
                   <RepostButton postId={post.id} />
+                  {/* 置顶按钮 - 仅管理员可见 */}
+                  {session?.user?.role === "admin" && (
+                    <PinButton postId={post.id} isPinned={post.pinned || false} />
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Comments Section */}
             <PostComments comments={post.comments} postId={post.id} postAuthorId={post.author.id} />
+        </div>
+        {showToc && (
+          <div className="post-detail-toc">
+            <PostToc headings={markdownHeadings} />
           </div>
+        )}
       </div>
     </div>
   );

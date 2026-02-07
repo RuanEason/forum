@@ -118,6 +118,9 @@ exports.Prisma.UserScalarFieldEnum = {
   bio: 'bio',
   postViewMode: 'postViewMode',
   coverImage: 'coverImage',
+  showUserData: 'showUserData',
+  experience: 'experience',
+  lastLoginRewardAt: 'lastLoginRewardAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -205,6 +208,13 @@ exports.Prisma.RepostScalarFieldEnum = {
   userId: 'userId'
 };
 
+exports.Prisma.FollowScalarFieldEnum = {
+  id: 'id',
+  followerId: 'followerId',
+  followingId: 'followingId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -218,7 +228,8 @@ exports.NotificationType = exports.$Enums.NotificationType = {
   REPLY_POST: 'REPLY_POST',
   REPLY_COMMENT: 'REPLY_COMMENT',
   LIKE_POST: 'LIKE_POST',
-  LIKE_COMMENT: 'LIKE_COMMENT'
+  LIKE_COMMENT: 'LIKE_COMMENT',
+  FOLLOW_USER: 'FOLLOW_USER'
 };
 
 exports.Prisma.ModelName = {
@@ -231,7 +242,8 @@ exports.Prisma.ModelName = {
   PostLike: 'PostLike',
   Notification: 'Notification',
   CommentLike: 'CommentLike',
-  Repost: 'Repost'
+  Repost: 'Repost',
+  Follow: 'Follow'
 };
 
 /**

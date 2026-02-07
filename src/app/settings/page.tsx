@@ -10,6 +10,7 @@ import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
+import Toggle from "@/components/ui/Toggle";
 
 export default function SettingsPage() {
   const { data: session, status, update } = useSession();
@@ -21,6 +22,9 @@ export default function SettingsPage() {
   const [coverImage, setCoverImage] = useState("");
   const [postViewMode, setPostViewMode] = useState(
     (session?.user as any)?.postViewMode || "both"
+  );
+  const [showUserData, setShowUserData] = useState(
+    (session?.user as any)?.showUserData ?? true
   );
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -38,7 +42,8 @@ export default function SettingsPage() {
     bio: "",
     avatar: "",
     coverImage: "",
-    postViewMode: "both"
+    postViewMode: "both",
+    showUserData: true
   });
 
   const isVideo = coverImage?.includes('backgrounds') && coverImage?.includes('.mp4');
@@ -50,7 +55,8 @@ export default function SettingsPage() {
       bio !== initialDataRef.current.bio ||
       avatar !== initialDataRef.current.avatar ||
       coverImage !== initialDataRef.current.coverImage ||
-      postViewMode !== initialDataRef.current.postViewMode
+      postViewMode !== initialDataRef.current.postViewMode ||
+      showUserData !== initialDataRef.current.showUserData
     );
   };
 
@@ -83,6 +89,7 @@ export default function SettingsPage() {
       setAvatar(user.avatar || "");
       setCoverImage(user.coverImage || "");
       setPostViewMode(user.postViewMode || "both");
+      setShowUserData(user.showUserData ?? true);
       fetchUserData();
     }
   }, [status, router, session, pathname]);
@@ -100,12 +107,14 @@ export default function SettingsPage() {
         setAvatar(data.avatar || "");
         setCoverImage(data.coverImage || "");
         setPostViewMode(data.postViewMode || "both");
+        setShowUserData(data.showUserData ?? true);
         initialDataRef.current = {
           name: data.name || "",
           bio: data.bio || "",
           avatar: data.avatar || "",
           coverImage: data.coverImage || "",
-          postViewMode: data.postViewMode || "both"
+          postViewMode: data.postViewMode || "both",
+          showUserData: data.showUserData ?? true
         };
         setHasUnsavedChanges(false);
       }
@@ -206,7 +215,7 @@ export default function SettingsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, bio, avatar, postViewMode, coverImage }),
+        body: JSON.stringify({ name, bio, avatar, postViewMode, coverImage, showUserData }),
       });
 
       const data = await response.json();
@@ -220,15 +229,17 @@ export default function SettingsPage() {
             avatar: avatar,
             postViewMode: postViewMode,
             coverImage: coverImage,
+            showUserData: showUserData,
           },
         });
-        setSuccess("个人信息更新成功！");
+        setSuccess("个人信息更新更新成功！");
         initialDataRef.current = {
           name,
           bio,
           avatar,
           coverImage,
-          postViewMode
+          postViewMode,
+          showUserData
         };
         setHasUnsavedChanges(false);
         router.refresh();
@@ -473,6 +484,17 @@ export default function SettingsPage() {
                     选择您在浏览帖子列表时希望看到的内容。
                   </p>
                 </div>
+
+                <Toggle
+                  id="showUserData"
+                  checked={showUserData}
+                  onChange={(checked) => {
+                    setShowUserData(checked);
+                    updateUnsavedChanges();
+                  }}
+                  label="展示用户数据"
+                  description="在您的个人资料页面公开显示帖子数、评论数、粉丝数等统计数据。关闭后将仅对您自己可见。"
+                />
               </div>
 
               {error && <div className="text-red-600 text-sm">{error}</div>}

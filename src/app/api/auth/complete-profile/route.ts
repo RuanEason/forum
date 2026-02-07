@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, avatar, bio, postViewMode, coverImage } = await request.json();
+    const { name, avatar, bio, postViewMode, coverImage, showUserData } = await request.json();
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -74,6 +74,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (showUserData !== undefined && showUserData !== null) {
+      if (typeof showUserData !== 'boolean') {
+        return NextResponse.json({ error: "showUserData must be a boolean" }, { status: 400 });
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
         bio,
         postViewMode,
         coverImage,
+        showUserData,
       }
     });
 

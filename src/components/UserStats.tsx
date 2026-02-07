@@ -4,6 +4,8 @@ interface UserStatsProps {
   totalViews: number;
   likesReceived: number;
   likesGiven: number;
+  experience: number;
+  level: number;
 }
 
 export default function UserStats({
@@ -12,8 +14,12 @@ export default function UserStats({
   totalViews,
   likesReceived,
   likesGiven,
+  experience,
+  level,
 }: UserStatsProps) {
   const stats = [
+    { label: "等级", value: level },
+    { label: "经验值", value: experience },
     { label: "加入天数", value: daysJoined },
     { label: "发布帖子", value: postsPublished },
     { label: "被浏览量", value: totalViews },
@@ -36,7 +42,7 @@ export default function UserStats({
     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200 mt-8">
       <div className="p-4 sm:p-6">
         <h3 className="text-sm font-medium text-gray-500 mb-4">用户统计</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {stats.map((stat) => (
             <div
               key={stat.label}

@@ -763,10 +763,12 @@ body {
 /* 侧边栏容器防止溢出 */
 .post-detail-layout {
   overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .post-detail-main {
   overflow-x: hidden;
+  overflow-y: visible;
   max-width: 100%;
 }
 

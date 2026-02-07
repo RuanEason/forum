@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getUserLevel } from "@/lib/experience";
 
 export async function GET() {
   const session = await getServerSession(authOptions) as any;
@@ -21,6 +22,8 @@ export async function GET() {
         bio: true,
         postViewMode: true,
         coverImage: true,
+        showUserData: true,
+        experience: true,
       },
     });
 
@@ -28,7 +31,10 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({
+      ...user,
+      level: getUserLevel(user.experience),
+    });
   } catch (error) {
     console.error("Fetch user error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

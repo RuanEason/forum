@@ -7,6 +7,10 @@ declare module "next-auth" {
       role: string;
       avatar?: string | null;
       postViewMode?: string;
+      showUserData?: boolean;
+      coverImage?: string | null;
+      experience?: number;
+      level?: number;
     };
   }
 
@@ -17,6 +21,10 @@ declare module "next-auth" {
     role: string;
     avatar?: string | null;
     postViewMode?: string;
+    showUserData?: boolean;
+    coverImage?: string | null;
+    experience?: number;
+    level?: number;
   }
 }
 
@@ -25,5 +33,9 @@ declare module "next-auth/jwt" {
     role: string;
     avatar?: string | null;
     postViewMode?: string;
+    showUserData?: boolean;
+    coverImage?: string | null;
+    experience?: number;
+    level?: number;
   }
 }
