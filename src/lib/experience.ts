@@ -2,10 +2,18 @@ import { prisma } from "@/lib/prisma";
 
 export const EXPERIENCE_REWARDS = {
   dailyLogin: 5,
-  comment: 10,
+  comment: 7,
   like: 5,
-  post: 15,
+  post: 10,
 } as const;
+
+export const DAILY_EXPERIENCE_LIMITS = {
+  like: 3,
+  comment: 3,
+  post: 3,
+} as const;
+
+type ExperienceAction = keyof typeof DAILY_EXPERIENCE_LIMITS;
 
 export const LEVEL_THRESHOLDS = [
   { level: 1, requiredExperience: 50 },
@@ -92,5 +100,149 @@ export async function rewardDailyLoginExperience(userId: string) {
     awarded: true,
     experience,
     level: getUserLevel(experience),
+  };
+}
+
+function getStartOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+export async function rewardActionExperience(userId: string, action: ExperienceAction) {
+  const startOfToday = getStartOfToday();
+  const dailyLimit = DAILY_EXPERIENCE_LIMITS[action];
+
+  if (action === "like") {
+    const now = new Date();
+
+    const rewardAmount = EXPERIENCE_REWARDS.like;
+
+    const resetAndRewardResult = await prisma.$executeRawUnsafe(
+      `
+      UPDATE \`User\`
+      SET
+        \`dailyLikeRewardCount\` = 1,
+        \`lastLikeRewardAt\` = ?,
+        \`experience\` = \`experience\` + ?
+      WHERE
+        \`id\` = ?
+        AND (
+          \`lastLikeRewardAt\` IS NULL
+          OR \`lastLikeRewardAt\` < ?
+        )
+      `,
+      now,
+      rewardAmount,
+      userId,
+      startOfToday,
+    );
+
+    let awarded = resetAndRewardResult > 0;
+
+    if (!awarded) {
+      const increaseAndRewardResult = await prisma.$executeRawUnsafe(
+        `
+        UPDATE \`User\`
+        SET
+          \`dailyLikeRewardCount\` = \`dailyLikeRewardCount\` + 1,
+          \`lastLikeRewardAt\` = ?,
+          \`experience\` = \`experience\` + ?
+        WHERE
+          \`id\` = ?
+          AND \`lastLikeRewardAt\` >= ?
+          AND \`dailyLikeRewardCount\` < ?
+        `,
+        now,
+        rewardAmount,
+        userId,
+        startOfToday,
+        dailyLimit,
+      );
+
+      awarded = increaseAndRewardResult > 0;
+    }
+
+    const users = await prisma.$queryRawUnsafe<Array<{
+      experience: number;
+      dailyLikeRewardCount: number;
+      lastLikeRewardAt: Date | null;
+    }>>(
+      `
+      SELECT
+        \`experience\`,
+        \`dailyLikeRewardCount\`,
+        \`lastLikeRewardAt\`
+      FROM \`User\`
+      WHERE \`id\` = ?
+      LIMIT 1
+      `,
+      userId,
+    );
+
+    const user = users[0];
+
+    const todayActionCount = user?.lastLikeRewardAt && user.lastLikeRewardAt >= startOfToday
+      ? user.dailyLikeRewardCount
+      : 0;
+
+    if (!awarded || user == null) {
+      return {
+        awarded: false,
+        todayActionCount,
+        dailyLimit,
+      };
+    }
+
+    return {
+      awarded: true,
+      todayActionCount,
+      dailyLimit,
+      experience: user.experience,
+      level: getUserLevel(user.experience),
+    };
+  }
+
+  let todayActionCount = 0;
+
+  if (action === "comment") {
+    todayActionCount = await prisma.comment.count({
+      where: {
+        authorId: userId,
+        createdAt: { gte: startOfToday },
+      },
+    });
+  } else {
+    todayActionCount = await prisma.post.count({
+      where: {
+        authorId: userId,
+        createdAt: { gte: startOfToday },
+      },
+    });
+  }
+
+  if (todayActionCount > dailyLimit) {
+    return {
+      awarded: false,
+      todayActionCount,
+      dailyLimit,
+    };
+  }
+
+  const rewardResult = await addUserExperience(userId, EXPERIENCE_REWARDS[action]);
+
+  if (!rewardResult) {
+    return {
+      awarded: false,
+      todayActionCount,
+      dailyLimit,
+    };
+  }
+
+  return {
+    awarded: true,
+    todayActionCount,
+    dailyLimit,
+    experience: rewardResult.experience,
+    level: rewardResult.level,
   };
 }

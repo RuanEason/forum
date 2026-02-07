@@ -40,6 +40,8 @@ const hasRequiredSchemaFields = (client: PrismaClientSingleton) => {
     userFieldNames.has("showUserData")
     && userFieldNames.has("experience")
     && userFieldNames.has("lastLoginRewardAt")
+    && userFieldNames.has("dailyLikeRewardCount")
+    && userFieldNames.has("lastLikeRewardAt")
   );
 };
 

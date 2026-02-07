@@ -101,6 +101,8 @@ export default function UserProfileClient({
 
   const coverUrl = user.coverImage || DEFAULT_COVER_IMAGE;
   const hasCover = !!coverUrl;
+  // 隐藏用户数据只隐藏统计和等级，关注/粉丝始终显示
+  const shouldShowUserStatsAndLevel = isCurrentUser || user.showUserData !== false;
   const isVideo = coverUrl?.includes('backgrounds') && coverUrl?.includes('.mp4');
   const previewUrl = isVideo ? coverUrl.replace('.mp4', '_preview.webp') : coverUrl;
 
@@ -239,38 +241,42 @@ export default function UserProfileClient({
                   <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
                     {user.name || "匿名用户"}
                   </h1>
-                  {(isCurrentUser || user.showUserData !== false) && (
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                      <Link
-                        href={`/user/${user.id}/connections?tab=following`}
-                        className="hover:text-indigo-600 transition-colors"
-                      >
-                        <span className="font-semibold">{stats.followingCount || 0}</span> 关注
-                      </Link>
-                      <span>·</span>
-                      <Link
-                        href={`/user/${user.id}/connections?tab=followers`}
-                        className="hover:text-indigo-600 transition-colors"
-                      >
-                        <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
-                      </Link>
-                      <span>·</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
-                        <div className="w-32 sm:w-36 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-indigo-500 transition-all"
-                              style={{ width: `${levelProgress.progressPercent}%` }}
-                            />
+                  {/* 关注和粉丝始终显示，不受 showUserData 影响 */}
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                    <Link
+                      href={`/user/${user.id}/connections?tab=following`}
+                      className="hover:text-indigo-600 transition-colors"
+                    >
+                      <span className="font-semibold">{stats.followingCount || 0}</span> 关注
+                    </Link>
+                    <span>·</span>
+                    <Link
+                      href={`/user/${user.id}/connections?tab=followers`}
+                      className="hover:text-indigo-600 transition-colors"
+                    >
+                      <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
+                    </Link>
+                    {/* 等级进度条只有允许显示统计数据时才显示 */}
+                    {shouldShowUserStatsAndLevel && (
+                      <>
+                        <span>·</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
+                          <div className="w-32 sm:w-36 flex items-center gap-2">
+                            <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-indigo-500 transition-all"
+                                style={{ width: `${levelProgress.progressPercent}%` }}
+                              />
+                            </div>
+                            <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
+                              {levelProgress.progressCurrent}/{levelProgress.progressTarget}
+                            </span>
                           </div>
-                          <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
-                            {levelProgress.progressCurrent}/{levelProgress.progressTarget}
-                          </span>
                         </div>
-                      </div>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                   <p className="text-gray-500 text-xs sm:text-sm mt-1">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}
                   </p>
@@ -284,7 +290,8 @@ export default function UserProfileClient({
             </div>
           </div>
 
-          {(isCurrentUser || user.showUserData !== false) && (
+          {/* 用户统计卡片只有允许显示统计数据时才显示 */}
+          {shouldShowUserStatsAndLevel && (
             <>
               <div
                 className={`-mt-8 sm:-mt-8 mb-6 sm:mb-8  z-10 relative ${
@@ -314,7 +321,11 @@ export default function UserProfileClient({
             </>
           )}
 
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0">
+          <h2
+            className={`text-lg sm:text-xl font-bold text-gray-900 mb-4 px-2 sm:px-0 ${
+              shouldShowUserStatsAndLevel ? "" : "mt-6 sm:mt-8"
+            }`}
+          >
             发布的帖子 ({user.posts.length})
           </h2>
           <UserPostList initialPosts={user.posts as unknown as UserPostListProps} />

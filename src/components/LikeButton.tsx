@@ -47,6 +47,10 @@ export default function LikeButton({
       if (response.ok) {
         setLikedByUser(data.liked);
         setLikesCount((prevCount) => (data.liked ? prevCount + 1 : prevCount - 1));
+
+        if (data.liked) {
+          router.refresh();
+        }
       } else {
         setError(data.error || "操作失败");
       }

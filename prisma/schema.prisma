@@ -28,6 +28,8 @@ model User {
   showUserData Boolean       @default(true) // 是否展示用户数据（帖子数、评论数、粉丝数等）
   experience   Int           @default(0)
   lastLoginRewardAt DateTime?
+  dailyLikeRewardCount Int   @default(0)
+  lastLikeRewardAt DateTime?
   posts        Post[]
   createdTopics Topic[]      @relation("TopicCreator")
   topics       Topic[]       @relation("TopicFollows")

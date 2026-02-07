@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { addUserExperience, EXPERIENCE_REWARDS } from "@/lib/experience";
+import { rewardActionExperience } from "@/lib/experience";
 
 /**
  * 处理点赞和取消点赞
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          await addUserExperience(userId, EXPERIENCE_REWARDS.like);
+          await rewardActionExperience(userId, "like");
         } catch (error) {
           console.error("Failed to reward post-like experience:", error);
         }
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          await addUserExperience(userId, EXPERIENCE_REWARDS.like);
+          await rewardActionExperience(userId, "like");
         } catch (error) {
           console.error("Failed to reward comment-like experience:", error);
         }

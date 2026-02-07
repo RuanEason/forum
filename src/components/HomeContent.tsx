@@ -84,12 +84,14 @@ export default function HomeContent({
   onPostDeleted,
   currentUserId,
   showAuthorLevel = false,
+  embedded = false,
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
   onPostDeleted?: () => void;
   currentUserId?: string;
   showAuthorLevel?: boolean;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -143,8 +145,8 @@ export default function HomeContent({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
-      <main className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
+    <div className={embedded ? undefined : "min-h-screen bg-gray-50 pb-16 sm:pb-0"}>
+      <main className={embedded ? undefined : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"}>
         <div className="px-0 sm:px-0">
           {session && !hideCreateButton && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">

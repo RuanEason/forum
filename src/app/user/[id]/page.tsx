@@ -9,10 +9,6 @@ interface UserProfileProps {
   params: Promise<{ id: string }>;
 }
 
-interface UserProfileProps {
-  params: Promise<{ id: string }>;
-}
-
 interface UserStats {
   daysJoined: number;
   postsPublished: number;
@@ -43,6 +39,7 @@ async function getUserProfileWithStats(id: string) {
       avatar: true,
       bio: true,
       coverImage: true,
+      experience: true,
       createdAt: true,
       showUserData: true,
       posts: {
