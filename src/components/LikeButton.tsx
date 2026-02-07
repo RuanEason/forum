@@ -86,9 +86,6 @@ export default function LikeButton({
       <span className="text-xs sm:text-sm font-medium ml-1 tabular-nums" suppressHydrationWarning>
         {likesCount > 0 ? likesCount : null}
       </span>
-      <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-0.5" suppressHydrationWarning>
-        {likesCount > 0 ? null : "点赞"}
-      </span>
       {error && <span className="text-red-500 text-xs sm:text-sm ml-2">{error}</span>}
     </button>
   );

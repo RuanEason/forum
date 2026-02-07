@@ -326,11 +326,11 @@ function CommentItem({
           <button
             onClick={() => setShowReplyForm(!showReplyForm)}
             className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm group"
-            title="回复"
+            title={showReplyForm ? "取消回复" : "回复"}
           >
-            <span className="font-medium">
-              {showReplyForm ? "取消回复" : "回复"}
-            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
           </button>
         )}
         {/* 只有帖子作者可以置顶评论 */}

@@ -272,9 +272,6 @@ export default function HomeContent({
                             <span className="text-xs sm:text-sm font-medium ml-1 tabular-nums">
                               {post.comments.length > 0 ? post.comments.length : null}
                             </span>
-                            <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-0.5">
-                              {post.comments.length > 0 ? "评论" : "评论"}
-                            </span>
                           </Link>
                           {/* 分享按钮 */}
                           <div className="flex items-center">
@@ -285,11 +282,10 @@ export default function HomeContent({
                             (session?.user as any)?.id === post.author.id && (
                               <button
                                 onClick={() => handleDeletePost(post.id)}
-                                className="text-red-500 hover:text-red-700 text-xs sm:text-sm p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
+                                className="text-red-500 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
                               >
-                                <span className="hidden sm:inline">删除</span>
-                                <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+"                                  <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
                                 </svg>
                               </button>
                             )}
