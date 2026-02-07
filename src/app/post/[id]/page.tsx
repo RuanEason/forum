@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { getPostById } from "@/lib/post";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSlug from "rehype-slug";
+
 import Link from "next/link";
 import { format } from "date-fns";
 import LikeButton from "@/components/LikeButton";
@@ -12,8 +12,6 @@ import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import BackButton from "@/components/BackButton";
-import PostSidebar from "@/components/PostSidebar";
-import { extractHeadings } from "@/lib/markdown";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
@@ -140,21 +138,6 @@ export default async function PostDetailPage({
     })),
   };
 
-  // 提取标题用于生成目录
-  const headings = extractHeadings(post.content);
-  const hasToc = headings.length > 0;
-  const hasComments = post.comments.length > 0;
-  // 只要有目录或评论就显示侧边栏
-  const hasSidebar = hasToc || hasComments;
-
-  // 将评论转换为时间轴需要的格式（只取顶级评论）
-  const commentsForTimeline = post.comments.map((comment) => ({
-    id: comment.id,
-    authorName: comment.author.name || "匿名用户",
-    createdAt: comment.createdAt,
-    isReply: false,
-  }));
-
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       {/* 阅读量追踪组件 - 使用 Cookie 防刷机制 */}
@@ -164,20 +147,10 @@ export default async function PostDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* 三栏布局容器 */}
-      <div
-        className={
-          hasSidebar
-            ? "post-detail-layout"
-            : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"
-        }
-      >
-        {/* 左侧占位（大屏幕） */}
-        {hasSidebar && <div className="post-detail-spacer hidden lg:block" />}
-
+      {/* 单栏布局容器 */}
+      <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
         {/* 主内容区域 */}
-        <div className={hasSidebar ? "post-detail-main" : "px-0"}>
-          <div className={hasSidebar ? "" : "px-0"}>
+        <div className="px-0">
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
@@ -229,7 +202,6 @@ export default async function PostDetailPage({
                   <div className="prose prose-sm sm:prose-base max-w-none break-words">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkBreaks]}
-                      rehypePlugins={[rehypeSlug]}
                     >
                       {post.content}
                     </ReactMarkdown>
@@ -273,16 +245,8 @@ export default async function PostDetailPage({
             </div>
 
             {/* Comments Section */}
-            <PostComments comments={post.comments} postId={post.id} />
+            <PostComments comments={post.comments} postId={post.id} postAuthorId={post.author.id} />
           </div>
-        </div>
-
-        {/* 右侧智能侧边栏（大屏幕显示） */}
-        {hasSidebar && (
-          <aside className="post-detail-toc">
-            <PostSidebar headings={headings} comments={commentsForTimeline} />
-          </aside>
-        )}
       </div>
     </div>
   );
