@@ -108,11 +108,14 @@ model Comment {
   parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[]     @relation("CommentReplies")
   likes     CommentLike[]
+  pinned    Boolean       @default(false)
+  pinnedAt  DateTime?
   createdAt DateTime      @default(now())
 
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
+  @@index([pinned, pinnedAt])
 }
 
 model PostLike {

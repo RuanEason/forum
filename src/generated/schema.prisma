@@ -115,7 +115,7 @@ model Comment {
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
-  @@index([postId, pinned, pinnedAt])
+  @@index([pinned, pinnedAt])
 }
 
 model PostLike {
