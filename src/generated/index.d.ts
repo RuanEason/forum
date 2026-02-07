@@ -3161,6 +3161,8 @@ export namespace Prisma {
     authorId: string | null
     topicId: string | null
     viewCount: number | null
+    pinned: boolean | null
+    pinnedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3172,6 +3174,8 @@ export namespace Prisma {
     authorId: string | null
     topicId: string | null
     viewCount: number | null
+    pinned: boolean | null
+    pinnedAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3183,6 +3187,8 @@ export namespace Prisma {
     authorId: number
     topicId: number
     viewCount: number
+    pinned: number
+    pinnedAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3204,6 +3210,8 @@ export namespace Prisma {
     authorId?: true
     topicId?: true
     viewCount?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3215,6 +3223,8 @@ export namespace Prisma {
     authorId?: true
     topicId?: true
     viewCount?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3226,6 +3236,8 @@ export namespace Prisma {
     authorId?: true
     topicId?: true
     viewCount?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3324,6 +3336,8 @@ export namespace Prisma {
     authorId: string
     topicId: string | null
     viewCount: number
+    pinned: boolean
+    pinnedAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: PostCountAggregateOutputType | null
@@ -3354,6 +3368,8 @@ export namespace Prisma {
     authorId?: boolean
     topicId?: boolean
     viewCount?: boolean
+    pinned?: boolean
+    pinnedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
@@ -3374,6 +3390,8 @@ export namespace Prisma {
     authorId?: boolean
     topicId?: boolean
     viewCount?: boolean
+    pinned?: boolean
+    pinnedAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -3410,6 +3428,8 @@ export namespace Prisma {
       authorId: string
       topicId: string | null
       viewCount: number
+      pinned: boolean
+      pinnedAt: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["post"]>
@@ -3827,6 +3847,8 @@ export namespace Prisma {
     readonly authorId: FieldRef<"Post", 'String'>
     readonly topicId: FieldRef<"Post", 'String'>
     readonly viewCount: FieldRef<"Post", 'Int'>
+    readonly pinned: FieldRef<"Post", 'Boolean'>
+    readonly pinnedAt: FieldRef<"Post", 'DateTime'>
     readonly createdAt: FieldRef<"Post", 'DateTime'>
     readonly updatedAt: FieldRef<"Post", 'DateTime'>
   }
@@ -7220,6 +7242,8 @@ export namespace Prisma {
     postId: string | null
     authorId: string | null
     parentId: string | null
+    pinned: boolean | null
+    pinnedAt: Date | null
     createdAt: Date | null
   }
 
@@ -7229,6 +7253,8 @@ export namespace Prisma {
     postId: string | null
     authorId: string | null
     parentId: string | null
+    pinned: boolean | null
+    pinnedAt: Date | null
     createdAt: Date | null
   }
 
@@ -7238,6 +7264,8 @@ export namespace Prisma {
     postId: number
     authorId: number
     parentId: number
+    pinned: number
+    pinnedAt: number
     createdAt: number
     _all: number
   }
@@ -7249,6 +7277,8 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
   }
 
@@ -7258,6 +7288,8 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
   }
 
@@ -7267,6 +7299,8 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    pinned?: true
+    pinnedAt?: true
     createdAt?: true
     _all?: true
   }
@@ -7349,6 +7383,8 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId: string | null
+    pinned: boolean
+    pinnedAt: Date | null
     createdAt: Date
     _count: CommentCountAggregateOutputType | null
     _min: CommentMinAggregateOutputType | null
@@ -7375,6 +7411,8 @@ export namespace Prisma {
     postId?: boolean
     authorId?: boolean
     parentId?: boolean
+    pinned?: boolean
+    pinnedAt?: boolean
     createdAt?: boolean
     post?: boolean | PostDefaultArgs<ExtArgs>
     author?: boolean | UserDefaultArgs<ExtArgs>
@@ -7390,6 +7428,8 @@ export namespace Prisma {
     postId?: boolean
     authorId?: boolean
     parentId?: boolean
+    pinned?: boolean
+    pinnedAt?: boolean
     createdAt?: boolean
   }
 
@@ -7418,6 +7458,8 @@ export namespace Prisma {
       postId: string
       authorId: string
       parentId: string | null
+      pinned: boolean
+      pinnedAt: Date | null
       createdAt: Date
     }, ExtArgs["result"]["comment"]>
     composites: {}
@@ -7827,6 +7869,8 @@ export namespace Prisma {
     readonly postId: FieldRef<"Comment", 'String'>
     readonly authorId: FieldRef<"Comment", 'String'>
     readonly parentId: FieldRef<"Comment", 'String'>
+    readonly pinned: FieldRef<"Comment", 'Boolean'>
+    readonly pinnedAt: FieldRef<"Comment", 'DateTime'>
     readonly createdAt: FieldRef<"Comment", 'DateTime'>
   }
     
@@ -11954,6 +11998,8 @@ export namespace Prisma {
     authorId: 'authorId',
     topicId: 'topicId',
     viewCount: 'viewCount',
+    pinned: 'pinned',
+    pinnedAt: 'pinnedAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -12004,6 +12050,8 @@ export namespace Prisma {
     postId: 'postId',
     authorId: 'authorId',
     parentId: 'parentId',
+    pinned: 'pinned',
+    pinnedAt: 'pinnedAt',
     createdAt: 'createdAt'
   };
 
@@ -12243,6 +12291,8 @@ export namespace Prisma {
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
+    pinned?: BoolFilter<"Post"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Post"> | Date | string | null
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -12262,6 +12312,8 @@ export namespace Prisma {
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
     viewCount?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     author?: UserOrderByWithRelationInput
@@ -12284,6 +12336,8 @@ export namespace Prisma {
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
+    pinned?: BoolFilter<"Post"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Post"> | Date | string | null
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -12303,6 +12357,8 @@ export namespace Prisma {
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
     viewCount?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: PostCountOrderByAggregateInput
@@ -12322,6 +12378,8 @@ export namespace Prisma {
     authorId?: StringWithAggregatesFilter<"Post"> | string
     topicId?: StringNullableWithAggregatesFilter<"Post"> | string | null
     viewCount?: IntWithAggregatesFilter<"Post"> | number
+    pinned?: BoolWithAggregatesFilter<"Post"> | boolean
+    pinnedAt?: DateTimeNullableWithAggregatesFilter<"Post"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
   }
@@ -12528,6 +12586,8 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    pinned?: BoolFilter<"Comment"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
     post?: XOR<PostRelationFilter, PostWhereInput>
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -12542,6 +12602,8 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrderInput | SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     post?: PostOrderByWithRelationInput
     author?: UserOrderByWithRelationInput
@@ -12559,6 +12621,8 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    pinned?: BoolFilter<"Comment"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
     post?: XOR<PostRelationFilter, PostWhereInput>
     author?: XOR<UserRelationFilter, UserWhereInput>
@@ -12573,6 +12637,8 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrderInput | SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: CommentCountOrderByAggregateInput
     _max?: CommentMaxOrderByAggregateInput
@@ -12588,6 +12654,8 @@ export namespace Prisma {
     postId?: StringWithAggregatesFilter<"Comment"> | string
     authorId?: StringWithAggregatesFilter<"Comment"> | string
     parentId?: StringNullableWithAggregatesFilter<"Comment"> | string | null
+    pinned?: BoolWithAggregatesFilter<"Comment"> | boolean
+    pinnedAt?: DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Comment"> | Date | string
   }
 
@@ -12970,6 +13038,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -12989,6 +13059,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -13004,6 +13076,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -13023,6 +13097,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -13040,6 +13116,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -13049,6 +13127,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -13060,6 +13140,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -13268,6 +13350,8 @@ export namespace Prisma {
   export type CommentCreateInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
@@ -13282,6 +13366,8 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
@@ -13290,6 +13376,8 @@ export namespace Prisma {
   export type CommentUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
@@ -13304,6 +13392,8 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
@@ -13315,12 +13405,16 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
   }
 
   export type CommentUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -13330,6 +13424,8 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -13772,6 +13868,17 @@ export namespace Prisma {
     not?: NestedIntFilter<$PrismaModel> | number
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type UserRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
@@ -13809,6 +13916,8 @@ export namespace Prisma {
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -13824,6 +13933,8 @@ export namespace Prisma {
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -13835,6 +13946,8 @@ export namespace Prisma {
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -13857,6 +13970,20 @@ export namespace Prisma {
     _sum?: NestedIntFilter<$PrismaModel>
     _min?: NestedIntFilter<$PrismaModel>
     _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type UserNullableRelationFilter = {
@@ -13984,6 +14111,8 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -13993,6 +14122,8 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -14002,6 +14133,8 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    pinned?: SortOrder
+    pinnedAt?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -14632,6 +14765,10 @@ export namespace Prisma {
     decrement?: number
     multiply?: number
     divide?: number
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
   }
 
   export type UserUpdateOneRequiredWithoutPostsNestedInput = {
@@ -15326,6 +15463,17 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[]
@@ -15353,6 +15501,20 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
   export type NestedEnumNotificationTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
     in?: $Enums.NotificationType[]
@@ -15375,6 +15537,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentCreateNestedManyWithoutPostInput
@@ -15392,6 +15556,8 @@ export namespace Prisma {
     content: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -15474,6 +15640,8 @@ export namespace Prisma {
   export type CommentCreateWithoutAuthorInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     post: PostCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
@@ -15486,6 +15654,8 @@ export namespace Prisma {
     content: string
     postId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
@@ -15651,6 +15821,8 @@ export namespace Prisma {
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
+    pinned?: BoolFilter<"Post"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Post"> | Date | string | null
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
   }
@@ -15725,6 +15897,8 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    pinned?: BoolFilter<"Comment"> | boolean
+    pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
   }
 
@@ -15905,6 +16079,8 @@ export namespace Prisma {
   export type CommentCreateWithoutPostInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     author: UserCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
@@ -15917,6 +16093,8 @@ export namespace Prisma {
     content: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
@@ -16298,6 +16476,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -16315,6 +16495,8 @@ export namespace Prisma {
     content: string
     authorId: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -16549,6 +16731,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -16567,6 +16751,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -16597,6 +16783,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -16615,6 +16803,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -16629,6 +16819,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -16647,6 +16839,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -16677,6 +16871,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -16695,6 +16891,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -16709,6 +16907,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -16727,6 +16927,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
@@ -16795,6 +16997,8 @@ export namespace Prisma {
   export type CommentCreateWithoutRepliesInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
@@ -16808,6 +17012,8 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
@@ -16820,6 +17026,8 @@ export namespace Prisma {
   export type CommentCreateWithoutParentInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
@@ -16832,6 +17040,8 @@ export namespace Prisma {
     content: string
     postId: string
     authorId: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
@@ -16885,6 +17095,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -16903,6 +17115,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
@@ -16983,6 +17197,8 @@ export namespace Prisma {
   export type CommentUpdateWithoutRepliesInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
@@ -16996,6 +17212,8 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
@@ -17037,6 +17255,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -17055,6 +17275,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -17136,6 +17358,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -17154,6 +17378,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -17327,6 +17553,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -17345,6 +17573,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -17489,6 +17719,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -17507,6 +17739,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -17519,6 +17753,8 @@ export namespace Prisma {
   export type CommentCreateWithoutLikesInput = {
     id?: string
     content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
@@ -17532,6 +17768,8 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
   }
@@ -17606,6 +17844,8 @@ export namespace Prisma {
   export type CommentUpdateWithoutLikesInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
@@ -17619,6 +17859,8 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
   }
@@ -17685,6 +17927,8 @@ export namespace Prisma {
     title?: string | null
     content: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
@@ -17703,6 +17947,8 @@ export namespace Prisma {
     authorId: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
@@ -17784,6 +18030,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -17802,6 +18050,8 @@ export namespace Prisma {
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -17874,6 +18124,8 @@ export namespace Prisma {
     content: string
     topicId?: string | null
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -17892,6 +18144,8 @@ export namespace Prisma {
     content: string
     postId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -17937,6 +18191,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUpdateManyWithoutPostNestedInput
@@ -17954,6 +18210,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -17970,6 +18228,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -18040,6 +18300,8 @@ export namespace Prisma {
   export type CommentUpdateWithoutAuthorInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
@@ -18052,6 +18314,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
@@ -18062,6 +18326,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -18181,6 +18447,8 @@ export namespace Prisma {
     content: string
     authorId: string
     parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -18224,6 +18492,8 @@ export namespace Prisma {
   export type CommentUpdateWithoutPostInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
@@ -18236,6 +18506,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
@@ -18246,6 +18518,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -18366,6 +18640,8 @@ export namespace Prisma {
     content: string
     authorId: string
     viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -18375,6 +18651,8 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
@@ -18392,6 +18670,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
@@ -18408,6 +18688,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -18478,6 +18760,8 @@ export namespace Prisma {
     content: string
     postId: string
     authorId: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
     createdAt?: Date | string
   }
 
@@ -18490,6 +18774,8 @@ export namespace Prisma {
   export type CommentUpdateWithoutParentInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
@@ -18502,6 +18788,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
@@ -18512,6 +18800,8 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

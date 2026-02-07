@@ -129,6 +129,8 @@ exports.Prisma.PostScalarFieldEnum = {
   authorId: 'authorId',
   topicId: 'topicId',
   viewCount: 'viewCount',
+  pinned: 'pinned',
+  pinnedAt: 'pinnedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -167,6 +169,8 @@ exports.Prisma.CommentScalarFieldEnum = {
   postId: 'postId',
   authorId: 'authorId',
   parentId: 'parentId',
+  pinned: 'pinned',
+  pinnedAt: 'pinnedAt',
   createdAt: 'createdAt'
 };
 

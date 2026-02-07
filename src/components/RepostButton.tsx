@@ -122,9 +122,6 @@ export default function RepostButton({
           <polyline points="16 6 12 2 8 6" />
           <line x1="12" y1="2" x2="12" y2="15" />
         </svg>
-        <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-1">
-          分享
-        </span>
       </button>
 
       {showMenu && (

@@ -480,8 +480,6 @@ body {
    Table of Contents (TOC) 样式
 -------------------------- */
 .toc-container {
-  /* position: sticky; - Removed to prevent layout issues inside .post-sidebar */
-  /* top: 5rem; */
   max-height: 100%; /* Use height controlled by parent */
   overflow-y: auto;
   padding: 1rem;
@@ -632,7 +630,10 @@ body {
 
   .post-detail-toc {
     grid-column: 3;
-    align-self: start; /* 让 TOC 容器在网格中从顶部对齐，帮助 sticky 生效 */
+    position: sticky;
+    top: 5rem;
+    align-self: start;
+    max-height: calc(100vh - 6rem);
   }
 
   .post-detail-spacer {
@@ -659,48 +660,33 @@ body {
 }
 
 /* --------------------------
-   Post Sidebar 智能切换样式
+   Post Sidebar 样式
 -------------------------- */
 .post-sidebar {
-  position: sticky;
-  top: 5rem;
-  max-height: calc(100vh - 6rem);
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
 }
 
 .sidebar-content {
-  position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  /* 限制最大高度，为控制按钮留出空间 */
-  max-height: calc(100vh - 14rem);
 }
 
-/* 面板切换动画 */
+/* 面板样式 */
 .sidebar-panel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-  /* 面板高度和滚动 */
-  max-height: calc(100vh - 14rem);
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  height: 100%;
   overflow-y: auto;
-  /* 极细滚动条 */
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
 }
 
-/* Webkit 浏览器滚动条样式 */
 .sidebar-panel::-webkit-scrollbar {
   width: 4px;
 }
@@ -718,21 +704,6 @@ body {
   background: #9ca3af;
 }
 
-.sidebar-panel-active {
-  position: relative;
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.sidebar-panel-hidden {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-}
-
-/* 暗色模式下的滚动条 */
 @media (prefers-color-scheme: dark) {
   .sidebar-panel {
     scrollbar-color: #525252 transparent;
@@ -753,494 +724,6 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   text-align: center;
-}
-
-/* 侧边栏控制区域 */
-.sidebar-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  flex-wrap: wrap;
-}
-
-/* 返回目录按钮 */
-.sidebar-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--primary-color);
-  background: #e0e7ff;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sidebar-back-btn:hover {
-  background: #c7d2fe;
-}
-
-/* 模式切换按钮 */
-.sidebar-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: auto;
-}
-
-.sidebar-toggle-btn:hover {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-  background: #f5f3ff;
-}
-
-.sidebar-toggle-btn-locked {
-  border-color: #fbbf24;
-  color: #d97706;
-}
-
-/* 锁定指示器 */
-.sidebar-lock-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  color: #d97706;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* --------------------------
-   Timeline Navigation 样式
--------------------------- */
-.timeline-container {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  /* 移除独立的 max-height，由父级 sidebar-panel 控制 */
-  max-height: 100%;
-  overflow-y: auto;
-  /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-}
-
-/* 隐藏 Webkit 滚动条 (Chrome/Safari) */
-.timeline-container::-webkit-scrollbar {
-  display: none;
-}
-
-.timeline-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: var(--text-main);
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  background: var(--bg-surface);
-  z-index: 1;
-}
-
-.timeline-icon {
-  color: #6b7280;
-}
-
-.timeline-count {
-  font-weight: 400;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.timeline-empty {
-  padding: 1rem;
-  text-align: center;
-  color: #9ca3af;
-}
-
-.timeline-list {
-  padding: 0.5rem;
-}
-
-.timeline-date-group {
-  margin-bottom: 0.75rem;
-}
-
-.timeline-date-group:last-child {
-  margin-bottom: 0;
-}
-
-.timeline-date-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.timeline-items {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.timeline-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  background: transparent;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  width: 100%;
-  font-size: 0.8rem;
-}
-
-.timeline-item:hover {
-  background: var(--bg-hover);
-}
-
-.timeline-item-active {
-  background: #e0e7ff;
-  color: var(--primary-color);
-}
-
-.timeline-item-reply {
-  padding-left: 1.25rem;
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
-
-.timeline-floor {
-  font-weight: 600;
-  color: var(--primary-color);
-  min-width: 2rem;
-}
-
-.timeline-author {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-main);
-}
-
-.timeline-time {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  flex-shrink: 0;
-}
-
-/* 时间轴快速操作按钮 */
-.timeline-actions {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-top: 1px solid var(--border-color);
-}
-
-.timeline-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-  color: #6b7280;
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.timeline-action-btn:hover {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-/* 暗色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .sidebar-back-btn {
-    background: #312e81;
-    color: #a5b4fc;
-  }
-
-  .sidebar-back-btn:hover {
-    background: #3730a3;
-  }
-
-  .sidebar-toggle-btn:hover {
-    background: #1e1b4b;
-  }
-
-  .sidebar-toggle-btn-locked {
-    border-color: #fbbf24;
-    color: #fbbf24;
-  }
-
-  .sidebar-lock-indicator {
-    color: #fbbf24;
-  }
-
-  .timeline-item-active {
-    background: #312e81;
-    color: #a5b4fc;
-  }
-}
-
-/* --------------------------
-   Timeline 收起/展开动画样式
--------------------------- */
-
-/* 侧边栏过渡动画 */
-.post-sidebar {
-  position: sticky;
-  top: 5rem;
-  max-height: calc(100vh - 6rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 100%;
-}
-
-/* 侧边栏收起状态 */
-.post-sidebar-collapsed {
-  width: 3.5rem;
-}
-
-/* 时间轴容器过渡 */
-.timeline-container {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 时间轴展开状态 */
-.timeline-expanded {
-  /* 默认完整宽度 */
-}
-
-/* 时间轴收起状态 */
-.timeline-collapsed {
-  /* 保持边框和背景 */
-}
-
-/* 时间轴 header 在收起时的样式 */
-.timeline-collapsed .timeline-header {
-  padding: 0.75rem 0.5rem;
-  justify-content: center;
-}
-
-.timeline-collapsed .timeline-header-text,
-.timeline-collapsed .timeline-count {
-  display: none;
-}
-
-/* 可展开的文本元素 - 过渡动画 */
-.timeline-expandable-text {
-  opacity: 1;
-  max-width: 200px;
-  overflow: hidden;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
-}
-
-/* 收起时隐藏文本 */
-.timeline-collapsed .timeline-expandable-text {
-  opacity: 0;
-  max-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-/* 时间轴节点圆点样式 - 只在展开状态显示 */
-.timeline-node {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--border-color);
-  flex-shrink: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.timeline-expanded .timeline-node {
-  opacity: 1;
-}
-
-.timeline-collapsed .timeline-node {
-  display: none;
-}
-
-.timeline-item:hover .timeline-node,
-.timeline-item-active .timeline-node {
-  background: var(--primary-color);
-  transform: scale(1.3);
-}
-
-/* 时间轴连接线样式 - 只在展开状态显示 */
-.timeline-line {
-  position: absolute;
-  left: 0.75rem;
-  top: calc(50% + 8px);
-  width: 2px;
-  height: calc(100% - 4px);
-  background: var(--border-color);
-  z-index: 0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.timeline-collapsed .timeline-line {
-  display: none;
-}
-
-/* 时间轴项目基础样式 */
-.timeline-item {
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 时间轴项目在收起状态下的布局调整 */
-.timeline-collapsed .timeline-item {
-  justify-content: center;
-  padding: 0.375rem 0.25rem;
-  gap: 0;
-}
-
-.timeline-collapsed .timeline-floor {
-  min-width: auto;
-  font-size: 0.75rem;
-}
-
-/* 时间轴列表在收起状态 */
-.timeline-collapsed .timeline-list {
-  padding: 0.25rem;
-}
-
-.timeline-collapsed .timeline-items {
-  align-items: center;
-  gap: 0;
-}
-
-/* 日期分组在收起状态 - 隐藏日期分组标签 */
-.timeline-collapsed .timeline-date-group {
-  margin-bottom: 0;
-}
-
-.timeline-collapsed .timeline-date-label {
-  display: none;
-}
-
-/* 时间轴操作按钮在收起状态 */
-.timeline-collapsed .timeline-actions {
-  flex-direction: column;
-  padding: 0.5rem 0.25rem;
-  gap: 0.25rem;
-}
-
-.timeline-collapsed .timeline-action-btn {
-  padding: 0.375rem;
-  justify-content: center;
-}
-
-.timeline-collapsed .timeline-action-btn svg {
-  margin: 0;
-}
-
-/* 侧边栏控制区域收起状态 */
-.sidebar-controls-collapsed {
-  padding: 0.375rem;
-  justify-content: center;
-}
-
-.sidebar-controls-collapsed .sidebar-toggle-btn {
-  padding: 0.375rem;
-  margin-left: 0;
-}
-
-.sidebar-controls-collapsed .sidebar-toggle-text {
-  display: none;
-}
-
-/* 切换按钮文字过渡 */
-.sidebar-toggle-text {
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 暗色模式下的节点和连接线 */
-@media (prefers-color-scheme: dark) {
-  .timeline-node {
-    background: #525252;
-    border-color: var(--bg-surface);
-  }
-
-  .timeline-item:hover .timeline-node,
-  .timeline-item-active .timeline-node {
-    background: #a5b4fc;
-  }
-
-  .timeline-line {
-    background: #404040;
-  }
-}
-
-/* 移动端适配 - 始终显示展开状态 */
-@media (max-width: 1023px) {
-  .post-sidebar-collapsed {
-    width: 100%;
-  }
-
-  .timeline-collapsed .timeline-expandable-text {
-    opacity: 1;
-    max-width: 200px;
-  }
-
-  .timeline-collapsed .timeline-header-text,
-  .timeline-collapsed .timeline-count {
-    display: inline;
-  }
-
-  .timeline-collapsed .timeline-header {
-    padding: 1rem;
-    justify-content: flex-start;
-  }
-
-  .sidebar-controls-collapsed .sidebar-toggle-text {
-    display: inline;
-  }
 }
 
 /* --------------------------
@@ -1296,46 +779,4 @@ body {
 html {
   overflow-x: hidden;
   max-width: 100vw;
-}
-
-/* --------------------------
-   固定切换按钮样式
--------------------------- */
-.sidebar-fixed-toggle {
-  position: fixed;
-  top: 5rem;
-  right: 1rem;
-  z-index: 40;
-  display: none;
-  /* 使用和 sidebar-toggle-btn 相同的样式 */
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-lg);
-}
-
-.sidebar-fixed-toggle:hover {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-  background: var(--bg-hover);
-}
-
-@media (min-width: 1024px) {
-  .sidebar-fixed-toggle {
-    display: inline-flex;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .sidebar-fixed-toggle:hover {
-    background: var(--bg-hover);
-  }
 }

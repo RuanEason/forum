@@ -26,14 +26,17 @@ export interface CommentProps {
   postId: string;
   likes: { userId: string }[];
   replies: Omit<CommentProps, "replies">[];
+  pinned?: boolean;
+  pinnedAt?: Date | null;
 }
 
 interface PostCommentsProps {
   comments: CommentProps[];
   postId: string;
+  postAuthorId: string;
 }
 
-export default function PostComments({ comments, postId }: PostCommentsProps) {
+export default function PostComments({ comments, postId, postAuthorId }: PostCommentsProps) {
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -64,6 +67,36 @@ export default function PostComments({ comments, postId }: PostCommentsProps) {
     }
   };
 
+  const handlePinComment = async (commentId: string, pinned: boolean) => {
+    try {
+      const response = await fetch("/api/pin/comment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ commentId, pinned }),
+      });
+
+      if (response.ok) {
+        refreshComments();
+      } else {
+        const data = await response.json();
+        alert(data.error || (pinned ? "置顶失败" : "取消置顶失败"));
+      }
+    } catch {
+      alert("网络错误，操作失败");
+    }
+  };
+
+  // 排序评论：置顶的在前，然后按创建时间
+  const sortedComments = [...comments].sort((a, b) => {
+    // 置顶的评论排在前面
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    // 同是置顶或同非置顶，按创建时间排序
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
   return (
     <div
       id="comments-section"
@@ -79,13 +112,15 @@ export default function PostComments({ comments, postId }: PostCommentsProps) {
           </p>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
+            {sortedComments.map((comment) => (
               <CommentItem
                 key={comment.id}
                 comment={comment}
                 currentUserId={(session as any)?.user?.id || null}
+                postAuthorId={postAuthorId}
                 onCommentPosted={refreshComments}
                 onDeleteComment={handleDeleteComment}
+                onPinComment={handlePinComment}
               />
             ))}
           </div>
@@ -201,13 +236,17 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
 function CommentItem({
   comment,
   currentUserId,
+  postAuthorId,
   onCommentPosted,
   onDeleteComment,
+  onPinComment,
 }: {
   comment: CommentProps;
   currentUserId: string | null;
+  postAuthorId: string;
   onCommentPosted: () => void;
   onDeleteComment: (id: string) => void;
+  onPinComment: (id: string, pinned: boolean) => void;
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -223,27 +262,37 @@ function CommentItem({
     setMounted(true);
   }, []);
 
+  // 判断当前用户是否是帖子作者
+  const isPostAuthor = currentUserId === postAuthorId;
+
   return (
     <div id={`comment-${comment.id}`} className="border-t border-gray-200 pt-4">
-      <div className="flex items-center">
-        <Avatar
-          src={comment.author.avatar}
-          name={comment.author.name}
-          size="sm"
-        />
-        <div className="ml-3">
-          <Link
-            href={`/user/${comment.author.id}`}
-            className="text-sm font-medium text-gray-900 hover:underline"
-          >
-            {comment.author.name || "匿名用户"}
-          </Link>
-          <div className="text-xs text-gray-500">
-            {mounted
-              ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")
-              : ""}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Avatar
+            src={comment.author.avatar}
+            name={comment.author.name}
+            size="sm"
+          />
+          <div className="ml-3">
+            <Link
+              href={`/user/${comment.author.id}`}
+              className="text-sm font-medium text-gray-900 hover:underline"
+            >
+              {comment.author.name || "匿名用户"}
+            </Link>
+            <div className="text-xs text-gray-500">
+              {mounted
+                ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")
+                : ""}
+            </div>
           </div>
         </div>
+        {comment.pinned && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+            📌 置顶
+          </span>
+        )}
       </div>
       {comment.parentId ? (
         <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
@@ -284,6 +333,16 @@ function CommentItem({
             </span>
           </button>
         )}
+        {/* 只有帖子作者可以置顶评论 */}
+        {isPostAuthor && !comment.parentId && (
+          <button
+            onClick={() => onPinComment(comment.id, !comment.pinned)}
+            className="text-gray-500 hover:text-yellow-600 text-sm"
+            title={comment.pinned ? "取消置顶" : "置顶评论"}
+          >
+            {comment.pinned ? "取消置顶" : "置顶"}
+          </button>
+        )}
         {currentUserId === comment.author.id && (
           <button
             onClick={() => onDeleteComment(comment.id)}
@@ -312,8 +371,10 @@ function CommentItem({
               key={reply.id}
               comment={reply as CommentProps}
               currentUserId={currentUserId}
+              postAuthorId={postAuthorId}
               onCommentPosted={onCommentPosted}
               onDeleteComment={onDeleteComment}
+              onPinComment={onPinComment}
             />
           ))}
           {!showAllReplies && remainingRepliesCount > 0 ? (

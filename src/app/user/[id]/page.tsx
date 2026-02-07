@@ -16,8 +16,17 @@ interface UserStats {
   likesGiven: number;
 }
 
-async function getUserProfile(id: string) {
+// 获取用户基本信息（（用于 metadata 和页面）
+async function getUserBasicInfo(id: string) {
   return prisma.user.findUnique({
+    where: { id },
+    select: { name: true, bio: true, avatar: true, coverImage: true },
+  });
+}
+
+// 获取用户完整资料和统计数据（一次性查询优化）
+async function getUserProfileWithStats(id: string) {
+  const user = await prisma.user.findUnique({
     where: { id },
     select: {
       id: true,
@@ -69,51 +78,40 @@ async function getUserProfile(id: string) {
       },
     },
   });
-}
 
-async function getUserStats(id: string, createdAt: Date): Promise<UserStats> {
-  // 并行查询所有统计数据
-  const [postsPublished, totalViewsResult, likesReceived, likesGiven] =
-    await Promise.all([
-      // 发布的帖子数量
-      prisma.post.count({ where: { authorId: id } }),
-      // 总浏览量
-      prisma.post.aggregate({
-        _sum: { viewCount: true },
-        where: { authorId: id },
-      }),
-      // 获得的点赞数（用户帖子收到的点赞）
-      prisma.postLike.count({
-        where: { post: { authorId: id } },
-      }),
-      // 送出的点赞数
-      prisma.postLike.count({
-        where: { userId: id },
-      }),
-    ]);
+  if (!user) return null;
 
   // 计算加入天数
   const daysJoined = Math.floor(
-    (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  return {
-    daysJoined: Math.max(daysJoined, 1), // 至少显示 1 天
+  // 从 posts 中直接计算统计数据，避免额外查询
+  const postsPublished = user.posts.length;
+  const totalViews = user.posts.reduce((sum, post) => sum + post.viewCount, 0);
+  const likesReceived = user.posts.reduce((sum, post) => sum + post.likes.length, 0);
+
+  // 获取用户送出的点赞数（这个无法从 posts 中直接获取）
+  const likesGiven = await prisma.postLike.count({
+    where: { userId: id },
+  });
+
+  const stats = {
+    daysJoined: Math.max(daysJoined, 1),
     postsPublished,
-    totalViews: totalViewsResult._sum.viewCount ?? 0,
+    totalViews,
     likesReceived,
     likesGiven,
   };
+
+  return { user, stats };
 }
 
 export async function generateMetadata({
   params,
 }: UserProfileProps): Promise<Metadata> {
   const { id } = await params;
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: { name: true, bio: true, avatar: true, coverImage: true },
-  });
+  const user = await getUserBasicInfo(id);
 
   if (!user) {
     return {
@@ -147,9 +145,11 @@ export default async function UserProfile({ params }: UserProfileProps) {
   const { id } = await params;
   const userId = id;
   const session = await getServerSession(authOptions) as any;
-  const user = await getUserProfile(userId);
 
-  if (!user) {
+  // 一次性获取用户数据和统计数据
+  const result = await getUserProfileWithStats(userId);
+
+  if (!result) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <h1 className="text-2xl font-bold text-gray-900">用户未找到</h1>
@@ -157,9 +157,7 @@ export default async function UserProfile({ params }: UserProfileProps) {
     );
   }
 
-  // 获取用户统计数据
-  const stats = await getUserStats(userId, user.createdAt);
-
+  const { user, stats } = result;
   const isCurrentUser = session?.user?.id === user.id;
 
   return (
