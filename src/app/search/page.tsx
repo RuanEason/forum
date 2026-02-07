@@ -11,6 +11,7 @@ import type {
 import HomeContent from "@/components/HomeContent";
 import Avatar from "@/components/Avatar";
 import Link from "next/link";
+import { getUserLevel } from "@/lib/experience";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -21,6 +22,7 @@ type UserSearchResult = {
   id: string;
   name: string | null;
   avatar: string | null;
+  experience: number;
   _count: {
     posts: number;
   };
@@ -156,6 +158,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         id: true,
         name: true,
         avatar: true,
+        experience: true,
         _count: {
           select: {
             posts: true,
@@ -281,9 +284,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     >
                       <Avatar src={user.avatar} name={user.name} size="md" />
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 hover:text-blue-600">
-                          {user.name || "未命名用户"}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-gray-900 hover:text-blue-600">
+                            {user.name || "未命名用户"}
+                          </span>
+                          <span className="text-xs font-medium text-indigo-600">
+                            lv.{getUserLevel(user.experience ?? 0)}
+                          </span>
+                        </div>
                         <span className="text-xs text-gray-500">
                           {user._count.posts} 篇帖子
                         </span>
@@ -304,6 +312,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <HomeContent
                 initialPosts={serializedPosts}
                 hideCreateButton={true}
+                showAuthorLevel
               />
             </div>
           )}

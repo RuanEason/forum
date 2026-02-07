@@ -106,6 +106,8 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
           评论 ({comments.length})
         </h2>
+        {/* Comment Form */}
+        <CommentForm postId={postId} onCommentPosted={refreshComments} />
         {comments.length === 0 ? (
           <p className="text-gray-500 text-sm sm:text-base">
             还没有评论，快来发表第一条评论吧！
@@ -125,8 +127,6 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
             ))}
           </div>
         )}
-        {/* Comment Form */}
-        <CommentForm postId={postId} onCommentPosted={refreshComments} />
       </div>
     </div>
   );
@@ -182,6 +182,13 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+    }
+  };
+
   if (!session) {
     return (
       <p className="text-center text-gray-500 mt-4">
@@ -197,37 +204,29 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   }
 
   return (
-    <div className="mt-6">
-      <h3 className="text-lg font-bold mb-2">
-        {parentId ? "回复" : "发表评论"}
-      </h3>
-      <form onSubmit={handleSubmit}>
-        <textarea
-          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          rows={parentId ? 2 : 4}
-          placeholder={
-            parentId
-              ? "在这里输入你的回复..."
-              : "在这里输入你的评论..."
-          }
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          disabled={loading}
-        ></textarea>
+    <div className={parentId ? "mt-6" : "mt-6 mb-8"}>
+      {parentId && (
+        <h3 className="text-lg font-bold mb-2">
+          回复
+        </h3>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="relative">
+          <textarea
+            className="w-full px-4 py-2.5 bg-slate-100 rounded-lg text-xs sm:text-sm text-slate-700 border-transparent focus:bg-white focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
+            rows={1}
+            placeholder={
+              parentId
+                ? "在这里输入你的回复..."
+                : "与其赞同别人的话语，不如自己畅所欲言。"
+            }
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={loading}
+          ></textarea>
+        </div>
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-        <button
-          type="submit"
-          className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading
-            ? parentId
-              ? "回复中..."
-              : "评论中..."
-            : parentId
-            ? "回复"
-            : "发表评论"}
-        </button>
       </form>
     </div>
   );

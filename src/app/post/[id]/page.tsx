@@ -20,12 +20,14 @@ import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
 import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
-import PostToc from "@/components/PostToc";
-import MobilePostToc from "@/components/MobilePostToc";
+import ArticleCatalog from "@/components/ArticleCatalog";
+import MobileArticleCatalog from "@/components/MobileArticleCatalog";
+import CatalogSidebar from "@/components/CatalogSidebar";
 import {
   createHeadingIdGenerator,
   extractMarkdownHeadings,
 } from "@/lib/markdown";
+import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
 interface AuthorProps {
@@ -137,6 +139,7 @@ export default async function PostDetailPage({
 
   const markdownHeadings = extractMarkdownHeadings(post.content);
   const showToc = markdownHeadings.length > 0;
+  const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
   const generateHeadingId = createHeadingIdGenerator();
   const markdownComponents: Components = {
     h1: ({ children, className, ...props }) => {
@@ -242,7 +245,7 @@ export default async function PostDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {showToc && <MobilePostToc headings={markdownHeadings} />}
+      {showToc && <MobileArticleCatalog items={catalogItems} />}
 
       <div
         className={
@@ -258,8 +261,8 @@ export default async function PostDetailPage({
                 <div className="sm:hidden mb-4">
                   <BackButton href="/" />
                 </div>
-                <div className="flex items-center relative">
-                  <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
+                <div className="flex items-center">
+                  <div className="hidden sm:flex items-center mr-3 shrink-0">
                     <BackButton href="/" />
                   </div>
                   <Avatar
@@ -355,7 +358,7 @@ export default async function PostDetailPage({
         </div>
         {showToc && (
           <div className="post-detail-toc">
-            <PostToc headings={markdownHeadings} />
+            <CatalogSidebar items={catalogItems} />
           </div>
         )}
       </div>
