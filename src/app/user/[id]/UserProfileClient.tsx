@@ -241,7 +241,7 @@ export default function UserProfileClient({
                   <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
                     {user.name || "匿名用户"}
                   </h1>
-                  {/* 关注和粉丝始终显示，不受 showUserData 影响 */}
+                  {/* 关注、粉丝、等级始终显示，不受 showUserData 影响 */}
                   <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                     <Link
                       href={`/user/${user.id}/connections?tab=following`}
@@ -256,26 +256,21 @@ export default function UserProfileClient({
                     >
                       <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
                     </Link>
-                    {/* 等级进度条只有允许显示统计数据时才显示 */}
-                    {shouldShowUserStatsAndLevel && (
-                      <>
-                        <span>·</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
-                          <div className="w-32 sm:w-36 flex items-center gap-2">
-                            <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-indigo-500 transition-all"
-                                style={{ width: `${levelProgress.progressPercent}%` }}
-                              />
-                            </div>
-                            <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
-                              {levelProgress.progressCurrent}/{levelProgress.progressTarget}
-                            </span>
-                          </div>
+                    <span>·</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
+                      <div className="w-32 sm:w-36 flex items-center gap-2">
+                        <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-indigo-500 transition-all"
+                            style={{ width: `${levelProgress.progressPercent}%` }}
+                          />
                         </div>
-                      </>
-                    )}
+                        <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
+                          {levelProgress.progressCurrent}/{levelProgress.progressTarget}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <p className="text-gray-500 text-xs sm:text-sm mt-1">
                     加入于 {format(new Date(user.createdAt), "yyyy年MM月dd日")}

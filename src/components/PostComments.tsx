@@ -289,7 +289,10 @@ function CommentItem({
         </div>
         {comment.pinned && (
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-            📌 置顶
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1">
+              <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
+            </svg>
+            置顶
           </span>
         )}
       </div>
@@ -336,10 +339,12 @@ function CommentItem({
         {isPostAuthor && !comment.parentId && (
           <button
             onClick={() => onPinComment(comment.id, !comment.pinned)}
-            className="text-gray-500 hover:text-yellow-600 text-sm"
+            className={`p-1 rounded-full hover:bg-yellow-50 transition-colors ${comment.pinned ? "text-yellow-600" : "text-gray-500 hover:text-yellow-600"}`}
             title={comment.pinned ? "取消置顶" : "置顶评论"}
           >
-            {comment.pinned ? "取消置顶" : "置顶"}
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
+            </svg>
           </button>
         )}
         {currentUserId === comment.author.id && (

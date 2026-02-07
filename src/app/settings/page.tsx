@@ -492,8 +492,8 @@ export default function SettingsPage() {
                     setShowUserData(checked);
                     updateUnsavedChanges();
                   }}
-                  label="展示用户数据"
-                  description="在您的个人资料页面公开显示帖子数、评论数、粉丝数等统计数据。关闭后将仅对您自己可见。"
+                  label="展示用户统计"
+                  description="在您的个人资料页面公开显示您的活动数据，包括加入天数、发布帖子数、被浏览量、获得点赞数和送出点赞数。关闭后将仅对您自己可见。"
                 />
               </div>
 
