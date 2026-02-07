@@ -18,11 +18,10 @@ interface UserStats {
   postsPublished: number;
   totalViews: number;
   likesReceived: number;
+  likes: number;
   likesGiven: number;
   followersCount: number;
   followingCount: number;
-  experience: number;
-  level: number;
 }
 
 // 获取用户基本信息（（用于 metadata 和页面）
@@ -44,7 +43,6 @@ async function getUserProfileWithStats(id: string) {
       avatar: true,
       bio: true,
       coverImage: true,
-      experience: true,
       createdAt: true,
       showUserData: true,
       posts: {

@@ -18,9 +18,29 @@ const prismaClientSingleton = () => {
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
-const hasFollowDelegate = (client: PrismaClientSingleton) => {
-  const followDelegate = (client as unknown as { follow?: { count?: unknown } }).follow;
-  return typeof followDelegate?.count === "function";
+const hasRequiredSchemaFields = (client: PrismaClientSingleton) => {
+  const runtimeDataModel = (client as unknown as {
+    _runtimeDataModel?: {
+      models?: Record<string, { fields?: Array<{ name?: string }> }>;
+    };
+  })._runtimeDataModel;
+
+  const userFields = runtimeDataModel?.models?.User?.fields;
+  if (!Array.isArray(userFields)) {
+    return false;
+  }
+
+  const userFieldNames = new Set(
+    userFields
+      .map((field) => field.name)
+      .filter((name): name is string => typeof name === "string"),
+  );
+
+  return (
+    userFieldNames.has("showUserData")
+    && userFieldNames.has("experience")
+    && userFieldNames.has("lastLoginRewardAt")
+  );
 };
 
 const globalForPrisma = globalThis as unknown as {
@@ -30,11 +50,11 @@ const globalForPrisma = globalThis as unknown as {
 const getPrismaClient = () => {
   const existingClient = globalForPrisma.prisma;
 
-  if (existingClient && hasFollowDelegate(existingClient)) {
+  if (existingClient && hasRequiredSchemaFields(existingClient)) {
     return existingClient;
   }
 
-  if (existingClient && !hasFollowDelegate(existingClient)) {
+  if (existingClient && !hasRequiredSchemaFields(existingClient)) {
     void existingClient.$disconnect().catch(() => undefined);
   }
 
