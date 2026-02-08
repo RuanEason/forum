@@ -8,7 +8,12 @@ import { zhCN } from "date-fns/locale";
 
 interface Notification {
   id: string;
-  type: "REPLY_POST" | "REPLY_COMMENT" | "LIKE_POST" | "LIKE_COMMENT";
+  type:
+    | "REPLY_POST"
+    | "REPLY_COMMENT"
+    | "LIKE_POST"
+    | "LIKE_COMMENT"
+    | "FOLLOW_USER";
   isRead: boolean;
   createdAt: string;
   sender: {
@@ -81,6 +86,11 @@ export default function NotificationsPage() {
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
       await markAsRead(notification.id);
+    }
+
+    if (notification.type === "FOLLOW_USER") {
+      router.push(`/user/${notification.sender.id}`);
+      return;
     }
 
     if (!notification.post) return;
@@ -157,6 +167,13 @@ export default function NotificationsPage() {
                   : comment.content}
               </div>
             )}
+          </div>
+        );
+      case "FOLLOW_USER":
+        return (
+          <div>
+            <span className="font-bold text-gray-900">{senderName}</span>
+            <span className="text-gray-600"> 关注了你</span>
           </div>
         );
       default:

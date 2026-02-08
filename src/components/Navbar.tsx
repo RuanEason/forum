@@ -19,6 +19,15 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -43,10 +52,20 @@ export default function Navbar() {
 
   const closeSearch = useCallback(() => {
     setIsSearchOpen(false);
-    setSearchQuery("");
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = window.setTimeout(() => {
+      setSearchQuery("");
+      closeTimerRef.current = null;
+    }, 180);
   }, []);
 
   const openSearch = useCallback(() => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     setIsSearchOpen(true);
   }, []);
 
@@ -137,7 +156,7 @@ export default function Navbar() {
           {/* Search Overlay */}
           <div
             ref={searchContainerRef}
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out ${
+            className={`absolute inset-0 flex items-center justify-center px-2 sm:px-4 pointer-events-none transition-all duration-300 ease-in-out ${
               isSearchOpen
                 ? "opacity-100 visible"
                 : "opacity-0 invisible pointer-events-none"
@@ -145,10 +164,10 @@ export default function Navbar() {
           >
             {/* Search input container */}
             <div
-              className={`flex items-center bg-white border border-gray-200 rounded-full shadow-lg transition-all duration-300 ease-in-out ${
+              className={`pointer-events-auto flex items-center bg-white border border-gray-200 rounded-full shadow-lg overflow-hidden transition-[opacity,transform] duration-200 ease-out ${
                 isSearchOpen
-                  ? "w-full sm:w-[80%] md:w-[70%] lg:w-[60%] scale-100"
-                  : "w-0 scale-95"
+                  ? "w-full max-w-sm sm:max-w-md md:max-w-xl scale-100 opacity-100"
+                  : "w-full max-w-sm sm:max-w-md md:max-w-xl scale-95 opacity-0"
               }`}
             >
               {/* Search icon inside input */}
