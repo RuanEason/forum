@@ -8,22 +8,35 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PinButton from "@/components/PinButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { Eye, MessageCircle, Plus } from "lucide-react";
+
+const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
+
+const getUserLevel = (experience: number) =>
+  LEVEL_THRESHOLDS.reduce((level, requiredExperience) => {
+    if (experience >= requiredExperience) {
+      return level + 1;
+    }
+    return level;
+  }, 0);
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
   viewCount?: number;
+  pinned?: boolean;
+  pinnedAt?: string | null;
   author: {
     id: string;
     name: string | null;
     avatar: string | null;
+    experience?: number | null;
   };
   likes: {
     userId: string;
@@ -70,11 +83,15 @@ export default function HomeContent({
   hideCreateButton = false,
   onPostDeleted,
   currentUserId,
+  showAuthorLevel = false,
+  embedded = false,
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
   onPostDeleted?: () => void;
   currentUserId?: string;
+  showAuthorLevel?: boolean;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -128,8 +145,8 @@ export default function HomeContent({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
-      <main className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
+    <div className={embedded ? undefined : "min-h-screen bg-gray-50 pb-16 sm:pb-0"}>
+      <main className={embedded ? undefined : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"}>
         <div className="px-0 sm:px-0">
           {session && !hideCreateButton && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
@@ -181,6 +198,11 @@ export default function HomeContent({
                             >
                               {post.author.name || "匿名用户"}
                             </Link>
+                            {showAuthorLevel && (
+                              <span className="text-xs font-medium text-indigo-600">
+                                lv.{getUserLevel(post.author.experience ?? 0)}
+                              </span>
+                            )}
                             {post.topic && (
                               <Link href={`/topic/${post.topic.id}`}>
                                 <Badge variant="primary" size="sm">
@@ -196,6 +218,15 @@ export default function HomeContent({
                           </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
+                          {/* 置顶标识 */}
+                          {post.pinned && (
+                            <div className="flex items-center gap-1 text-orange-500 text-xs font-medium mb-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
+                              </svg>
+                              <span>已置顶</span>
+                            </div>
+                          )}
                           <div
                             onClick={(e) => {
                               if ((e.target as HTMLElement).closest("a"))
@@ -272,24 +303,26 @@ export default function HomeContent({
                             <span className="text-xs sm:text-sm font-medium ml-1 tabular-nums">
                               {post.comments.length > 0 ? post.comments.length : null}
                             </span>
-                            <span className="hidden sm:inline text-xs sm:text-sm font-medium ml-0.5">
-                              {post.comments.length > 0 ? "评论" : "评论"}
-                            </span>
                           </Link>
                           {/* 分享按钮 */}
                           <div className="flex items-center">
                             <RepostButton postId={post.id} />
                           </div>
+                          {/* 置顶按钮 - 仅管理员可见 */}
+                          {(session?.user as any)?.role === "admin" && (
+                            <div className="flex items-center">
+                              <PinButton postId={post.id} isPinned={post.pinned || false} />
+                            </div>
+                          )}
                           {/* 删除按钮 */}
                           {(session?.user as any)?.id &&
                             (session?.user as any)?.id === post.author.id && (
                               <button
                                 onClick={() => handleDeletePost(post.id)}
-                                className="text-red-500 hover:text-red-700 text-xs sm:text-sm p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
+                                className="text-red-500 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
                               >
-                                <span className="hidden sm:inline">删除</span>
-                                <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
                                 </svg>
                               </button>
                             )}

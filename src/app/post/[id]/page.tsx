@@ -2,23 +2,33 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getPostById } from "@/lib/post";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSlug from "rehype-slug";
+import { isValidElement, type ReactNode } from "react";
+
 import Link from "next/link";
 import { format } from "date-fns";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PinButton from "@/components/PinButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import BackButton from "@/components/BackButton";
-import PostSidebar from "@/components/PostSidebar";
-import { extractHeadings } from "@/lib/markdown";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
-import remarkBreaks from 'remark-breaks';
+import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
+import ArticleCatalog from "@/components/ArticleCatalog";
+import MobileArticleCatalog from "@/components/MobileArticleCatalog";
+import CatalogSidebar from "@/components/CatalogSidebar";
+import {
+  createHeadingIdGenerator,
+  extractMarkdownHeadings,
+} from "@/lib/markdown";
+import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
+import { cn } from "@/lib/utils";
 
 interface AuthorProps {
   id: string;
@@ -33,6 +43,8 @@ interface PostDetailProps {
   author: AuthorProps;
   createdAt: Date;
   viewCount: number;
+  pinned?: boolean;
+  pinnedAt?: Date | null;
   likes: { userId: string }[];
   reposts: { userId: string }[];
   comments: CommentProps[];
@@ -46,6 +58,22 @@ interface PostDetailProps {
     downloadCount: number;
   }>;
   topic?: { id: string; name: string } | null;
+}
+
+function getTextFromReactNode(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((child) => getTextFromReactNode(child)).join("");
+  }
+
+  if (isValidElement(node)) {
+    return getTextFromReactNode((node.props as { children?: ReactNode }).children);
+  }
+
+  return "";
 }
 
 export async function generateMetadata({
@@ -95,7 +123,9 @@ export default async function PostDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions) as any;
+  const session = (await getServerSession(authOptions)) as {
+    user?: { id?: string; role?: string };
+  } | null;
   const postId = id;
   const post = (await getPostById(postId)) as unknown as PostDetailProps | null;
 
@@ -106,6 +136,73 @@ export default async function PostDetailPage({
       </div>
     );
   }
+
+  const markdownHeadings = extractMarkdownHeadings(post.content);
+  const showToc = markdownHeadings.length > 0;
+  const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
+  const generateHeadingId = createHeadingIdGenerator();
+  const markdownComponents: Components = {
+    h1: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h1 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h1>
+      );
+    },
+    h2: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h2 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h2>
+      );
+    },
+    h3: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h3 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h3>
+      );
+    },
+    h4: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h4 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h4>
+      );
+    },
+    h5: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h5 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h5>
+      );
+    },
+    h6: ({ children, className, ...props }) => {
+      const headingText = getTextFromReactNode(children);
+      const headingId = generateHeadingId(headingText);
+
+      return (
+        <h6 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
+          {children}
+        </h6>
+      );
+    },
+  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -140,21 +237,6 @@ export default async function PostDetailPage({
     })),
   };
 
-  // 提取标题用于生成目录
-  const headings = extractHeadings(post.content);
-  const hasToc = headings.length > 0;
-  const hasComments = post.comments.length > 0;
-  // 只要有目录或评论就显示侧边栏
-  const hasSidebar = hasToc || hasComments;
-
-  // 将评论转换为时间轴需要的格式（只取顶级评论）
-  const commentsForTimeline = post.comments.map((comment) => ({
-    id: comment.id,
-    authorName: comment.author.name || "匿名用户",
-    createdAt: comment.createdAt,
-    isReply: false,
-  }));
-
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       {/* 阅读量追踪组件 - 使用 Cookie 防刷机制 */}
@@ -163,29 +245,24 @@ export default async function PostDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {showToc && <MobileArticleCatalog items={catalogItems} />}
 
-      {/* 三栏布局容器 */}
       <div
         className={
-          hasSidebar
+          showToc
             ? "post-detail-layout"
-            : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"
+            : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0"
         }
       >
-        {/* 左侧占位（大屏幕） */}
-        {hasSidebar && <div className="post-detail-spacer hidden lg:block" />}
-
-        {/* 主内容区域 */}
-        <div className={hasSidebar ? "post-detail-main" : "px-0"}>
-          <div className={hasSidebar ? "" : "px-0"}>
+        <div className={showToc ? "post-detail-main px-0" : "px-0"}>
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
                 <div className="sm:hidden mb-4">
                   <BackButton href="/" />
                 </div>
-                <div className="flex items-center relative">
-                  <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
+                <div className="flex items-center">
+                  <div className="hidden sm:flex items-center mr-3 shrink-0">
                     <BackButton href="/" />
                   </div>
                   <Avatar
@@ -229,7 +306,7 @@ export default async function PostDetailPage({
                   <div className="prose prose-sm sm:prose-base max-w-none break-words">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkBreaks]}
-                      rehypePlugins={[rehypeSlug]}
+                      components={markdownComponents}
                     >
                       {post.content}
                     </ReactMarkdown>
@@ -262,26 +339,27 @@ export default async function PostDetailPage({
                     initialLikedByUser={
                       session?.user?.id
                         ? post.likes.some(
-                            (like) => like.userId === session.user.id
+                            (like) => like.userId === (session.user?.id ?? '')
                           )
                         : false
                     }
                   />
                   <RepostButton postId={post.id} />
+                  {/* 置顶按钮 - 仅管理员可见 */}
+                  {session?.user?.role === "admin" && (
+                    <PinButton postId={post.id} isPinned={post.pinned || false} />
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Comments Section */}
-            <PostComments comments={post.comments} postId={post.id} />
-          </div>
+            <PostComments comments={post.comments} postId={post.id} postAuthorId={post.author.id} />
         </div>
-
-        {/* 右侧智能侧边栏（大屏幕显示） */}
-        {hasSidebar && (
-          <aside className="post-detail-toc">
-            <PostSidebar headings={headings} comments={commentsForTimeline} />
-          </aside>
+        {showToc && (
+          <div className="post-detail-toc">
+            <CatalogSidebar items={catalogItems} />
+          </div>
         )}
       </div>
     </div>

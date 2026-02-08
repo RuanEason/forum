@@ -79,7 +79,7 @@ async function processVideo(file: File, filename: string): Promise<ProcessedUplo
         .outputOptions(['-frames:v 1'])
         .format('mjpeg')
         .on('end', () => resolve())
-        .on('error', (err) => reject(err))
+        .on('error', (err: Error) => reject(err))
         .save(rawPreviewPath);
     });
 

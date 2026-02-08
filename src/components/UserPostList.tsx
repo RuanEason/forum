@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
+import PinButton from "@/components/PinButton";
 import PostImages from "@/components/PostImages";
 import { Eye } from "lucide-react";
 
@@ -18,6 +19,8 @@ interface PostProps {
   title: string | null;
   content: string;
   viewCount?: number;
+  pinned?: boolean;
+  pinnedAt?: Date | null;
   createdAt: Date;
   author: {
     id: string;
@@ -115,6 +118,15 @@ export default function UserPostList({
                       : ""}
                   </span>
                 </div>
+                {/* 置顶标识 */}
+                {post.pinned && (
+                  <div className="flex items-center gap-1 text-orange-500 text-xs font-medium mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                      <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
+                    </svg>
+                    <span>已置顶</span>
+                  </div>
+                )}
                 {/* 标题显示逻辑 */}
                 {(viewMode === "title" ||
                   viewMode === "titleAndContent" ||
@@ -199,6 +211,10 @@ export default function UserPostList({
                     </span>
                   </Link>
                   <RepostButton postId={post.id} />
+                  {/* 置顶按钮 - 仅管理员可见 */}
+                  {(session?.user as any)?.role === "admin" && (
+                    <PinButton postId={post.id} isPinned={post.pinned || false} />
+                  )}
                   {(session?.user as any)?.id && (session?.user as any).id === post.author.id && (
                     <button
                       onClick={() => handleDeletePost(post.id)}

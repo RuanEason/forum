@@ -25,6 +25,9 @@ model User {
   bio          String?
   postViewMode String        @default("both") // title, content, both
   coverImage   String?
+  showUserData Boolean       @default(true) // 是否展示用户数据（帖子数、评论数、粉丝数等）
+  experience   Int           @default(0)
+  lastLoginRewardAt DateTime?
   posts        Post[]
   createdTopics Topic[]      @relation("TopicCreator")
   topics       Topic[]       @relation("TopicFollows")
@@ -34,6 +37,8 @@ model User {
   commentLikes CommentLike[]
   sentNotifications     Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
+  following    Follow[]     @relation("UserFollowing")
+  followers    Follow[]     @relation("UserFollowers")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -53,12 +58,15 @@ model Post {
   topicId     String?
   topic       Topic?           @relation(fields: [topicId], references: [id])
   viewCount   Int              @default(0)
+  pinned      Boolean          @default(false)
+  pinnedAt    DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   @@index([authorId])
   @@index([createdAt])
   @@index([topicId])
+  @@index([pinned, pinnedAt])
 }
 
 model Topic {
@@ -105,11 +113,14 @@ model Comment {
   parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[]     @relation("CommentReplies")
   likes     CommentLike[]
+  pinned    Boolean       @default(false)
+  pinnedAt  DateTime?
   createdAt DateTime      @default(now())
 
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
+  @@index([pinned, pinnedAt])
 }
 
 model PostLike {
@@ -128,6 +139,7 @@ enum NotificationType {
   REPLY_COMMENT
   LIKE_POST
   LIKE_COMMENT
+  FOLLOW_USER
 }
 
 model Notification {
@@ -168,4 +180,17 @@ model Repost {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }

@@ -8,23 +8,12 @@ import type {
   PostImage,
   Topic,
 } from "@/generated";
-import HomeContent from "@/components/HomeContent";
-import Avatar from "@/components/Avatar";
+import SearchResultSwitcher from "@/components/SearchResultSwitcher";
 import Link from "next/link";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
 }
-
-// 用户搜索结果类型
-type UserSearchResult = {
-  id: string;
-  name: string | null;
-  avatar: string | null;
-  _count: {
-    posts: number;
-  };
-};
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
@@ -115,6 +104,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             id: true,
             name: true,
             avatar: true,
+            experience: true,
           },
         },
         likes: {
@@ -155,6 +145,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         id: true,
         name: true,
         avatar: true,
+        experience: true,
         _count: {
           select: {
             posts: true,
@@ -187,6 +178,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ...post,
     createdAt: post.createdAt.toISOString(),
     updatedAt: post.updatedAt.toISOString(),
+    pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
   }));
 
   const hasUsers = users.length > 0;
@@ -263,47 +255,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </div>
           )}
 
-          {/* 相关用户区块 */}
-          {hasUsers && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                相关用户
-              </h2>
-              <div className="bg-white sm:rounded-lg shadow-sm p-4">
-                <div className="flex flex-wrap gap-4">
-                  {users.map((user: UserSearchResult) => (
-                    <Link
-                      key={user.id}
-                      href={`/user/${user.id}`}
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100 hover:border-gray-200"
-                    >
-                      <Avatar src={user.avatar} name={user.name} size="md" />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 hover:text-blue-600">
-                          {user.name || "未命名用户"}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {user._count.posts} 篇帖子
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 相关帖子区块 */}
-          {hasPosts && (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                相关帖子
-              </h2>
-              <HomeContent
-                initialPosts={serializedPosts}
-                hideCreateButton={true}
-              />
-            </div>
+          {(hasUsers || hasPosts) && (
+            <SearchResultSwitcher users={users} posts={serializedPosts} />
           )}
         </div>
       </main>

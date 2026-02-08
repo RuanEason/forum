@@ -8,12 +8,15 @@ export async function getPosts(topicId?: string) {
       title: true,
       content: true,
       viewCount: true,
+      pinned: true,
+      pinnedAt: true,
       createdAt: true,
       author: {
         select: {
           id: true,
           name: true,
           avatar: true,
+          experience: true,
         },
       },
       likes: {
@@ -53,9 +56,11 @@ export async function getPosts(topicId?: string) {
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { pinned: 'desc' },    // 置顶的帖子排在前面
+      { pinnedAt: 'desc' },  // 按置顶时间降序
+      { createdAt: 'desc' }, // 非置顶帖子按创建时间降序
+    ],
   });
 }
 
@@ -91,7 +96,15 @@ export async function createPost(
 export async function getPostById(id: string) {
   return prisma.post.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      pinned: true,
+      pinnedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      viewCount: true,
       author: {
         select: {
           id: true,
@@ -122,7 +135,7 @@ export async function getPostById(id: string) {
           fileSize: true,
           mimeType: true,
           downloadCount: true,
-        },
+          },
       },
       topic: {
         select: {
@@ -131,7 +144,14 @@ export async function getPostById(id: string) {
         },
       },
       comments: {
-        include: {
+        select: {
+          id: true,
+          content: true,
+          postId: true,
+          createdAt: true,
+          pinned: true,
+          pinnedAt: true,
+          parentId: true,
           author: {
             select: {
               id: true,
@@ -145,7 +165,12 @@ export async function getPostById(id: string) {
             },
           },
           replies: {
-            include: {
+            select: {
+              id: true,
+              content: true,
+              postId: true,
+              createdAt: true,
+              parentId: true,
               author: {
                 select: {
                   id: true,
@@ -167,9 +192,11 @@ export async function getPostById(id: string) {
         where: {
           parentId: null,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy: [
+          { pinned: 'desc' },
+          { pinnedAt: 'desc' },
+          { createdAt: 'desc' },
+        ],
       },
     },
   });

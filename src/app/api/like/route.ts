@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rewardActionExperience } from "@/lib/experience";
 
 /**
  * 处理点赞和取消点赞
@@ -103,6 +104,12 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        try {
+          await rewardActionExperience(userId, "like");
+        } catch (error) {
+          console.error("Failed to reward post-like experience:", error);
+        }
+
         return NextResponse.json({ message: "Liked successfully", liked: true, like }, { status: 201 });
       }
     } else if (targetType === "comment") {
@@ -159,6 +166,12 @@ export async function POST(request: NextRequest) {
               }
             });
           }
+        }
+
+        try {
+          await rewardActionExperience(userId, "like");
+        } catch (error) {
+          console.error("Failed to reward comment-like experience:", error);
         }
 
         return NextResponse.json({ message: "Liked successfully", liked: true, like }, { status: 201 });

@@ -1,6 +1,7 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { getUserLevel, rewardDailyLoginExperience } from "@/lib/experience";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const authOptions: any = {
@@ -35,6 +36,17 @@ export const authOptions: any = {
           throw new Error("Invalid credentials");
         }
 
+        let currentExperience = user.experience;
+
+        try {
+          const loginRewardResult = await rewardDailyLoginExperience(user.id);
+          if (loginRewardResult.awarded && typeof loginRewardResult.experience === "number") {
+            currentExperience = loginRewardResult.experience;
+          }
+        } catch (error) {
+          console.error("Failed to reward daily login experience:", error);
+        }
+
         return {
           id: user.id.toString(),
           email: user.email,
@@ -42,6 +54,8 @@ export const authOptions: any = {
           role: user.role,
           avatar: user.avatar,
           postViewMode: user.postViewMode,
+          experience: currentExperience,
+          level: getUserLevel(currentExperience),
         };
       }
     })
@@ -57,6 +71,8 @@ export const authOptions: any = {
         token.role = user.role;
         token.avatar = user.avatar;
         token.postViewMode = user.postViewMode;
+        token.experience = user.experience;
+        token.level = user.level;
       }
       if (trigger === "update" && session?.user) {
         token.name = session.user.name;
@@ -64,6 +80,18 @@ export const authOptions: any = {
         // 确保 postViewMode 被更新，即使它是 undefined
         if ('postViewMode' in session.user) {
           token.postViewMode = session.user.postViewMode;
+        }
+        if ('showUserData' in session.user) {
+          token.showUserData = session.user.showUserData;
+        }
+        if ('coverImage' in session.user) {
+          token.coverImage = session.user.coverImage;
+        }
+        if ('experience' in session.user) {
+          token.experience = session.user.experience;
+        }
+        if ('level' in session.user) {
+          token.level = session.user.level;
         }
       }
       return token;
@@ -75,6 +103,10 @@ export const authOptions: any = {
         session.user.role = token.role as string;
         session.user.avatar = token.avatar as string;
         session.user.postViewMode = token.postViewMode as string;
+        session.user.showUserData = token.showUserData as boolean;
+        session.user.coverImage = token.coverImage as string;
+        session.user.experience = token.experience as number;
+        session.user.level = token.level as number;
       }
       return session;
     }
