@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import { createPortal } from "react-dom";
 import remarkGfm from "remark-gfm";
 import { ImagePlus, SendHorizontal } from "lucide-react";
@@ -410,9 +411,9 @@ function CommentItem({
   // 判断当前用户是否是帖子作者
   const isPostAuthor = currentUserId === postAuthorId;
 
-  const markdownComponents = {
-    img: ({ src, alt }: { src?: string; alt?: string }) => {
-      if (!src) return null;
+  const markdownComponents: Components = {
+    img: ({ src, alt }) => {
+      if (typeof src !== "string" || !src) return null;
 
       return (
         <button
