@@ -26,7 +26,7 @@ export default function CatalogSidebar({
 
     // 获取所有标题元素
     const articleHeadings = Array.from(
-      article.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      article.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')
     );
 
     if (articleHeadings.length === 0) return;
@@ -48,7 +48,9 @@ export default function CatalogSidebar({
 
       // 更新目录高亮
       const anchorName = currentHeading ? currentHeading.id : '';
-      const activeCatalog = dir.querySelector(`.catalog[name="${anchorName}"]`);
+      const activeCatalog = Array.from(
+        dir.querySelectorAll<HTMLElement>('.catalog')
+      ).find((item) => item.dataset.anchor === anchorName);
       if (activeCatalog) {
         // 移除所有已激活的目录条目的激活状态
         dir.querySelectorAll('.catalog-active').forEach(function(item) {
@@ -108,7 +110,7 @@ export default function CatalogSidebar({
             <div
               key={item.id}
               className="catalog"
-              name={item.id}
+              data-anchor={item.id}
               style={{ paddingLeft: `${paddingLeft}rem` }}
             >
               <a href={`#${item.id}`}>
