@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
+import { enqueueNotificationPush } from "@/lib/push";
 
 /**
  * 处理点赞和取消点赞
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
 
           if (!existingNotif) {
             // Create notification only if doesn't exist
-            await prisma.notification.create({
+            const notification = await prisma.notification.create({
               data: {
                 type: "LIKE_POST",
                 senderId: userId,
@@ -101,6 +102,8 @@ export async function POST(request: NextRequest) {
                 postId: targetId,
               }
             });
+
+            enqueueNotificationPush(notification.id);
           }
         }
 
@@ -156,7 +159,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (!existingNotif) {
-            await prisma.notification.create({
+            const notification = await prisma.notification.create({
               data: {
                 type: "LIKE_COMMENT",
                 senderId: userId,
@@ -165,6 +168,8 @@ export async function POST(request: NextRequest) {
                 commentId: targetId,
               }
             });
+
+            enqueueNotificationPush(notification.id);
           }
         }
 

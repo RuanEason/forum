@@ -28,6 +28,8 @@ model User {
   showUserData Boolean       @default(true) // 是否展示用户数据（帖子数、评论数、粉丝数等）
   experience   Int           @default(0)
   lastLoginRewardAt DateTime?
+  dailyLikeRewardCount Int   @default(0)
+  lastLikeRewardAt DateTime?
   posts        Post[]
   createdTopics Topic[]      @relation("TopicCreator")
   topics       Topic[]       @relation("TopicFollows")
@@ -37,6 +39,7 @@ model User {
   commentLikes CommentLike[]
   sentNotifications     Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationReceiver")
+  pushDevices           PushDevice[]
   following    Follow[]     @relation("UserFollowing")
   followers    Follow[]     @relation("UserFollowers")
   createdAt    DateTime      @default(now())
@@ -153,12 +156,70 @@ model Notification {
   postId    String?
   post      Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
   commentId String?
+  pushLogs  PushLog[]
   createdAt DateTime         @default(now())
 
   @@index([receiverId])
   @@index([receiverId, isRead, createdAt])
   @@index([senderId, receiverId, type, postId, isRead])
   @@index([senderId, receiverId, type, commentId, isRead])
+}
+
+enum PushPlatform {
+  IOS
+  ANDROID
+  HARMONY
+  OTHER
+}
+
+enum PushLogStatus {
+  PENDING
+  RETRYING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model PushDevice {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registrationId String       @unique
+  platform       PushPlatform
+  appPackage     String
+  appVersion     String?
+  isActive       Boolean      @default(true)
+  lastSeenAt     DateTime     @default(now())
+  pushLogs       PushLog[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId, isActive])
+  @@index([platform])
+  @@map("push_devices")
+}
+
+model PushLog {
+  id             String        @id @default(cuid())
+  notificationId String
+  notification   Notification  @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  deviceId       String
+  device         PushDevice    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  registrationId String
+  requestId      String?
+  status         PushLogStatus @default(PENDING)
+  attemptCount   Int           @default(0)
+  error          String?       @db.Text
+  sentAt         DateTime?
+  nextRetryAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([notificationId, registrationId])
+  @@index([status, nextRetryAt])
+  @@index([deviceId])
+  @@index([notificationId])
+  @@map("push_logs")
 }
 
 model CommentLike {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { enqueueNotificationPush } from "@/lib/push";
 
 /**
  * POST /api/follow
@@ -90,13 +91,15 @@ export async function POST(request: Request) {
       });
 
       // 创建关注通知
-      await prisma.notification.create({
+      const notification = await prisma.notification.create({
         data: {
           type: "FOLLOW_USER",
           senderId: followerId,
           receiverId: followingId,
         },
       });
+
+      enqueueNotificationPush(notification.id);
 
       return NextResponse.json({
         success: true,
@@ -105,14 +108,19 @@ export async function POST(request: Request) {
       });
     } else {
       // 取消关注
-      await prisma.follow.delete({
+      const deleted = await prisma.follow.deleteMany({
         where: {
-          followerId_followingId: {
-            followerId,
-            followingId,
-          },
+          followerId,
+          followingId,
         },
       });
+
+      if (deleted.count === 0) {
+        return NextResponse.json(
+          { error: "尚未关注该用户" },
+          { status: 400 }
+        );
+      }
 
       // 删除相关的关注通知
       await prisma.notification.deleteMany({

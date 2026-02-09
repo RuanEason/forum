@@ -121,6 +121,8 @@ exports.Prisma.UserScalarFieldEnum = {
   showUserData: 'showUserData',
   experience: 'experience',
   lastLoginRewardAt: 'lastLoginRewardAt',
+  dailyLikeRewardCount: 'dailyLikeRewardCount',
+  lastLikeRewardAt: 'lastLikeRewardAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -195,6 +197,34 @@ exports.Prisma.NotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.PushDeviceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  registrationId: 'registrationId',
+  platform: 'platform',
+  appPackage: 'appPackage',
+  appVersion: 'appVersion',
+  isActive: 'isActive',
+  lastSeenAt: 'lastSeenAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PushLogScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  deviceId: 'deviceId',
+  registrationId: 'registrationId',
+  requestId: 'requestId',
+  status: 'status',
+  attemptCount: 'attemptCount',
+  error: 'error',
+  sentAt: 'sentAt',
+  nextRetryAt: 'nextRetryAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.CommentLikeScalarFieldEnum = {
   id: 'id',
   commentId: 'commentId',
@@ -232,6 +262,21 @@ exports.NotificationType = exports.$Enums.NotificationType = {
   FOLLOW_USER: 'FOLLOW_USER'
 };
 
+exports.PushPlatform = exports.$Enums.PushPlatform = {
+  IOS: 'IOS',
+  ANDROID: 'ANDROID',
+  HARMONY: 'HARMONY',
+  OTHER: 'OTHER'
+};
+
+exports.PushLogStatus = exports.$Enums.PushLogStatus = {
+  PENDING: 'PENDING',
+  RETRYING: 'RETRYING',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Post: 'Post',
@@ -241,6 +286,8 @@ exports.Prisma.ModelName = {
   Comment: 'Comment',
   PostLike: 'PostLike',
   Notification: 'Notification',
+  PushDevice: 'PushDevice',
+  PushLog: 'PushLog',
   CommentLike: 'CommentLike',
   Repost: 'Repost',
   Follow: 'Follow'

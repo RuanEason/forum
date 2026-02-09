@@ -54,6 +54,16 @@ export type PostLike = $Result.DefaultSelection<Prisma.$PostLikePayload>
  */
 export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
 /**
+ * Model PushDevice
+ * 
+ */
+export type PushDevice = $Result.DefaultSelection<Prisma.$PushDevicePayload>
+/**
+ * Model PushLog
+ * 
+ */
+export type PushLog = $Result.DefaultSelection<Prisma.$PushLogPayload>
+/**
  * Model CommentLike
  * 
  */
@@ -83,11 +93,40 @@ export namespace $Enums {
 
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
 
+
+export const PushPlatform: {
+  IOS: 'IOS',
+  ANDROID: 'ANDROID',
+  HARMONY: 'HARMONY',
+  OTHER: 'OTHER'
+};
+
+export type PushPlatform = (typeof PushPlatform)[keyof typeof PushPlatform]
+
+
+export const PushLogStatus: {
+  PENDING: 'PENDING',
+  RETRYING: 'RETRYING',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+};
+
+export type PushLogStatus = (typeof PushLogStatus)[keyof typeof PushLogStatus]
+
 }
 
 export type NotificationType = $Enums.NotificationType
 
 export const NotificationType: typeof $Enums.NotificationType
+
+export type PushPlatform = $Enums.PushPlatform
+
+export const PushPlatform: typeof $Enums.PushPlatform
+
+export type PushLogStatus = $Enums.PushLogStatus
+
+export const PushLogStatus: typeof $Enums.PushLogStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -290,6 +329,26 @@ export class PrismaClient<
     * ```
     */
   get notification(): Prisma.NotificationDelegate<ExtArgs>;
+
+  /**
+   * `prisma.pushDevice`: Exposes CRUD operations for the **PushDevice** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PushDevices
+    * const pushDevices = await prisma.pushDevice.findMany()
+    * ```
+    */
+  get pushDevice(): Prisma.PushDeviceDelegate<ExtArgs>;
+
+  /**
+   * `prisma.pushLog`: Exposes CRUD operations for the **PushLog** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PushLogs
+    * const pushLogs = await prisma.pushLog.findMany()
+    * ```
+    */
+  get pushLog(): Prisma.PushLogDelegate<ExtArgs>;
 
   /**
    * `prisma.commentLike`: Exposes CRUD operations for the **CommentLike** model.
@@ -798,6 +857,8 @@ export namespace Prisma {
     Comment: 'Comment',
     PostLike: 'PostLike',
     Notification: 'Notification',
+    PushDevice: 'PushDevice',
+    PushLog: 'PushLog',
     CommentLike: 'CommentLike',
     Repost: 'Repost',
     Follow: 'Follow'
@@ -817,7 +878,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     meta: {
-      modelProps: 'user' | 'post' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'commentLike' | 'repost' | 'follow'
+      modelProps: 'user' | 'post' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'pushDevice' | 'pushLog' | 'commentLike' | 'repost' | 'follow'
       txIsolationLevel: Prisma.TransactionIsolationLevel
     },
     model: {
@@ -1349,6 +1410,138 @@ export namespace Prisma {
           }
         }
       }
+      PushDevice: {
+        payload: Prisma.$PushDevicePayload<ExtArgs>
+        fields: Prisma.PushDeviceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PushDeviceFindUniqueArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PushDeviceFindUniqueOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          findFirst: {
+            args: Prisma.PushDeviceFindFirstArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PushDeviceFindFirstOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          findMany: {
+            args: Prisma.PushDeviceFindManyArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>[]
+          }
+          create: {
+            args: Prisma.PushDeviceCreateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          createMany: {
+            args: Prisma.PushDeviceCreateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          delete: {
+            args: Prisma.PushDeviceDeleteArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          update: {
+            args: Prisma.PushDeviceUpdateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          deleteMany: {
+            args: Prisma.PushDeviceDeleteManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PushDeviceUpdateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          upsert: {
+            args: Prisma.PushDeviceUpsertArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushDevicePayload>
+          }
+          aggregate: {
+            args: Prisma.PushDeviceAggregateArgs<ExtArgs>,
+            result: $Utils.Optional<AggregatePushDevice>
+          }
+          groupBy: {
+            args: Prisma.PushDeviceGroupByArgs<ExtArgs>,
+            result: $Utils.Optional<PushDeviceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PushDeviceCountArgs<ExtArgs>,
+            result: $Utils.Optional<PushDeviceCountAggregateOutputType> | number
+          }
+        }
+      }
+      PushLog: {
+        payload: Prisma.$PushLogPayload<ExtArgs>
+        fields: Prisma.PushLogFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PushLogFindUniqueArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PushLogFindUniqueOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          findFirst: {
+            args: Prisma.PushLogFindFirstArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PushLogFindFirstOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          findMany: {
+            args: Prisma.PushLogFindManyArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>[]
+          }
+          create: {
+            args: Prisma.PushLogCreateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          createMany: {
+            args: Prisma.PushLogCreateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          delete: {
+            args: Prisma.PushLogDeleteArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          update: {
+            args: Prisma.PushLogUpdateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          deleteMany: {
+            args: Prisma.PushLogDeleteManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PushLogUpdateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          upsert: {
+            args: Prisma.PushLogUpsertArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$PushLogPayload>
+          }
+          aggregate: {
+            args: Prisma.PushLogAggregateArgs<ExtArgs>,
+            result: $Utils.Optional<AggregatePushLog>
+          }
+          groupBy: {
+            args: Prisma.PushLogGroupByArgs<ExtArgs>,
+            result: $Utils.Optional<PushLogGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PushLogCountArgs<ExtArgs>,
+            result: $Utils.Optional<PushLogCountAggregateOutputType> | number
+          }
+        }
+      }
       CommentLike: {
         payload: Prisma.$CommentLikePayload<ExtArgs>
         fields: Prisma.CommentLikeFieldRefs
@@ -1715,6 +1908,7 @@ export namespace Prisma {
     commentLikes: number
     sentNotifications: number
     receivedNotifications: number
+    pushDevices: number
     following: number
     followers: number
   }
@@ -1729,6 +1923,7 @@ export namespace Prisma {
     commentLikes?: boolean | UserCountOutputTypeCountCommentLikesArgs
     sentNotifications?: boolean | UserCountOutputTypeCountSentNotificationsArgs
     receivedNotifications?: boolean | UserCountOutputTypeCountReceivedNotificationsArgs
+    pushDevices?: boolean | UserCountOutputTypeCountPushDevicesArgs
     following?: boolean | UserCountOutputTypeCountFollowingArgs
     followers?: boolean | UserCountOutputTypeCountFollowersArgs
   }
@@ -1815,6 +2010,14 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountReceivedNotificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: NotificationWhereInput
+  }
+
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountPushDevicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PushDeviceWhereInput
   }
 
 
@@ -2008,6 +2211,74 @@ export namespace Prisma {
 
 
   /**
+   * Count Type NotificationCountOutputType
+   */
+
+  export type NotificationCountOutputType = {
+    pushLogs: number
+  }
+
+  export type NotificationCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    pushLogs?: boolean | NotificationCountOutputTypeCountPushLogsArgs
+  }
+
+  // Custom InputTypes
+
+  /**
+   * NotificationCountOutputType without action
+   */
+  export type NotificationCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationCountOutputType
+     */
+    select?: NotificationCountOutputTypeSelect<ExtArgs> | null
+  }
+
+
+  /**
+   * NotificationCountOutputType without action
+   */
+  export type NotificationCountOutputTypeCountPushLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PushLogWhereInput
+  }
+
+
+
+  /**
+   * Count Type PushDeviceCountOutputType
+   */
+
+  export type PushDeviceCountOutputType = {
+    pushLogs: number
+  }
+
+  export type PushDeviceCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    pushLogs?: boolean | PushDeviceCountOutputTypeCountPushLogsArgs
+  }
+
+  // Custom InputTypes
+
+  /**
+   * PushDeviceCountOutputType without action
+   */
+  export type PushDeviceCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDeviceCountOutputType
+     */
+    select?: PushDeviceCountOutputTypeSelect<ExtArgs> | null
+  }
+
+
+  /**
+   * PushDeviceCountOutputType without action
+   */
+  export type PushDeviceCountOutputTypeCountPushLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PushLogWhereInput
+  }
+
+
+
+  /**
    * Models
    */
 
@@ -2025,10 +2296,12 @@ export namespace Prisma {
 
   export type UserAvgAggregateOutputType = {
     experience: number | null
+    dailyLikeRewardCount: number | null
   }
 
   export type UserSumAggregateOutputType = {
     experience: number | null
+    dailyLikeRewardCount: number | null
   }
 
   export type UserMinAggregateOutputType = {
@@ -2045,6 +2318,8 @@ export namespace Prisma {
     showUserData: boolean | null
     experience: number | null
     lastLoginRewardAt: Date | null
+    dailyLikeRewardCount: number | null
+    lastLikeRewardAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2063,6 +2338,8 @@ export namespace Prisma {
     showUserData: boolean | null
     experience: number | null
     lastLoginRewardAt: Date | null
+    dailyLikeRewardCount: number | null
+    lastLikeRewardAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2081,6 +2358,8 @@ export namespace Prisma {
     showUserData: number
     experience: number
     lastLoginRewardAt: number
+    dailyLikeRewardCount: number
+    lastLikeRewardAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -2089,10 +2368,12 @@ export namespace Prisma {
 
   export type UserAvgAggregateInputType = {
     experience?: true
+    dailyLikeRewardCount?: true
   }
 
   export type UserSumAggregateInputType = {
     experience?: true
+    dailyLikeRewardCount?: true
   }
 
   export type UserMinAggregateInputType = {
@@ -2109,6 +2390,8 @@ export namespace Prisma {
     showUserData?: true
     experience?: true
     lastLoginRewardAt?: true
+    dailyLikeRewardCount?: true
+    lastLikeRewardAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2127,6 +2410,8 @@ export namespace Prisma {
     showUserData?: true
     experience?: true
     lastLoginRewardAt?: true
+    dailyLikeRewardCount?: true
+    lastLikeRewardAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2145,6 +2430,8 @@ export namespace Prisma {
     showUserData?: true
     experience?: true
     lastLoginRewardAt?: true
+    dailyLikeRewardCount?: true
+    lastLikeRewardAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2250,6 +2537,8 @@ export namespace Prisma {
     showUserData: boolean
     experience: number
     lastLoginRewardAt: Date | null
+    dailyLikeRewardCount: number
+    lastLikeRewardAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -2287,6 +2576,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: boolean
     lastLoginRewardAt?: boolean
+    dailyLikeRewardCount?: boolean
+    lastLikeRewardAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     posts?: boolean | User$postsArgs<ExtArgs>
@@ -2298,6 +2589,7 @@ export namespace Prisma {
     commentLikes?: boolean | User$commentLikesArgs<ExtArgs>
     sentNotifications?: boolean | User$sentNotificationsArgs<ExtArgs>
     receivedNotifications?: boolean | User$receivedNotificationsArgs<ExtArgs>
+    pushDevices?: boolean | User$pushDevicesArgs<ExtArgs>
     following?: boolean | User$followingArgs<ExtArgs>
     followers?: boolean | User$followersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -2317,6 +2609,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: boolean
     lastLoginRewardAt?: boolean
+    dailyLikeRewardCount?: boolean
+    lastLikeRewardAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -2331,6 +2625,7 @@ export namespace Prisma {
     commentLikes?: boolean | User$commentLikesArgs<ExtArgs>
     sentNotifications?: boolean | User$sentNotificationsArgs<ExtArgs>
     receivedNotifications?: boolean | User$receivedNotificationsArgs<ExtArgs>
+    pushDevices?: boolean | User$pushDevicesArgs<ExtArgs>
     following?: boolean | User$followingArgs<ExtArgs>
     followers?: boolean | User$followersArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -2349,6 +2644,7 @@ export namespace Prisma {
       commentLikes: Prisma.$CommentLikePayload<ExtArgs>[]
       sentNotifications: Prisma.$NotificationPayload<ExtArgs>[]
       receivedNotifications: Prisma.$NotificationPayload<ExtArgs>[]
+      pushDevices: Prisma.$PushDevicePayload<ExtArgs>[]
       following: Prisma.$FollowPayload<ExtArgs>[]
       followers: Prisma.$FollowPayload<ExtArgs>[]
     }
@@ -2366,6 +2662,8 @@ export namespace Prisma {
       showUserData: boolean
       experience: number
       lastLoginRewardAt: Date | null
+      dailyLikeRewardCount: number
+      lastLikeRewardAt: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -2751,6 +3049,8 @@ export namespace Prisma {
 
     receivedNotifications<T extends User$receivedNotificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$receivedNotificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, 'findMany'> | Null>;
 
+    pushDevices<T extends User$pushDevicesArgs<ExtArgs> = {}>(args?: Subset<T, User$pushDevicesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findMany'> | Null>;
+
     following<T extends User$followingArgs<ExtArgs> = {}>(args?: Subset<T, User$followingArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     followers<T extends User$followersArgs<ExtArgs> = {}>(args?: Subset<T, User$followersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, 'findMany'> | Null>;
@@ -2796,6 +3096,8 @@ export namespace Prisma {
     readonly showUserData: FieldRef<"User", 'Boolean'>
     readonly experience: FieldRef<"User", 'Int'>
     readonly lastLoginRewardAt: FieldRef<"User", 'DateTime'>
+    readonly dailyLikeRewardCount: FieldRef<"User", 'Int'>
+    readonly lastLikeRewardAt: FieldRef<"User", 'DateTime'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -3295,6 +3597,27 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+
+  /**
+   * User.pushDevices
+   */
+  export type User$pushDevicesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    where?: PushDeviceWhereInput
+    orderBy?: PushDeviceOrderByWithRelationInput | PushDeviceOrderByWithRelationInput[]
+    cursor?: PushDeviceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PushDeviceScalarFieldEnum | PushDeviceScalarFieldEnum[]
   }
 
 
@@ -9582,6 +9905,8 @@ export namespace Prisma {
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
     post?: boolean | Notification$postArgs<ExtArgs>
+    pushLogs?: boolean | Notification$pushLogsArgs<ExtArgs>
+    _count?: boolean | NotificationCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["notification"]>
 
   export type NotificationSelectScalar = {
@@ -9599,6 +9924,8 @@ export namespace Prisma {
     sender?: boolean | UserDefaultArgs<ExtArgs>
     receiver?: boolean | UserDefaultArgs<ExtArgs>
     post?: boolean | Notification$postArgs<ExtArgs>
+    pushLogs?: boolean | Notification$pushLogsArgs<ExtArgs>
+    _count?: boolean | NotificationCountOutputTypeDefaultArgs<ExtArgs>
   }
 
 
@@ -9608,6 +9935,7 @@ export namespace Prisma {
       sender: Prisma.$UserPayload<ExtArgs>
       receiver: Prisma.$UserPayload<ExtArgs>
       post: Prisma.$PostPayload<ExtArgs> | null
+      pushLogs: Prisma.$PushLogPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -9989,6 +10317,8 @@ export namespace Prisma {
 
     post<T extends Notification$postArgs<ExtArgs> = {}>(args?: Subset<T, Notification$postArgs<ExtArgs>>): Prisma__PostClient<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, 'findUniqueOrThrow'> | null, null, ExtArgs>;
 
+    pushLogs<T extends Notification$pushLogsArgs<ExtArgs> = {}>(args?: Subset<T, Notification$pushLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findMany'> | Null>;
+
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -10353,6 +10683,27 @@ export namespace Prisma {
 
 
   /**
+   * Notification.pushLogs
+   */
+  export type Notification$pushLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    where?: PushLogWhereInput
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    cursor?: PushLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PushLogScalarFieldEnum | PushLogScalarFieldEnum[]
+  }
+
+
+  /**
    * Notification without action
    */
   export type NotificationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10364,6 +10715,2041 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well.
      */
     include?: NotificationInclude<ExtArgs> | null
+  }
+
+
+
+  /**
+   * Model PushDevice
+   */
+
+  export type AggregatePushDevice = {
+    _count: PushDeviceCountAggregateOutputType | null
+    _min: PushDeviceMinAggregateOutputType | null
+    _max: PushDeviceMaxAggregateOutputType | null
+  }
+
+  export type PushDeviceMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    registrationId: string | null
+    platform: $Enums.PushPlatform | null
+    appPackage: string | null
+    appVersion: string | null
+    isActive: boolean | null
+    lastSeenAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PushDeviceMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    registrationId: string | null
+    platform: $Enums.PushPlatform | null
+    appPackage: string | null
+    appVersion: string | null
+    isActive: boolean | null
+    lastSeenAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PushDeviceCountAggregateOutputType = {
+    id: number
+    userId: number
+    registrationId: number
+    platform: number
+    appPackage: number
+    appVersion: number
+    isActive: number
+    lastSeenAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PushDeviceMinAggregateInputType = {
+    id?: true
+    userId?: true
+    registrationId?: true
+    platform?: true
+    appPackage?: true
+    appVersion?: true
+    isActive?: true
+    lastSeenAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PushDeviceMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    registrationId?: true
+    platform?: true
+    appPackage?: true
+    appVersion?: true
+    isActive?: true
+    lastSeenAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PushDeviceCountAggregateInputType = {
+    id?: true
+    userId?: true
+    registrationId?: true
+    platform?: true
+    appPackage?: true
+    appVersion?: true
+    isActive?: true
+    lastSeenAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PushDeviceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PushDevice to aggregate.
+     */
+    where?: PushDeviceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushDevices to fetch.
+     */
+    orderBy?: PushDeviceOrderByWithRelationInput | PushDeviceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PushDeviceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushDevices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushDevices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PushDevices
+    **/
+    _count?: true | PushDeviceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PushDeviceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PushDeviceMaxAggregateInputType
+  }
+
+  export type GetPushDeviceAggregateType<T extends PushDeviceAggregateArgs> = {
+        [P in keyof T & keyof AggregatePushDevice]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePushDevice[P]>
+      : GetScalarType<T[P], AggregatePushDevice[P]>
+  }
+
+
+
+
+  export type PushDeviceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PushDeviceWhereInput
+    orderBy?: PushDeviceOrderByWithAggregationInput | PushDeviceOrderByWithAggregationInput[]
+    by: PushDeviceScalarFieldEnum[] | PushDeviceScalarFieldEnum
+    having?: PushDeviceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PushDeviceCountAggregateInputType | true
+    _min?: PushDeviceMinAggregateInputType
+    _max?: PushDeviceMaxAggregateInputType
+  }
+
+  export type PushDeviceGroupByOutputType = {
+    id: string
+    userId: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion: string | null
+    isActive: boolean
+    lastSeenAt: Date
+    createdAt: Date
+    updatedAt: Date
+    _count: PushDeviceCountAggregateOutputType | null
+    _min: PushDeviceMinAggregateOutputType | null
+    _max: PushDeviceMaxAggregateOutputType | null
+  }
+
+  type GetPushDeviceGroupByPayload<T extends PushDeviceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PushDeviceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PushDeviceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PushDeviceGroupByOutputType[P]>
+            : GetScalarType<T[P], PushDeviceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PushDeviceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    registrationId?: boolean
+    platform?: boolean
+    appPackage?: boolean
+    appVersion?: boolean
+    isActive?: boolean
+    lastSeenAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    pushLogs?: boolean | PushDevice$pushLogsArgs<ExtArgs>
+    _count?: boolean | PushDeviceCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["pushDevice"]>
+
+  export type PushDeviceSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    registrationId?: boolean
+    platform?: boolean
+    appPackage?: boolean
+    appVersion?: boolean
+    isActive?: boolean
+    lastSeenAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type PushDeviceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    pushLogs?: boolean | PushDevice$pushLogsArgs<ExtArgs>
+    _count?: boolean | PushDeviceCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+
+  export type $PushDevicePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PushDevice"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+      pushLogs: Prisma.$PushLogPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      registrationId: string
+      platform: $Enums.PushPlatform
+      appPackage: string
+      appVersion: string | null
+      isActive: boolean
+      lastSeenAt: Date
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["pushDevice"]>
+    composites: {}
+  }
+
+
+  type PushDeviceGetPayload<S extends boolean | null | undefined | PushDeviceDefaultArgs> = $Result.GetResult<Prisma.$PushDevicePayload, S>
+
+  type PushDeviceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<PushDeviceFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: PushDeviceCountAggregateInputType | true
+    }
+
+  export interface PushDeviceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PushDevice'], meta: { name: 'PushDevice' } }
+    /**
+     * Find zero or one PushDevice that matches the filter.
+     * @param {PushDeviceFindUniqueArgs} args - Arguments to find a PushDevice
+     * @example
+     * // Get one PushDevice
+     * const pushDevice = await prisma.pushDevice.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends PushDeviceFindUniqueArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceFindUniqueArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findUnique'> | null, null, ExtArgs>
+
+    /**
+     * Find one PushDevice that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {PushDeviceFindUniqueOrThrowArgs} args - Arguments to find a PushDevice
+     * @example
+     * // Get one PushDevice
+     * const pushDevice = await prisma.pushDevice.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends PushDeviceFindUniqueOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceFindUniqueOrThrowArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findUniqueOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find the first PushDevice that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceFindFirstArgs} args - Arguments to find a PushDevice
+     * @example
+     * // Get one PushDevice
+     * const pushDevice = await prisma.pushDevice.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends PushDeviceFindFirstArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceFindFirstArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findFirst'> | null, null, ExtArgs>
+
+    /**
+     * Find the first PushDevice that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceFindFirstOrThrowArgs} args - Arguments to find a PushDevice
+     * @example
+     * // Get one PushDevice
+     * const pushDevice = await prisma.pushDevice.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends PushDeviceFindFirstOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceFindFirstOrThrowArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findFirstOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find zero or more PushDevices that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PushDevices
+     * const pushDevices = await prisma.pushDevice.findMany()
+     * 
+     * // Get first 10 PushDevices
+     * const pushDevices = await prisma.pushDevice.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pushDeviceWithIdOnly = await prisma.pushDevice.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends PushDeviceFindManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceFindManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findMany'>>
+
+    /**
+     * Create a PushDevice.
+     * @param {PushDeviceCreateArgs} args - Arguments to create a PushDevice.
+     * @example
+     * // Create one PushDevice
+     * const PushDevice = await prisma.pushDevice.create({
+     *   data: {
+     *     // ... data to create a PushDevice
+     *   }
+     * })
+     * 
+    **/
+    create<T extends PushDeviceCreateArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceCreateArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'create'>, never, ExtArgs>
+
+    /**
+     * Create many PushDevices.
+     *     @param {PushDeviceCreateManyArgs} args - Arguments to create many PushDevices.
+     *     @example
+     *     // Create many PushDevices
+     *     const pushDevice = await prisma.pushDevice.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends PushDeviceCreateManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceCreateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PushDevice.
+     * @param {PushDeviceDeleteArgs} args - Arguments to delete one PushDevice.
+     * @example
+     * // Delete one PushDevice
+     * const PushDevice = await prisma.pushDevice.delete({
+     *   where: {
+     *     // ... filter to delete one PushDevice
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends PushDeviceDeleteArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceDeleteArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'delete'>, never, ExtArgs>
+
+    /**
+     * Update one PushDevice.
+     * @param {PushDeviceUpdateArgs} args - Arguments to update one PushDevice.
+     * @example
+     * // Update one PushDevice
+     * const pushDevice = await prisma.pushDevice.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends PushDeviceUpdateArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceUpdateArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'update'>, never, ExtArgs>
+
+    /**
+     * Delete zero or more PushDevices.
+     * @param {PushDeviceDeleteManyArgs} args - Arguments to filter PushDevices to delete.
+     * @example
+     * // Delete a few PushDevices
+     * const { count } = await prisma.pushDevice.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends PushDeviceDeleteManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushDeviceDeleteManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PushDevices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PushDevices
+     * const pushDevice = await prisma.pushDevice.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends PushDeviceUpdateManyArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceUpdateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PushDevice.
+     * @param {PushDeviceUpsertArgs} args - Arguments to update or create a PushDevice.
+     * @example
+     * // Update or create a PushDevice
+     * const pushDevice = await prisma.pushDevice.upsert({
+     *   create: {
+     *     // ... data to create a PushDevice
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PushDevice we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends PushDeviceUpsertArgs<ExtArgs>>(
+      args: SelectSubset<T, PushDeviceUpsertArgs<ExtArgs>>
+    ): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'upsert'>, never, ExtArgs>
+
+    /**
+     * Count the number of PushDevices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceCountArgs} args - Arguments to filter PushDevices to count.
+     * @example
+     * // Count the number of PushDevices
+     * const count = await prisma.pushDevice.count({
+     *   where: {
+     *     // ... the filter for the PushDevices we want to count
+     *   }
+     * })
+    **/
+    count<T extends PushDeviceCountArgs>(
+      args?: Subset<T, PushDeviceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PushDeviceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PushDevice.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PushDeviceAggregateArgs>(args: Subset<T, PushDeviceAggregateArgs>): Prisma.PrismaPromise<GetPushDeviceAggregateType<T>>
+
+    /**
+     * Group by PushDevice.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushDeviceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PushDeviceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PushDeviceGroupByArgs['orderBy'] }
+        : { orderBy?: PushDeviceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PushDeviceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPushDeviceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PushDevice model
+   */
+  readonly fields: PushDeviceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PushDevice.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PushDeviceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise';
+
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    pushLogs<T extends PushDevice$pushLogsArgs<ExtArgs> = {}>(args?: Subset<T, PushDevice$pushLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findMany'> | Null>;
+
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+
+
+  /**
+   * Fields of the PushDevice model
+   */ 
+  interface PushDeviceFieldRefs {
+    readonly id: FieldRef<"PushDevice", 'String'>
+    readonly userId: FieldRef<"PushDevice", 'String'>
+    readonly registrationId: FieldRef<"PushDevice", 'String'>
+    readonly platform: FieldRef<"PushDevice", 'PushPlatform'>
+    readonly appPackage: FieldRef<"PushDevice", 'String'>
+    readonly appVersion: FieldRef<"PushDevice", 'String'>
+    readonly isActive: FieldRef<"PushDevice", 'Boolean'>
+    readonly lastSeenAt: FieldRef<"PushDevice", 'DateTime'>
+    readonly createdAt: FieldRef<"PushDevice", 'DateTime'>
+    readonly updatedAt: FieldRef<"PushDevice", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+
+  /**
+   * PushDevice findUnique
+   */
+  export type PushDeviceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter, which PushDevice to fetch.
+     */
+    where: PushDeviceWhereUniqueInput
+  }
+
+
+  /**
+   * PushDevice findUniqueOrThrow
+   */
+  export type PushDeviceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter, which PushDevice to fetch.
+     */
+    where: PushDeviceWhereUniqueInput
+  }
+
+
+  /**
+   * PushDevice findFirst
+   */
+  export type PushDeviceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter, which PushDevice to fetch.
+     */
+    where?: PushDeviceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushDevices to fetch.
+     */
+    orderBy?: PushDeviceOrderByWithRelationInput | PushDeviceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PushDevices.
+     */
+    cursor?: PushDeviceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushDevices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushDevices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PushDevices.
+     */
+    distinct?: PushDeviceScalarFieldEnum | PushDeviceScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushDevice findFirstOrThrow
+   */
+  export type PushDeviceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter, which PushDevice to fetch.
+     */
+    where?: PushDeviceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushDevices to fetch.
+     */
+    orderBy?: PushDeviceOrderByWithRelationInput | PushDeviceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PushDevices.
+     */
+    cursor?: PushDeviceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushDevices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushDevices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PushDevices.
+     */
+    distinct?: PushDeviceScalarFieldEnum | PushDeviceScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushDevice findMany
+   */
+  export type PushDeviceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter, which PushDevices to fetch.
+     */
+    where?: PushDeviceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushDevices to fetch.
+     */
+    orderBy?: PushDeviceOrderByWithRelationInput | PushDeviceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PushDevices.
+     */
+    cursor?: PushDeviceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushDevices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushDevices.
+     */
+    skip?: number
+    distinct?: PushDeviceScalarFieldEnum | PushDeviceScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushDevice create
+   */
+  export type PushDeviceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PushDevice.
+     */
+    data: XOR<PushDeviceCreateInput, PushDeviceUncheckedCreateInput>
+  }
+
+
+  /**
+   * PushDevice createMany
+   */
+  export type PushDeviceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PushDevices.
+     */
+    data: PushDeviceCreateManyInput | PushDeviceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * PushDevice update
+   */
+  export type PushDeviceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PushDevice.
+     */
+    data: XOR<PushDeviceUpdateInput, PushDeviceUncheckedUpdateInput>
+    /**
+     * Choose, which PushDevice to update.
+     */
+    where: PushDeviceWhereUniqueInput
+  }
+
+
+  /**
+   * PushDevice updateMany
+   */
+  export type PushDeviceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PushDevices.
+     */
+    data: XOR<PushDeviceUpdateManyMutationInput, PushDeviceUncheckedUpdateManyInput>
+    /**
+     * Filter which PushDevices to update
+     */
+    where?: PushDeviceWhereInput
+  }
+
+
+  /**
+   * PushDevice upsert
+   */
+  export type PushDeviceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PushDevice to update in case it exists.
+     */
+    where: PushDeviceWhereUniqueInput
+    /**
+     * In case the PushDevice found by the `where` argument doesn't exist, create a new PushDevice with this data.
+     */
+    create: XOR<PushDeviceCreateInput, PushDeviceUncheckedCreateInput>
+    /**
+     * In case the PushDevice was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PushDeviceUpdateInput, PushDeviceUncheckedUpdateInput>
+  }
+
+
+  /**
+   * PushDevice delete
+   */
+  export type PushDeviceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+    /**
+     * Filter which PushDevice to delete.
+     */
+    where: PushDeviceWhereUniqueInput
+  }
+
+
+  /**
+   * PushDevice deleteMany
+   */
+  export type PushDeviceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PushDevices to delete
+     */
+    where?: PushDeviceWhereInput
+  }
+
+
+  /**
+   * PushDevice.pushLogs
+   */
+  export type PushDevice$pushLogsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    where?: PushLogWhereInput
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    cursor?: PushLogWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PushLogScalarFieldEnum | PushLogScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushDevice without action
+   */
+  export type PushDeviceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushDevice
+     */
+    select?: PushDeviceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushDeviceInclude<ExtArgs> | null
+  }
+
+
+
+  /**
+   * Model PushLog
+   */
+
+  export type AggregatePushLog = {
+    _count: PushLogCountAggregateOutputType | null
+    _avg: PushLogAvgAggregateOutputType | null
+    _sum: PushLogSumAggregateOutputType | null
+    _min: PushLogMinAggregateOutputType | null
+    _max: PushLogMaxAggregateOutputType | null
+  }
+
+  export type PushLogAvgAggregateOutputType = {
+    attemptCount: number | null
+  }
+
+  export type PushLogSumAggregateOutputType = {
+    attemptCount: number | null
+  }
+
+  export type PushLogMinAggregateOutputType = {
+    id: string | null
+    notificationId: string | null
+    deviceId: string | null
+    registrationId: string | null
+    requestId: string | null
+    status: $Enums.PushLogStatus | null
+    attemptCount: number | null
+    error: string | null
+    sentAt: Date | null
+    nextRetryAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PushLogMaxAggregateOutputType = {
+    id: string | null
+    notificationId: string | null
+    deviceId: string | null
+    registrationId: string | null
+    requestId: string | null
+    status: $Enums.PushLogStatus | null
+    attemptCount: number | null
+    error: string | null
+    sentAt: Date | null
+    nextRetryAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PushLogCountAggregateOutputType = {
+    id: number
+    notificationId: number
+    deviceId: number
+    registrationId: number
+    requestId: number
+    status: number
+    attemptCount: number
+    error: number
+    sentAt: number
+    nextRetryAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PushLogAvgAggregateInputType = {
+    attemptCount?: true
+  }
+
+  export type PushLogSumAggregateInputType = {
+    attemptCount?: true
+  }
+
+  export type PushLogMinAggregateInputType = {
+    id?: true
+    notificationId?: true
+    deviceId?: true
+    registrationId?: true
+    requestId?: true
+    status?: true
+    attemptCount?: true
+    error?: true
+    sentAt?: true
+    nextRetryAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PushLogMaxAggregateInputType = {
+    id?: true
+    notificationId?: true
+    deviceId?: true
+    registrationId?: true
+    requestId?: true
+    status?: true
+    attemptCount?: true
+    error?: true
+    sentAt?: true
+    nextRetryAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PushLogCountAggregateInputType = {
+    id?: true
+    notificationId?: true
+    deviceId?: true
+    registrationId?: true
+    requestId?: true
+    status?: true
+    attemptCount?: true
+    error?: true
+    sentAt?: true
+    nextRetryAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PushLogAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PushLog to aggregate.
+     */
+    where?: PushLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushLogs to fetch.
+     */
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PushLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PushLogs
+    **/
+    _count?: true | PushLogCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PushLogAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PushLogSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PushLogMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PushLogMaxAggregateInputType
+  }
+
+  export type GetPushLogAggregateType<T extends PushLogAggregateArgs> = {
+        [P in keyof T & keyof AggregatePushLog]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePushLog[P]>
+      : GetScalarType<T[P], AggregatePushLog[P]>
+  }
+
+
+
+
+  export type PushLogGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PushLogWhereInput
+    orderBy?: PushLogOrderByWithAggregationInput | PushLogOrderByWithAggregationInput[]
+    by: PushLogScalarFieldEnum[] | PushLogScalarFieldEnum
+    having?: PushLogScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PushLogCountAggregateInputType | true
+    _avg?: PushLogAvgAggregateInputType
+    _sum?: PushLogSumAggregateInputType
+    _min?: PushLogMinAggregateInputType
+    _max?: PushLogMaxAggregateInputType
+  }
+
+  export type PushLogGroupByOutputType = {
+    id: string
+    notificationId: string
+    deviceId: string
+    registrationId: string
+    requestId: string | null
+    status: $Enums.PushLogStatus
+    attemptCount: number
+    error: string | null
+    sentAt: Date | null
+    nextRetryAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    _count: PushLogCountAggregateOutputType | null
+    _avg: PushLogAvgAggregateOutputType | null
+    _sum: PushLogSumAggregateOutputType | null
+    _min: PushLogMinAggregateOutputType | null
+    _max: PushLogMaxAggregateOutputType | null
+  }
+
+  type GetPushLogGroupByPayload<T extends PushLogGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PushLogGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PushLogGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PushLogGroupByOutputType[P]>
+            : GetScalarType<T[P], PushLogGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PushLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    notificationId?: boolean
+    deviceId?: boolean
+    registrationId?: boolean
+    requestId?: boolean
+    status?: boolean
+    attemptCount?: boolean
+    error?: boolean
+    sentAt?: boolean
+    nextRetryAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    notification?: boolean | NotificationDefaultArgs<ExtArgs>
+    device?: boolean | PushDeviceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["pushLog"]>
+
+  export type PushLogSelectScalar = {
+    id?: boolean
+    notificationId?: boolean
+    deviceId?: boolean
+    registrationId?: boolean
+    requestId?: boolean
+    status?: boolean
+    attemptCount?: boolean
+    error?: boolean
+    sentAt?: boolean
+    nextRetryAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type PushLogInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    notification?: boolean | NotificationDefaultArgs<ExtArgs>
+    device?: boolean | PushDeviceDefaultArgs<ExtArgs>
+  }
+
+
+  export type $PushLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PushLog"
+    objects: {
+      notification: Prisma.$NotificationPayload<ExtArgs>
+      device: Prisma.$PushDevicePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      notificationId: string
+      deviceId: string
+      registrationId: string
+      requestId: string | null
+      status: $Enums.PushLogStatus
+      attemptCount: number
+      error: string | null
+      sentAt: Date | null
+      nextRetryAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["pushLog"]>
+    composites: {}
+  }
+
+
+  type PushLogGetPayload<S extends boolean | null | undefined | PushLogDefaultArgs> = $Result.GetResult<Prisma.$PushLogPayload, S>
+
+  type PushLogCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<PushLogFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: PushLogCountAggregateInputType | true
+    }
+
+  export interface PushLogDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PushLog'], meta: { name: 'PushLog' } }
+    /**
+     * Find zero or one PushLog that matches the filter.
+     * @param {PushLogFindUniqueArgs} args - Arguments to find a PushLog
+     * @example
+     * // Get one PushLog
+     * const pushLog = await prisma.pushLog.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends PushLogFindUniqueArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogFindUniqueArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findUnique'> | null, null, ExtArgs>
+
+    /**
+     * Find one PushLog that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {PushLogFindUniqueOrThrowArgs} args - Arguments to find a PushLog
+     * @example
+     * // Get one PushLog
+     * const pushLog = await prisma.pushLog.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends PushLogFindUniqueOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogFindUniqueOrThrowArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findUniqueOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find the first PushLog that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogFindFirstArgs} args - Arguments to find a PushLog
+     * @example
+     * // Get one PushLog
+     * const pushLog = await prisma.pushLog.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends PushLogFindFirstArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogFindFirstArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findFirst'> | null, null, ExtArgs>
+
+    /**
+     * Find the first PushLog that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogFindFirstOrThrowArgs} args - Arguments to find a PushLog
+     * @example
+     * // Get one PushLog
+     * const pushLog = await prisma.pushLog.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends PushLogFindFirstOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogFindFirstOrThrowArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findFirstOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find zero or more PushLogs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PushLogs
+     * const pushLogs = await prisma.pushLog.findMany()
+     * 
+     * // Get first 10 PushLogs
+     * const pushLogs = await prisma.pushLog.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const pushLogWithIdOnly = await prisma.pushLog.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends PushLogFindManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogFindManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'findMany'>>
+
+    /**
+     * Create a PushLog.
+     * @param {PushLogCreateArgs} args - Arguments to create a PushLog.
+     * @example
+     * // Create one PushLog
+     * const PushLog = await prisma.pushLog.create({
+     *   data: {
+     *     // ... data to create a PushLog
+     *   }
+     * })
+     * 
+    **/
+    create<T extends PushLogCreateArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogCreateArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'create'>, never, ExtArgs>
+
+    /**
+     * Create many PushLogs.
+     *     @param {PushLogCreateManyArgs} args - Arguments to create many PushLogs.
+     *     @example
+     *     // Create many PushLogs
+     *     const pushLog = await prisma.pushLog.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends PushLogCreateManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogCreateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a PushLog.
+     * @param {PushLogDeleteArgs} args - Arguments to delete one PushLog.
+     * @example
+     * // Delete one PushLog
+     * const PushLog = await prisma.pushLog.delete({
+     *   where: {
+     *     // ... filter to delete one PushLog
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends PushLogDeleteArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogDeleteArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'delete'>, never, ExtArgs>
+
+    /**
+     * Update one PushLog.
+     * @param {PushLogUpdateArgs} args - Arguments to update one PushLog.
+     * @example
+     * // Update one PushLog
+     * const pushLog = await prisma.pushLog.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends PushLogUpdateArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogUpdateArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'update'>, never, ExtArgs>
+
+    /**
+     * Delete zero or more PushLogs.
+     * @param {PushLogDeleteManyArgs} args - Arguments to filter PushLogs to delete.
+     * @example
+     * // Delete a few PushLogs
+     * const { count } = await prisma.pushLog.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends PushLogDeleteManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, PushLogDeleteManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PushLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PushLogs
+     * const pushLog = await prisma.pushLog.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends PushLogUpdateManyArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogUpdateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one PushLog.
+     * @param {PushLogUpsertArgs} args - Arguments to update or create a PushLog.
+     * @example
+     * // Update or create a PushLog
+     * const pushLog = await prisma.pushLog.upsert({
+     *   create: {
+     *     // ... data to create a PushLog
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PushLog we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends PushLogUpsertArgs<ExtArgs>>(
+      args: SelectSubset<T, PushLogUpsertArgs<ExtArgs>>
+    ): Prisma__PushLogClient<$Result.GetResult<Prisma.$PushLogPayload<ExtArgs>, T, 'upsert'>, never, ExtArgs>
+
+    /**
+     * Count the number of PushLogs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogCountArgs} args - Arguments to filter PushLogs to count.
+     * @example
+     * // Count the number of PushLogs
+     * const count = await prisma.pushLog.count({
+     *   where: {
+     *     // ... the filter for the PushLogs we want to count
+     *   }
+     * })
+    **/
+    count<T extends PushLogCountArgs>(
+      args?: Subset<T, PushLogCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PushLogCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PushLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PushLogAggregateArgs>(args: Subset<T, PushLogAggregateArgs>): Prisma.PrismaPromise<GetPushLogAggregateType<T>>
+
+    /**
+     * Group by PushLog.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PushLogGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PushLogGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PushLogGroupByArgs['orderBy'] }
+        : { orderBy?: PushLogGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PushLogGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPushLogGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PushLog model
+   */
+  readonly fields: PushLogFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PushLog.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PushLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise';
+
+    notification<T extends NotificationDefaultArgs<ExtArgs> = {}>(args?: Subset<T, NotificationDefaultArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    device<T extends PushDeviceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PushDeviceDefaultArgs<ExtArgs>>): Prisma__PushDeviceClient<$Result.GetResult<Prisma.$PushDevicePayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+
+
+  /**
+   * Fields of the PushLog model
+   */ 
+  interface PushLogFieldRefs {
+    readonly id: FieldRef<"PushLog", 'String'>
+    readonly notificationId: FieldRef<"PushLog", 'String'>
+    readonly deviceId: FieldRef<"PushLog", 'String'>
+    readonly registrationId: FieldRef<"PushLog", 'String'>
+    readonly requestId: FieldRef<"PushLog", 'String'>
+    readonly status: FieldRef<"PushLog", 'PushLogStatus'>
+    readonly attemptCount: FieldRef<"PushLog", 'Int'>
+    readonly error: FieldRef<"PushLog", 'String'>
+    readonly sentAt: FieldRef<"PushLog", 'DateTime'>
+    readonly nextRetryAt: FieldRef<"PushLog", 'DateTime'>
+    readonly createdAt: FieldRef<"PushLog", 'DateTime'>
+    readonly updatedAt: FieldRef<"PushLog", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+
+  /**
+   * PushLog findUnique
+   */
+  export type PushLogFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter, which PushLog to fetch.
+     */
+    where: PushLogWhereUniqueInput
+  }
+
+
+  /**
+   * PushLog findUniqueOrThrow
+   */
+  export type PushLogFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter, which PushLog to fetch.
+     */
+    where: PushLogWhereUniqueInput
+  }
+
+
+  /**
+   * PushLog findFirst
+   */
+  export type PushLogFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter, which PushLog to fetch.
+     */
+    where?: PushLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushLogs to fetch.
+     */
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PushLogs.
+     */
+    cursor?: PushLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PushLogs.
+     */
+    distinct?: PushLogScalarFieldEnum | PushLogScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushLog findFirstOrThrow
+   */
+  export type PushLogFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter, which PushLog to fetch.
+     */
+    where?: PushLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushLogs to fetch.
+     */
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PushLogs.
+     */
+    cursor?: PushLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushLogs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PushLogs.
+     */
+    distinct?: PushLogScalarFieldEnum | PushLogScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushLog findMany
+   */
+  export type PushLogFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter, which PushLogs to fetch.
+     */
+    where?: PushLogWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PushLogs to fetch.
+     */
+    orderBy?: PushLogOrderByWithRelationInput | PushLogOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PushLogs.
+     */
+    cursor?: PushLogWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PushLogs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PushLogs.
+     */
+    skip?: number
+    distinct?: PushLogScalarFieldEnum | PushLogScalarFieldEnum[]
+  }
+
+
+  /**
+   * PushLog create
+   */
+  export type PushLogCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PushLog.
+     */
+    data: XOR<PushLogCreateInput, PushLogUncheckedCreateInput>
+  }
+
+
+  /**
+   * PushLog createMany
+   */
+  export type PushLogCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PushLogs.
+     */
+    data: PushLogCreateManyInput | PushLogCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * PushLog update
+   */
+  export type PushLogUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PushLog.
+     */
+    data: XOR<PushLogUpdateInput, PushLogUncheckedUpdateInput>
+    /**
+     * Choose, which PushLog to update.
+     */
+    where: PushLogWhereUniqueInput
+  }
+
+
+  /**
+   * PushLog updateMany
+   */
+  export type PushLogUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PushLogs.
+     */
+    data: XOR<PushLogUpdateManyMutationInput, PushLogUncheckedUpdateManyInput>
+    /**
+     * Filter which PushLogs to update
+     */
+    where?: PushLogWhereInput
+  }
+
+
+  /**
+   * PushLog upsert
+   */
+  export type PushLogUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PushLog to update in case it exists.
+     */
+    where: PushLogWhereUniqueInput
+    /**
+     * In case the PushLog found by the `where` argument doesn't exist, create a new PushLog with this data.
+     */
+    create: XOR<PushLogCreateInput, PushLogUncheckedCreateInput>
+    /**
+     * In case the PushLog was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PushLogUpdateInput, PushLogUncheckedUpdateInput>
+  }
+
+
+  /**
+   * PushLog delete
+   */
+  export type PushLogDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
+    /**
+     * Filter which PushLog to delete.
+     */
+    where: PushLogWhereUniqueInput
+  }
+
+
+  /**
+   * PushLog deleteMany
+   */
+  export type PushLogDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PushLogs to delete
+     */
+    where?: PushLogWhereInput
+  }
+
+
+  /**
+   * PushLog without action
+   */
+  export type PushLogDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PushLog
+     */
+    select?: PushLogSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PushLogInclude<ExtArgs> | null
   }
 
 
@@ -13121,6 +15507,8 @@ export namespace Prisma {
     showUserData: 'showUserData',
     experience: 'experience',
     lastLoginRewardAt: 'lastLoginRewardAt',
+    dailyLikeRewardCount: 'dailyLikeRewardCount',
+    lastLikeRewardAt: 'lastLikeRewardAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -13219,6 +15607,40 @@ export namespace Prisma {
   export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
 
 
+  export const PushDeviceScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    registrationId: 'registrationId',
+    platform: 'platform',
+    appPackage: 'appPackage',
+    appVersion: 'appVersion',
+    isActive: 'isActive',
+    lastSeenAt: 'lastSeenAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PushDeviceScalarFieldEnum = (typeof PushDeviceScalarFieldEnum)[keyof typeof PushDeviceScalarFieldEnum]
+
+
+  export const PushLogScalarFieldEnum: {
+    id: 'id',
+    notificationId: 'notificationId',
+    deviceId: 'deviceId',
+    registrationId: 'registrationId',
+    requestId: 'requestId',
+    status: 'status',
+    attemptCount: 'attemptCount',
+    error: 'error',
+    sentAt: 'sentAt',
+    nextRetryAt: 'nextRetryAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PushLogScalarFieldEnum = (typeof PushLogScalarFieldEnum)[keyof typeof PushLogScalarFieldEnum]
+
+
   export const CommentLikeScalarFieldEnum: {
     id: 'id',
     commentId: 'commentId',
@@ -13305,6 +15727,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'PushPlatform'
+   */
+  export type EnumPushPlatformFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushPlatform'>
+    
+
+
+  /**
+   * Reference to a field of type 'PushLogStatus'
+   */
+  export type EnumPushLogStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushLogStatus'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -13331,6 +15767,8 @@ export namespace Prisma {
     showUserData?: BoolFilter<"User"> | boolean
     experience?: IntFilter<"User"> | number
     lastLoginRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    dailyLikeRewardCount?: IntFilter<"User"> | number
+    lastLikeRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     posts?: PostListRelationFilter
@@ -13342,6 +15780,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeListRelationFilter
     sentNotifications?: NotificationListRelationFilter
     receivedNotifications?: NotificationListRelationFilter
+    pushDevices?: PushDeviceListRelationFilter
     following?: FollowListRelationFilter
     followers?: FollowListRelationFilter
   }
@@ -13360,6 +15799,8 @@ export namespace Prisma {
     showUserData?: SortOrder
     experience?: SortOrder
     lastLoginRewardAt?: SortOrderInput | SortOrder
+    dailyLikeRewardCount?: SortOrder
+    lastLikeRewardAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     posts?: PostOrderByRelationAggregateInput
@@ -13371,6 +15812,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeOrderByRelationAggregateInput
     sentNotifications?: NotificationOrderByRelationAggregateInput
     receivedNotifications?: NotificationOrderByRelationAggregateInput
+    pushDevices?: PushDeviceOrderByRelationAggregateInput
     following?: FollowOrderByRelationAggregateInput
     followers?: FollowOrderByRelationAggregateInput
   }
@@ -13392,6 +15834,8 @@ export namespace Prisma {
     showUserData?: BoolFilter<"User"> | boolean
     experience?: IntFilter<"User"> | number
     lastLoginRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    dailyLikeRewardCount?: IntFilter<"User"> | number
+    lastLikeRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     posts?: PostListRelationFilter
@@ -13403,6 +15847,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeListRelationFilter
     sentNotifications?: NotificationListRelationFilter
     receivedNotifications?: NotificationListRelationFilter
+    pushDevices?: PushDeviceListRelationFilter
     following?: FollowListRelationFilter
     followers?: FollowListRelationFilter
   }, "id" | "email">
@@ -13421,6 +15866,8 @@ export namespace Prisma {
     showUserData?: SortOrder
     experience?: SortOrder
     lastLoginRewardAt?: SortOrderInput | SortOrder
+    dailyLikeRewardCount?: SortOrder
+    lastLikeRewardAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -13447,6 +15894,8 @@ export namespace Prisma {
     showUserData?: BoolWithAggregatesFilter<"User"> | boolean
     experience?: IntWithAggregatesFilter<"User"> | number
     lastLoginRewardAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    dailyLikeRewardCount?: IntWithAggregatesFilter<"User"> | number
+    lastLikeRewardAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -13898,6 +16347,7 @@ export namespace Prisma {
     sender?: XOR<UserRelationFilter, UserWhereInput>
     receiver?: XOR<UserRelationFilter, UserWhereInput>
     post?: XOR<PostNullableRelationFilter, PostWhereInput> | null
+    pushLogs?: PushLogListRelationFilter
   }
 
   export type NotificationOrderByWithRelationInput = {
@@ -13912,6 +16362,7 @@ export namespace Prisma {
     sender?: UserOrderByWithRelationInput
     receiver?: UserOrderByWithRelationInput
     post?: PostOrderByWithRelationInput
+    pushLogs?: PushLogOrderByRelationAggregateInput
   }
 
   export type NotificationWhereUniqueInput = Prisma.AtLeast<{
@@ -13929,6 +16380,7 @@ export namespace Prisma {
     sender?: XOR<UserRelationFilter, UserWhereInput>
     receiver?: XOR<UserRelationFilter, UserWhereInput>
     post?: XOR<PostNullableRelationFilter, PostWhereInput> | null
+    pushLogs?: PushLogListRelationFilter
   }, "id">
 
   export type NotificationOrderByWithAggregationInput = {
@@ -13957,6 +16409,185 @@ export namespace Prisma {
     postId?: StringNullableWithAggregatesFilter<"Notification"> | string | null
     commentId?: StringNullableWithAggregatesFilter<"Notification"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
+  }
+
+  export type PushDeviceWhereInput = {
+    AND?: PushDeviceWhereInput | PushDeviceWhereInput[]
+    OR?: PushDeviceWhereInput[]
+    NOT?: PushDeviceWhereInput | PushDeviceWhereInput[]
+    id?: StringFilter<"PushDevice"> | string
+    userId?: StringFilter<"PushDevice"> | string
+    registrationId?: StringFilter<"PushDevice"> | string
+    platform?: EnumPushPlatformFilter<"PushDevice"> | $Enums.PushPlatform
+    appPackage?: StringFilter<"PushDevice"> | string
+    appVersion?: StringNullableFilter<"PushDevice"> | string | null
+    isActive?: BoolFilter<"PushDevice"> | boolean
+    lastSeenAt?: DateTimeFilter<"PushDevice"> | Date | string
+    createdAt?: DateTimeFilter<"PushDevice"> | Date | string
+    updatedAt?: DateTimeFilter<"PushDevice"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+    pushLogs?: PushLogListRelationFilter
+  }
+
+  export type PushDeviceOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    registrationId?: SortOrder
+    platform?: SortOrder
+    appPackage?: SortOrder
+    appVersion?: SortOrderInput | SortOrder
+    isActive?: SortOrder
+    lastSeenAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+    pushLogs?: PushLogOrderByRelationAggregateInput
+  }
+
+  export type PushDeviceWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    registrationId?: string
+    AND?: PushDeviceWhereInput | PushDeviceWhereInput[]
+    OR?: PushDeviceWhereInput[]
+    NOT?: PushDeviceWhereInput | PushDeviceWhereInput[]
+    userId?: StringFilter<"PushDevice"> | string
+    platform?: EnumPushPlatformFilter<"PushDevice"> | $Enums.PushPlatform
+    appPackage?: StringFilter<"PushDevice"> | string
+    appVersion?: StringNullableFilter<"PushDevice"> | string | null
+    isActive?: BoolFilter<"PushDevice"> | boolean
+    lastSeenAt?: DateTimeFilter<"PushDevice"> | Date | string
+    createdAt?: DateTimeFilter<"PushDevice"> | Date | string
+    updatedAt?: DateTimeFilter<"PushDevice"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+    pushLogs?: PushLogListRelationFilter
+  }, "id" | "registrationId">
+
+  export type PushDeviceOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    registrationId?: SortOrder
+    platform?: SortOrder
+    appPackage?: SortOrder
+    appVersion?: SortOrderInput | SortOrder
+    isActive?: SortOrder
+    lastSeenAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PushDeviceCountOrderByAggregateInput
+    _max?: PushDeviceMaxOrderByAggregateInput
+    _min?: PushDeviceMinOrderByAggregateInput
+  }
+
+  export type PushDeviceScalarWhereWithAggregatesInput = {
+    AND?: PushDeviceScalarWhereWithAggregatesInput | PushDeviceScalarWhereWithAggregatesInput[]
+    OR?: PushDeviceScalarWhereWithAggregatesInput[]
+    NOT?: PushDeviceScalarWhereWithAggregatesInput | PushDeviceScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PushDevice"> | string
+    userId?: StringWithAggregatesFilter<"PushDevice"> | string
+    registrationId?: StringWithAggregatesFilter<"PushDevice"> | string
+    platform?: EnumPushPlatformWithAggregatesFilter<"PushDevice"> | $Enums.PushPlatform
+    appPackage?: StringWithAggregatesFilter<"PushDevice"> | string
+    appVersion?: StringNullableWithAggregatesFilter<"PushDevice"> | string | null
+    isActive?: BoolWithAggregatesFilter<"PushDevice"> | boolean
+    lastSeenAt?: DateTimeWithAggregatesFilter<"PushDevice"> | Date | string
+    createdAt?: DateTimeWithAggregatesFilter<"PushDevice"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PushDevice"> | Date | string
+  }
+
+  export type PushLogWhereInput = {
+    AND?: PushLogWhereInput | PushLogWhereInput[]
+    OR?: PushLogWhereInput[]
+    NOT?: PushLogWhereInput | PushLogWhereInput[]
+    id?: StringFilter<"PushLog"> | string
+    notificationId?: StringFilter<"PushLog"> | string
+    deviceId?: StringFilter<"PushLog"> | string
+    registrationId?: StringFilter<"PushLog"> | string
+    requestId?: StringNullableFilter<"PushLog"> | string | null
+    status?: EnumPushLogStatusFilter<"PushLog"> | $Enums.PushLogStatus
+    attemptCount?: IntFilter<"PushLog"> | number
+    error?: StringNullableFilter<"PushLog"> | string | null
+    sentAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    nextRetryAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    createdAt?: DateTimeFilter<"PushLog"> | Date | string
+    updatedAt?: DateTimeFilter<"PushLog"> | Date | string
+    notification?: XOR<NotificationRelationFilter, NotificationWhereInput>
+    device?: XOR<PushDeviceRelationFilter, PushDeviceWhereInput>
+  }
+
+  export type PushLogOrderByWithRelationInput = {
+    id?: SortOrder
+    notificationId?: SortOrder
+    deviceId?: SortOrder
+    registrationId?: SortOrder
+    requestId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    attemptCount?: SortOrder
+    error?: SortOrderInput | SortOrder
+    sentAt?: SortOrderInput | SortOrder
+    nextRetryAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    notification?: NotificationOrderByWithRelationInput
+    device?: PushDeviceOrderByWithRelationInput
+  }
+
+  export type PushLogWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    notificationId_registrationId?: PushLogNotificationIdRegistrationIdCompoundUniqueInput
+    AND?: PushLogWhereInput | PushLogWhereInput[]
+    OR?: PushLogWhereInput[]
+    NOT?: PushLogWhereInput | PushLogWhereInput[]
+    notificationId?: StringFilter<"PushLog"> | string
+    deviceId?: StringFilter<"PushLog"> | string
+    registrationId?: StringFilter<"PushLog"> | string
+    requestId?: StringNullableFilter<"PushLog"> | string | null
+    status?: EnumPushLogStatusFilter<"PushLog"> | $Enums.PushLogStatus
+    attemptCount?: IntFilter<"PushLog"> | number
+    error?: StringNullableFilter<"PushLog"> | string | null
+    sentAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    nextRetryAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    createdAt?: DateTimeFilter<"PushLog"> | Date | string
+    updatedAt?: DateTimeFilter<"PushLog"> | Date | string
+    notification?: XOR<NotificationRelationFilter, NotificationWhereInput>
+    device?: XOR<PushDeviceRelationFilter, PushDeviceWhereInput>
+  }, "id" | "notificationId_registrationId">
+
+  export type PushLogOrderByWithAggregationInput = {
+    id?: SortOrder
+    notificationId?: SortOrder
+    deviceId?: SortOrder
+    registrationId?: SortOrder
+    requestId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    attemptCount?: SortOrder
+    error?: SortOrderInput | SortOrder
+    sentAt?: SortOrderInput | SortOrder
+    nextRetryAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: PushLogCountOrderByAggregateInput
+    _avg?: PushLogAvgOrderByAggregateInput
+    _max?: PushLogMaxOrderByAggregateInput
+    _min?: PushLogMinOrderByAggregateInput
+    _sum?: PushLogSumOrderByAggregateInput
+  }
+
+  export type PushLogScalarWhereWithAggregatesInput = {
+    AND?: PushLogScalarWhereWithAggregatesInput | PushLogScalarWhereWithAggregatesInput[]
+    OR?: PushLogScalarWhereWithAggregatesInput[]
+    NOT?: PushLogScalarWhereWithAggregatesInput | PushLogScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PushLog"> | string
+    notificationId?: StringWithAggregatesFilter<"PushLog"> | string
+    deviceId?: StringWithAggregatesFilter<"PushLog"> | string
+    registrationId?: StringWithAggregatesFilter<"PushLog"> | string
+    requestId?: StringNullableWithAggregatesFilter<"PushLog"> | string | null
+    status?: EnumPushLogStatusWithAggregatesFilter<"PushLog"> | $Enums.PushLogStatus
+    attemptCount?: IntWithAggregatesFilter<"PushLog"> | number
+    error?: StringNullableWithAggregatesFilter<"PushLog"> | string | null
+    sentAt?: DateTimeNullableWithAggregatesFilter<"PushLog"> | Date | string | null
+    nextRetryAt?: DateTimeNullableWithAggregatesFilter<"PushLog"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"PushLog"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PushLog"> | Date | string
   }
 
   export type CommentLikeWhereInput = {
@@ -14130,6 +16761,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -14141,6 +16774,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -14159,6 +16793,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -14170,6 +16806,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -14188,6 +16825,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -14199,6 +16838,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -14217,6 +16857,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -14228,6 +16870,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -14246,6 +16889,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -14264,6 +16909,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -14282,6 +16929,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -14738,6 +17387,7 @@ export namespace Prisma {
     sender: UserCreateNestedOneWithoutSentNotificationsInput
     receiver: UserCreateNestedOneWithoutReceivedNotificationsInput
     post?: PostCreateNestedOneWithoutNotificationsInput
+    pushLogs?: PushLogCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationUncheckedCreateInput = {
@@ -14749,6 +17399,7 @@ export namespace Prisma {
     postId?: string | null
     commentId?: string | null
     createdAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationUpdateInput = {
@@ -14760,6 +17411,7 @@ export namespace Prisma {
     sender?: UserUpdateOneRequiredWithoutSentNotificationsNestedInput
     receiver?: UserUpdateOneRequiredWithoutReceivedNotificationsNestedInput
     post?: PostUpdateOneWithoutNotificationsNestedInput
+    pushLogs?: PushLogUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateInput = {
@@ -14771,6 +17423,7 @@ export namespace Prisma {
     postId?: NullableStringFieldUpdateOperationsInput | string | null
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationCreateManyInput = {
@@ -14801,6 +17454,203 @@ export namespace Prisma {
     postId?: NullableStringFieldUpdateOperationsInput | string | null
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushDeviceCreateInput = {
+    id?: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutPushDevicesInput
+    pushLogs?: PushLogCreateNestedManyWithoutDeviceInput
+  }
+
+  export type PushDeviceUncheckedCreateInput = {
+    id?: string
+    userId: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutDeviceInput
+  }
+
+  export type PushDeviceUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutPushDevicesNestedInput
+    pushLogs?: PushLogUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type PushDeviceUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type PushDeviceCreateManyInput = {
+    id?: string
+    userId: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushDeviceUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushDeviceUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogCreateInput = {
+    id?: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    notification: NotificationCreateNestedOneWithoutPushLogsInput
+    device: PushDeviceCreateNestedOneWithoutPushLogsInput
+  }
+
+  export type PushLogUncheckedCreateInput = {
+    id?: string
+    notificationId: string
+    deviceId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    notification?: NotificationUpdateOneRequiredWithoutPushLogsNestedInput
+    device?: PushDeviceUpdateOneRequiredWithoutPushLogsNestedInput
+  }
+
+  export type PushLogUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notificationId?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogCreateManyInput = {
+    id?: string
+    notificationId: string
+    deviceId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notificationId?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CommentLikeCreateInput = {
@@ -15045,6 +17895,12 @@ export namespace Prisma {
     none?: NotificationWhereInput
   }
 
+  export type PushDeviceListRelationFilter = {
+    every?: PushDeviceWhereInput
+    some?: PushDeviceWhereInput
+    none?: PushDeviceWhereInput
+  }
+
   export type FollowListRelationFilter = {
     every?: FollowWhereInput
     some?: FollowWhereInput
@@ -15084,6 +17940,10 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type PushDeviceOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type FollowOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -15102,12 +17962,15 @@ export namespace Prisma {
     showUserData?: SortOrder
     experience?: SortOrder
     lastLoginRewardAt?: SortOrder
+    dailyLikeRewardCount?: SortOrder
+    lastLikeRewardAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
     experience?: SortOrder
+    dailyLikeRewardCount?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -15124,6 +17987,8 @@ export namespace Prisma {
     showUserData?: SortOrder
     experience?: SortOrder
     lastLoginRewardAt?: SortOrder
+    dailyLikeRewardCount?: SortOrder
+    lastLikeRewardAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -15142,12 +18007,15 @@ export namespace Prisma {
     showUserData?: SortOrder
     experience?: SortOrder
     lastLoginRewardAt?: SortOrder
+    dailyLikeRewardCount?: SortOrder
+    lastLikeRewardAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
     experience?: SortOrder
+    dailyLikeRewardCount?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -15503,6 +18371,16 @@ export namespace Prisma {
     isNot?: PostWhereInput | null
   }
 
+  export type PushLogListRelationFilter = {
+    every?: PushLogWhereInput
+    some?: PushLogWhereInput
+    none?: PushLogWhereInput
+  }
+
+  export type PushLogOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type NotificationCountOrderByAggregateInput = {
     id?: SortOrder
     type?: SortOrder
@@ -15544,6 +18422,147 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumNotificationTypeFilter<$PrismaModel>
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
+  }
+
+  export type EnumPushPlatformFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushPlatform | EnumPushPlatformFieldRefInput<$PrismaModel>
+    in?: $Enums.PushPlatform[]
+    notIn?: $Enums.PushPlatform[]
+    not?: NestedEnumPushPlatformFilter<$PrismaModel> | $Enums.PushPlatform
+  }
+
+  export type PushDeviceCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    registrationId?: SortOrder
+    platform?: SortOrder
+    appPackage?: SortOrder
+    appVersion?: SortOrder
+    isActive?: SortOrder
+    lastSeenAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PushDeviceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    registrationId?: SortOrder
+    platform?: SortOrder
+    appPackage?: SortOrder
+    appVersion?: SortOrder
+    isActive?: SortOrder
+    lastSeenAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PushDeviceMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    registrationId?: SortOrder
+    platform?: SortOrder
+    appPackage?: SortOrder
+    appVersion?: SortOrder
+    isActive?: SortOrder
+    lastSeenAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumPushPlatformWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushPlatform | EnumPushPlatformFieldRefInput<$PrismaModel>
+    in?: $Enums.PushPlatform[]
+    notIn?: $Enums.PushPlatform[]
+    not?: NestedEnumPushPlatformWithAggregatesFilter<$PrismaModel> | $Enums.PushPlatform
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPushPlatformFilter<$PrismaModel>
+    _max?: NestedEnumPushPlatformFilter<$PrismaModel>
+  }
+
+  export type EnumPushLogStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushLogStatus | EnumPushLogStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PushLogStatus[]
+    notIn?: $Enums.PushLogStatus[]
+    not?: NestedEnumPushLogStatusFilter<$PrismaModel> | $Enums.PushLogStatus
+  }
+
+  export type NotificationRelationFilter = {
+    is?: NotificationWhereInput
+    isNot?: NotificationWhereInput
+  }
+
+  export type PushDeviceRelationFilter = {
+    is?: PushDeviceWhereInput
+    isNot?: PushDeviceWhereInput
+  }
+
+  export type PushLogNotificationIdRegistrationIdCompoundUniqueInput = {
+    notificationId: string
+    registrationId: string
+  }
+
+  export type PushLogCountOrderByAggregateInput = {
+    id?: SortOrder
+    notificationId?: SortOrder
+    deviceId?: SortOrder
+    registrationId?: SortOrder
+    requestId?: SortOrder
+    status?: SortOrder
+    attemptCount?: SortOrder
+    error?: SortOrder
+    sentAt?: SortOrder
+    nextRetryAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PushLogAvgOrderByAggregateInput = {
+    attemptCount?: SortOrder
+  }
+
+  export type PushLogMaxOrderByAggregateInput = {
+    id?: SortOrder
+    notificationId?: SortOrder
+    deviceId?: SortOrder
+    registrationId?: SortOrder
+    requestId?: SortOrder
+    status?: SortOrder
+    attemptCount?: SortOrder
+    error?: SortOrder
+    sentAt?: SortOrder
+    nextRetryAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PushLogMinOrderByAggregateInput = {
+    id?: SortOrder
+    notificationId?: SortOrder
+    deviceId?: SortOrder
+    registrationId?: SortOrder
+    requestId?: SortOrder
+    status?: SortOrder
+    attemptCount?: SortOrder
+    error?: SortOrder
+    sentAt?: SortOrder
+    nextRetryAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PushLogSumOrderByAggregateInput = {
+    attemptCount?: SortOrder
+  }
+
+  export type EnumPushLogStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushLogStatus | EnumPushLogStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PushLogStatus[]
+    notIn?: $Enums.PushLogStatus[]
+    not?: NestedEnumPushLogStatusWithAggregatesFilter<$PrismaModel> | $Enums.PushLogStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPushLogStatusFilter<$PrismaModel>
+    _max?: NestedEnumPushLogStatusFilter<$PrismaModel>
   }
 
   export type CommentRelationFilter = {
@@ -15688,6 +18707,13 @@ export namespace Prisma {
     connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
   }
 
+  export type PushDeviceCreateNestedManyWithoutUserInput = {
+    create?: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput> | PushDeviceCreateWithoutUserInput[] | PushDeviceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutUserInput | PushDeviceCreateOrConnectWithoutUserInput[]
+    createMany?: PushDeviceCreateManyUserInputEnvelope
+    connect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+  }
+
   export type FollowCreateNestedManyWithoutFollowingInput = {
     create?: XOR<FollowCreateWithoutFollowingInput, FollowUncheckedCreateWithoutFollowingInput> | FollowCreateWithoutFollowingInput[] | FollowUncheckedCreateWithoutFollowingInput[]
     connectOrCreate?: FollowCreateOrConnectWithoutFollowingInput | FollowCreateOrConnectWithoutFollowingInput[]
@@ -15762,6 +18788,13 @@ export namespace Prisma {
     connectOrCreate?: NotificationCreateOrConnectWithoutReceiverInput | NotificationCreateOrConnectWithoutReceiverInput[]
     createMany?: NotificationCreateManyReceiverInputEnvelope
     connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type PushDeviceUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput> | PushDeviceCreateWithoutUserInput[] | PushDeviceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutUserInput | PushDeviceCreateOrConnectWithoutUserInput[]
+    createMany?: PushDeviceCreateManyUserInputEnvelope
+    connect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
   }
 
   export type FollowUncheckedCreateNestedManyWithoutFollowingInput = {
@@ -15931,6 +18964,20 @@ export namespace Prisma {
     deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
   }
 
+  export type PushDeviceUpdateManyWithoutUserNestedInput = {
+    create?: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput> | PushDeviceCreateWithoutUserInput[] | PushDeviceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutUserInput | PushDeviceCreateOrConnectWithoutUserInput[]
+    upsert?: PushDeviceUpsertWithWhereUniqueWithoutUserInput | PushDeviceUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: PushDeviceCreateManyUserInputEnvelope
+    set?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    disconnect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    delete?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    connect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    update?: PushDeviceUpdateWithWhereUniqueWithoutUserInput | PushDeviceUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: PushDeviceUpdateManyWithWhereWithoutUserInput | PushDeviceUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: PushDeviceScalarWhereInput | PushDeviceScalarWhereInput[]
+  }
+
   export type FollowUpdateManyWithoutFollowingNestedInput = {
     create?: XOR<FollowCreateWithoutFollowingInput, FollowUncheckedCreateWithoutFollowingInput> | FollowCreateWithoutFollowingInput[] | FollowUncheckedCreateWithoutFollowingInput[]
     connectOrCreate?: FollowCreateOrConnectWithoutFollowingInput | FollowCreateOrConnectWithoutFollowingInput[]
@@ -16082,6 +19129,20 @@ export namespace Prisma {
     update?: NotificationUpdateWithWhereUniqueWithoutReceiverInput | NotificationUpdateWithWhereUniqueWithoutReceiverInput[]
     updateMany?: NotificationUpdateManyWithWhereWithoutReceiverInput | NotificationUpdateManyWithWhereWithoutReceiverInput[]
     deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type PushDeviceUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput> | PushDeviceCreateWithoutUserInput[] | PushDeviceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutUserInput | PushDeviceCreateOrConnectWithoutUserInput[]
+    upsert?: PushDeviceUpsertWithWhereUniqueWithoutUserInput | PushDeviceUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: PushDeviceCreateManyUserInputEnvelope
+    set?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    disconnect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    delete?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    connect?: PushDeviceWhereUniqueInput | PushDeviceWhereUniqueInput[]
+    update?: PushDeviceUpdateWithWhereUniqueWithoutUserInput | PushDeviceUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: PushDeviceUpdateManyWithWhereWithoutUserInput | PushDeviceUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: PushDeviceScalarWhereInput | PushDeviceScalarWhereInput[]
   }
 
   export type FollowUncheckedUpdateManyWithoutFollowingNestedInput = {
@@ -16692,6 +19753,20 @@ export namespace Prisma {
     connect?: PostWhereUniqueInput
   }
 
+  export type PushLogCreateNestedManyWithoutNotificationInput = {
+    create?: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput> | PushLogCreateWithoutNotificationInput[] | PushLogUncheckedCreateWithoutNotificationInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutNotificationInput | PushLogCreateOrConnectWithoutNotificationInput[]
+    createMany?: PushLogCreateManyNotificationInputEnvelope
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+  }
+
+  export type PushLogUncheckedCreateNestedManyWithoutNotificationInput = {
+    create?: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput> | PushLogCreateWithoutNotificationInput[] | PushLogUncheckedCreateWithoutNotificationInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutNotificationInput | PushLogCreateOrConnectWithoutNotificationInput[]
+    createMany?: PushLogCreateManyNotificationInputEnvelope
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+  }
+
   export type EnumNotificationTypeFieldUpdateOperationsInput = {
     set?: $Enums.NotificationType
   }
@@ -16720,6 +19795,126 @@ export namespace Prisma {
     delete?: PostWhereInput | boolean
     connect?: PostWhereUniqueInput
     update?: XOR<XOR<PostUpdateToOneWithWhereWithoutNotificationsInput, PostUpdateWithoutNotificationsInput>, PostUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type PushLogUpdateManyWithoutNotificationNestedInput = {
+    create?: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput> | PushLogCreateWithoutNotificationInput[] | PushLogUncheckedCreateWithoutNotificationInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutNotificationInput | PushLogCreateOrConnectWithoutNotificationInput[]
+    upsert?: PushLogUpsertWithWhereUniqueWithoutNotificationInput | PushLogUpsertWithWhereUniqueWithoutNotificationInput[]
+    createMany?: PushLogCreateManyNotificationInputEnvelope
+    set?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    disconnect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    delete?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    update?: PushLogUpdateWithWhereUniqueWithoutNotificationInput | PushLogUpdateWithWhereUniqueWithoutNotificationInput[]
+    updateMany?: PushLogUpdateManyWithWhereWithoutNotificationInput | PushLogUpdateManyWithWhereWithoutNotificationInput[]
+    deleteMany?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+  }
+
+  export type PushLogUncheckedUpdateManyWithoutNotificationNestedInput = {
+    create?: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput> | PushLogCreateWithoutNotificationInput[] | PushLogUncheckedCreateWithoutNotificationInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutNotificationInput | PushLogCreateOrConnectWithoutNotificationInput[]
+    upsert?: PushLogUpsertWithWhereUniqueWithoutNotificationInput | PushLogUpsertWithWhereUniqueWithoutNotificationInput[]
+    createMany?: PushLogCreateManyNotificationInputEnvelope
+    set?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    disconnect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    delete?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    update?: PushLogUpdateWithWhereUniqueWithoutNotificationInput | PushLogUpdateWithWhereUniqueWithoutNotificationInput[]
+    updateMany?: PushLogUpdateManyWithWhereWithoutNotificationInput | PushLogUpdateManyWithWhereWithoutNotificationInput[]
+    deleteMany?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutPushDevicesInput = {
+    create?: XOR<UserCreateWithoutPushDevicesInput, UserUncheckedCreateWithoutPushDevicesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutPushDevicesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type PushLogCreateNestedManyWithoutDeviceInput = {
+    create?: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput> | PushLogCreateWithoutDeviceInput[] | PushLogUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutDeviceInput | PushLogCreateOrConnectWithoutDeviceInput[]
+    createMany?: PushLogCreateManyDeviceInputEnvelope
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+  }
+
+  export type PushLogUncheckedCreateNestedManyWithoutDeviceInput = {
+    create?: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput> | PushLogCreateWithoutDeviceInput[] | PushLogUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutDeviceInput | PushLogCreateOrConnectWithoutDeviceInput[]
+    createMany?: PushLogCreateManyDeviceInputEnvelope
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+  }
+
+  export type EnumPushPlatformFieldUpdateOperationsInput = {
+    set?: $Enums.PushPlatform
+  }
+
+  export type UserUpdateOneRequiredWithoutPushDevicesNestedInput = {
+    create?: XOR<UserCreateWithoutPushDevicesInput, UserUncheckedCreateWithoutPushDevicesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutPushDevicesInput
+    upsert?: UserUpsertWithoutPushDevicesInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPushDevicesInput, UserUpdateWithoutPushDevicesInput>, UserUncheckedUpdateWithoutPushDevicesInput>
+  }
+
+  export type PushLogUpdateManyWithoutDeviceNestedInput = {
+    create?: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput> | PushLogCreateWithoutDeviceInput[] | PushLogUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutDeviceInput | PushLogCreateOrConnectWithoutDeviceInput[]
+    upsert?: PushLogUpsertWithWhereUniqueWithoutDeviceInput | PushLogUpsertWithWhereUniqueWithoutDeviceInput[]
+    createMany?: PushLogCreateManyDeviceInputEnvelope
+    set?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    disconnect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    delete?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    update?: PushLogUpdateWithWhereUniqueWithoutDeviceInput | PushLogUpdateWithWhereUniqueWithoutDeviceInput[]
+    updateMany?: PushLogUpdateManyWithWhereWithoutDeviceInput | PushLogUpdateManyWithWhereWithoutDeviceInput[]
+    deleteMany?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+  }
+
+  export type PushLogUncheckedUpdateManyWithoutDeviceNestedInput = {
+    create?: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput> | PushLogCreateWithoutDeviceInput[] | PushLogUncheckedCreateWithoutDeviceInput[]
+    connectOrCreate?: PushLogCreateOrConnectWithoutDeviceInput | PushLogCreateOrConnectWithoutDeviceInput[]
+    upsert?: PushLogUpsertWithWhereUniqueWithoutDeviceInput | PushLogUpsertWithWhereUniqueWithoutDeviceInput[]
+    createMany?: PushLogCreateManyDeviceInputEnvelope
+    set?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    disconnect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    delete?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    connect?: PushLogWhereUniqueInput | PushLogWhereUniqueInput[]
+    update?: PushLogUpdateWithWhereUniqueWithoutDeviceInput | PushLogUpdateWithWhereUniqueWithoutDeviceInput[]
+    updateMany?: PushLogUpdateManyWithWhereWithoutDeviceInput | PushLogUpdateManyWithWhereWithoutDeviceInput[]
+    deleteMany?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+  }
+
+  export type NotificationCreateNestedOneWithoutPushLogsInput = {
+    create?: XOR<NotificationCreateWithoutPushLogsInput, NotificationUncheckedCreateWithoutPushLogsInput>
+    connectOrCreate?: NotificationCreateOrConnectWithoutPushLogsInput
+    connect?: NotificationWhereUniqueInput
+  }
+
+  export type PushDeviceCreateNestedOneWithoutPushLogsInput = {
+    create?: XOR<PushDeviceCreateWithoutPushLogsInput, PushDeviceUncheckedCreateWithoutPushLogsInput>
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutPushLogsInput
+    connect?: PushDeviceWhereUniqueInput
+  }
+
+  export type EnumPushLogStatusFieldUpdateOperationsInput = {
+    set?: $Enums.PushLogStatus
+  }
+
+  export type NotificationUpdateOneRequiredWithoutPushLogsNestedInput = {
+    create?: XOR<NotificationCreateWithoutPushLogsInput, NotificationUncheckedCreateWithoutPushLogsInput>
+    connectOrCreate?: NotificationCreateOrConnectWithoutPushLogsInput
+    upsert?: NotificationUpsertWithoutPushLogsInput
+    connect?: NotificationWhereUniqueInput
+    update?: XOR<XOR<NotificationUpdateToOneWithWhereWithoutPushLogsInput, NotificationUpdateWithoutPushLogsInput>, NotificationUncheckedUpdateWithoutPushLogsInput>
+  }
+
+  export type PushDeviceUpdateOneRequiredWithoutPushLogsNestedInput = {
+    create?: XOR<PushDeviceCreateWithoutPushLogsInput, PushDeviceUncheckedCreateWithoutPushLogsInput>
+    connectOrCreate?: PushDeviceCreateOrConnectWithoutPushLogsInput
+    upsert?: PushDeviceUpsertWithoutPushLogsInput
+    connect?: PushDeviceWhereUniqueInput
+    update?: XOR<XOR<PushDeviceUpdateToOneWithWhereWithoutPushLogsInput, PushDeviceUpdateWithoutPushLogsInput>, PushDeviceUncheckedUpdateWithoutPushLogsInput>
   }
 
   export type CommentCreateNestedOneWithoutLikesInput = {
@@ -16997,6 +20192,40 @@ export namespace Prisma {
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
   }
 
+  export type NestedEnumPushPlatformFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushPlatform | EnumPushPlatformFieldRefInput<$PrismaModel>
+    in?: $Enums.PushPlatform[]
+    notIn?: $Enums.PushPlatform[]
+    not?: NestedEnumPushPlatformFilter<$PrismaModel> | $Enums.PushPlatform
+  }
+
+  export type NestedEnumPushPlatformWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushPlatform | EnumPushPlatformFieldRefInput<$PrismaModel>
+    in?: $Enums.PushPlatform[]
+    notIn?: $Enums.PushPlatform[]
+    not?: NestedEnumPushPlatformWithAggregatesFilter<$PrismaModel> | $Enums.PushPlatform
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPushPlatformFilter<$PrismaModel>
+    _max?: NestedEnumPushPlatformFilter<$PrismaModel>
+  }
+
+  export type NestedEnumPushLogStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushLogStatus | EnumPushLogStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PushLogStatus[]
+    notIn?: $Enums.PushLogStatus[]
+    not?: NestedEnumPushLogStatusFilter<$PrismaModel> | $Enums.PushLogStatus
+  }
+
+  export type NestedEnumPushLogStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PushLogStatus | EnumPushLogStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.PushLogStatus[]
+    notIn?: $Enums.PushLogStatus[]
+    not?: NestedEnumPushLogStatusWithAggregatesFilter<$PrismaModel> | $Enums.PushLogStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPushLogStatusFilter<$PrismaModel>
+    _max?: NestedEnumPushLogStatusFilter<$PrismaModel>
+  }
+
   export type PostCreateWithoutAuthorInput = {
     id?: string
     title?: string | null
@@ -17208,6 +20437,7 @@ export namespace Prisma {
     createdAt?: Date | string
     receiver: UserCreateNestedOneWithoutReceivedNotificationsInput
     post?: PostCreateNestedOneWithoutNotificationsInput
+    pushLogs?: PushLogCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationUncheckedCreateWithoutSenderInput = {
@@ -17218,6 +20448,7 @@ export namespace Prisma {
     postId?: string | null
     commentId?: string | null
     createdAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationCreateOrConnectWithoutSenderInput = {
@@ -17238,6 +20469,7 @@ export namespace Prisma {
     createdAt?: Date | string
     sender: UserCreateNestedOneWithoutSentNotificationsInput
     post?: PostCreateNestedOneWithoutNotificationsInput
+    pushLogs?: PushLogCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationUncheckedCreateWithoutReceiverInput = {
@@ -17248,6 +20480,7 @@ export namespace Prisma {
     postId?: string | null
     commentId?: string | null
     createdAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationCreateOrConnectWithoutReceiverInput = {
@@ -17257,6 +20490,42 @@ export namespace Prisma {
 
   export type NotificationCreateManyReceiverInputEnvelope = {
     data: NotificationCreateManyReceiverInput | NotificationCreateManyReceiverInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PushDeviceCreateWithoutUserInput = {
+    id?: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    pushLogs?: PushLogCreateNestedManyWithoutDeviceInput
+  }
+
+  export type PushDeviceUncheckedCreateWithoutUserInput = {
+    id?: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutDeviceInput
+  }
+
+  export type PushDeviceCreateOrConnectWithoutUserInput = {
+    where: PushDeviceWhereUniqueInput
+    create: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput>
+  }
+
+  export type PushDeviceCreateManyUserInputEnvelope = {
+    data: PushDeviceCreateManyUserInput | PushDeviceCreateManyUserInput[]
     skipDuplicates?: boolean
   }
 
@@ -17534,6 +20803,38 @@ export namespace Prisma {
     data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyWithoutReceiverInput>
   }
 
+  export type PushDeviceUpsertWithWhereUniqueWithoutUserInput = {
+    where: PushDeviceWhereUniqueInput
+    update: XOR<PushDeviceUpdateWithoutUserInput, PushDeviceUncheckedUpdateWithoutUserInput>
+    create: XOR<PushDeviceCreateWithoutUserInput, PushDeviceUncheckedCreateWithoutUserInput>
+  }
+
+  export type PushDeviceUpdateWithWhereUniqueWithoutUserInput = {
+    where: PushDeviceWhereUniqueInput
+    data: XOR<PushDeviceUpdateWithoutUserInput, PushDeviceUncheckedUpdateWithoutUserInput>
+  }
+
+  export type PushDeviceUpdateManyWithWhereWithoutUserInput = {
+    where: PushDeviceScalarWhereInput
+    data: XOR<PushDeviceUpdateManyMutationInput, PushDeviceUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type PushDeviceScalarWhereInput = {
+    AND?: PushDeviceScalarWhereInput | PushDeviceScalarWhereInput[]
+    OR?: PushDeviceScalarWhereInput[]
+    NOT?: PushDeviceScalarWhereInput | PushDeviceScalarWhereInput[]
+    id?: StringFilter<"PushDevice"> | string
+    userId?: StringFilter<"PushDevice"> | string
+    registrationId?: StringFilter<"PushDevice"> | string
+    platform?: EnumPushPlatformFilter<"PushDevice"> | $Enums.PushPlatform
+    appPackage?: StringFilter<"PushDevice"> | string
+    appVersion?: StringNullableFilter<"PushDevice"> | string | null
+    isActive?: BoolFilter<"PushDevice"> | boolean
+    lastSeenAt?: DateTimeFilter<"PushDevice"> | Date | string
+    createdAt?: DateTimeFilter<"PushDevice"> | Date | string
+    updatedAt?: DateTimeFilter<"PushDevice"> | Date | string
+  }
+
   export type FollowUpsertWithWhereUniqueWithoutFollowingInput = {
     where: FollowWhereUniqueInput
     update: XOR<FollowUpdateWithoutFollowingInput, FollowUncheckedUpdateWithoutFollowingInput>
@@ -17590,6 +20891,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
@@ -17600,6 +20903,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -17618,6 +20922,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
@@ -17628,6 +20934,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -17773,6 +21080,7 @@ export namespace Prisma {
     createdAt?: Date | string
     sender: UserCreateNestedOneWithoutSentNotificationsInput
     receiver: UserCreateNestedOneWithoutReceivedNotificationsInput
+    pushLogs?: PushLogCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationUncheckedCreateWithoutPostInput = {
@@ -17783,6 +21091,7 @@ export namespace Prisma {
     receiverId: string
     commentId?: string | null
     createdAt?: Date | string
+    pushLogs?: PushLogUncheckedCreateNestedManyWithoutNotificationInput
   }
 
   export type NotificationCreateOrConnectWithoutPostInput = {
@@ -17847,6 +21156,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
@@ -17857,6 +21168,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -17875,6 +21187,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
@@ -17885,6 +21199,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -18102,6 +21417,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -18112,6 +21429,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -18130,6 +21448,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -18140,6 +21460,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -18163,6 +21484,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -18173,6 +21496,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -18191,6 +21515,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -18201,6 +21527,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -18251,6 +21578,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -18261,6 +21590,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -18279,6 +21609,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -18289,6 +21621,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -18326,6 +21659,8 @@ export namespace Prisma {
     showUserData?: BoolFilter<"User"> | boolean
     experience?: IntFilter<"User"> | number
     lastLoginRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
+    dailyLikeRewardCount?: IntFilter<"User"> | number
+    lastLikeRewardAt?: DateTimeNullableFilter<"User"> | Date | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
   }
@@ -18561,6 +21896,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -18571,6 +21908,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -18589,6 +21927,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -18599,6 +21939,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -18765,6 +22106,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -18775,6 +22118,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -18793,6 +22137,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -18803,6 +22149,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -18929,6 +22276,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -18939,6 +22288,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -18957,6 +22307,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -18967,6 +22319,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -19048,6 +22401,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -19058,6 +22413,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -19076,6 +22432,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -19086,6 +22444,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -19104,6 +22463,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19114,6 +22475,7 @@ export namespace Prisma {
     postLikes?: PostLikeCreateNestedManyWithoutUserInput
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -19132,6 +22494,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19142,6 +22506,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -19165,6 +22530,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19175,6 +22542,7 @@ export namespace Prisma {
     postLikes?: PostLikeCreateNestedManyWithoutUserInput
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -19193,6 +22561,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19203,6 +22573,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -19253,6 +22624,44 @@ export namespace Prisma {
     create: XOR<PostCreateWithoutNotificationsInput, PostUncheckedCreateWithoutNotificationsInput>
   }
 
+  export type PushLogCreateWithoutNotificationInput = {
+    id?: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    device: PushDeviceCreateNestedOneWithoutPushLogsInput
+  }
+
+  export type PushLogUncheckedCreateWithoutNotificationInput = {
+    id?: string
+    deviceId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogCreateOrConnectWithoutNotificationInput = {
+    where: PushLogWhereUniqueInput
+    create: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput>
+  }
+
+  export type PushLogCreateManyNotificationInputEnvelope = {
+    data: PushLogCreateManyNotificationInput | PushLogCreateManyNotificationInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserUpsertWithoutSentNotificationsInput = {
     update: XOR<UserUpdateWithoutSentNotificationsInput, UserUncheckedUpdateWithoutSentNotificationsInput>
     create: XOR<UserCreateWithoutSentNotificationsInput, UserUncheckedCreateWithoutSentNotificationsInput>
@@ -19278,6 +22687,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -19288,6 +22699,7 @@ export namespace Prisma {
     postLikes?: PostLikeUpdateManyWithoutUserNestedInput
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -19306,6 +22718,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -19316,6 +22730,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -19345,6 +22760,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -19355,6 +22772,7 @@ export namespace Prisma {
     postLikes?: PostLikeUpdateManyWithoutUserNestedInput
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -19373,6 +22791,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -19383,6 +22803,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -19434,6 +22855,362 @@ export namespace Prisma {
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
   }
 
+  export type PushLogUpsertWithWhereUniqueWithoutNotificationInput = {
+    where: PushLogWhereUniqueInput
+    update: XOR<PushLogUpdateWithoutNotificationInput, PushLogUncheckedUpdateWithoutNotificationInput>
+    create: XOR<PushLogCreateWithoutNotificationInput, PushLogUncheckedCreateWithoutNotificationInput>
+  }
+
+  export type PushLogUpdateWithWhereUniqueWithoutNotificationInput = {
+    where: PushLogWhereUniqueInput
+    data: XOR<PushLogUpdateWithoutNotificationInput, PushLogUncheckedUpdateWithoutNotificationInput>
+  }
+
+  export type PushLogUpdateManyWithWhereWithoutNotificationInput = {
+    where: PushLogScalarWhereInput
+    data: XOR<PushLogUpdateManyMutationInput, PushLogUncheckedUpdateManyWithoutNotificationInput>
+  }
+
+  export type PushLogScalarWhereInput = {
+    AND?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+    OR?: PushLogScalarWhereInput[]
+    NOT?: PushLogScalarWhereInput | PushLogScalarWhereInput[]
+    id?: StringFilter<"PushLog"> | string
+    notificationId?: StringFilter<"PushLog"> | string
+    deviceId?: StringFilter<"PushLog"> | string
+    registrationId?: StringFilter<"PushLog"> | string
+    requestId?: StringNullableFilter<"PushLog"> | string | null
+    status?: EnumPushLogStatusFilter<"PushLog"> | $Enums.PushLogStatus
+    attemptCount?: IntFilter<"PushLog"> | number
+    error?: StringNullableFilter<"PushLog"> | string | null
+    sentAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    nextRetryAt?: DateTimeNullableFilter<"PushLog"> | Date | string | null
+    createdAt?: DateTimeFilter<"PushLog"> | Date | string
+    updatedAt?: DateTimeFilter<"PushLog"> | Date | string
+  }
+
+  export type UserCreateWithoutPushDevicesInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostCreateNestedManyWithoutAuthorInput
+    createdTopics?: TopicCreateNestedManyWithoutCreatorInput
+    topics?: TopicCreateNestedManyWithoutFollowersInput
+    comments?: CommentCreateNestedManyWithoutAuthorInput
+    reposts?: RepostCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    following?: FollowCreateNestedManyWithoutFollowingInput
+    followers?: FollowCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserUncheckedCreateWithoutPushDevicesInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
+    topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
+    comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
+    followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserCreateOrConnectWithoutPushDevicesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutPushDevicesInput, UserUncheckedCreateWithoutPushDevicesInput>
+  }
+
+  export type PushLogCreateWithoutDeviceInput = {
+    id?: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    notification: NotificationCreateNestedOneWithoutPushLogsInput
+  }
+
+  export type PushLogUncheckedCreateWithoutDeviceInput = {
+    id?: string
+    notificationId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogCreateOrConnectWithoutDeviceInput = {
+    where: PushLogWhereUniqueInput
+    create: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput>
+  }
+
+  export type PushLogCreateManyDeviceInputEnvelope = {
+    data: PushLogCreateManyDeviceInput | PushLogCreateManyDeviceInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserUpsertWithoutPushDevicesInput = {
+    update: XOR<UserUpdateWithoutPushDevicesInput, UserUncheckedUpdateWithoutPushDevicesInput>
+    create: XOR<UserCreateWithoutPushDevicesInput, UserUncheckedCreateWithoutPushDevicesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutPushDevicesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutPushDevicesInput, UserUncheckedUpdateWithoutPushDevicesInput>
+  }
+
+  export type UserUpdateWithoutPushDevicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUpdateManyWithoutAuthorNestedInput
+    createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    following?: FollowUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutPushDevicesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type PushLogUpsertWithWhereUniqueWithoutDeviceInput = {
+    where: PushLogWhereUniqueInput
+    update: XOR<PushLogUpdateWithoutDeviceInput, PushLogUncheckedUpdateWithoutDeviceInput>
+    create: XOR<PushLogCreateWithoutDeviceInput, PushLogUncheckedCreateWithoutDeviceInput>
+  }
+
+  export type PushLogUpdateWithWhereUniqueWithoutDeviceInput = {
+    where: PushLogWhereUniqueInput
+    data: XOR<PushLogUpdateWithoutDeviceInput, PushLogUncheckedUpdateWithoutDeviceInput>
+  }
+
+  export type PushLogUpdateManyWithWhereWithoutDeviceInput = {
+    where: PushLogScalarWhereInput
+    data: XOR<PushLogUpdateManyMutationInput, PushLogUncheckedUpdateManyWithoutDeviceInput>
+  }
+
+  export type NotificationCreateWithoutPushLogsInput = {
+    id?: string
+    type: $Enums.NotificationType
+    isRead?: boolean
+    commentId?: string | null
+    createdAt?: Date | string
+    sender: UserCreateNestedOneWithoutSentNotificationsInput
+    receiver: UserCreateNestedOneWithoutReceivedNotificationsInput
+    post?: PostCreateNestedOneWithoutNotificationsInput
+  }
+
+  export type NotificationUncheckedCreateWithoutPushLogsInput = {
+    id?: string
+    type: $Enums.NotificationType
+    isRead?: boolean
+    senderId: string
+    receiverId: string
+    postId?: string | null
+    commentId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationCreateOrConnectWithoutPushLogsInput = {
+    where: NotificationWhereUniqueInput
+    create: XOR<NotificationCreateWithoutPushLogsInput, NotificationUncheckedCreateWithoutPushLogsInput>
+  }
+
+  export type PushDeviceCreateWithoutPushLogsInput = {
+    id?: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutPushDevicesInput
+  }
+
+  export type PushDeviceUncheckedCreateWithoutPushLogsInput = {
+    id?: string
+    userId: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushDeviceCreateOrConnectWithoutPushLogsInput = {
+    where: PushDeviceWhereUniqueInput
+    create: XOR<PushDeviceCreateWithoutPushLogsInput, PushDeviceUncheckedCreateWithoutPushLogsInput>
+  }
+
+  export type NotificationUpsertWithoutPushLogsInput = {
+    update: XOR<NotificationUpdateWithoutPushLogsInput, NotificationUncheckedUpdateWithoutPushLogsInput>
+    create: XOR<NotificationCreateWithoutPushLogsInput, NotificationUncheckedCreateWithoutPushLogsInput>
+    where?: NotificationWhereInput
+  }
+
+  export type NotificationUpdateToOneWithWhereWithoutPushLogsInput = {
+    where?: NotificationWhereInput
+    data: XOR<NotificationUpdateWithoutPushLogsInput, NotificationUncheckedUpdateWithoutPushLogsInput>
+  }
+
+  export type NotificationUpdateWithoutPushLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    commentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sender?: UserUpdateOneRequiredWithoutSentNotificationsNestedInput
+    receiver?: UserUpdateOneRequiredWithoutReceivedNotificationsNestedInput
+    post?: PostUpdateOneWithoutNotificationsNestedInput
+  }
+
+  export type NotificationUncheckedUpdateWithoutPushLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    senderId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    postId?: NullableStringFieldUpdateOperationsInput | string | null
+    commentId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushDeviceUpsertWithoutPushLogsInput = {
+    update: XOR<PushDeviceUpdateWithoutPushLogsInput, PushDeviceUncheckedUpdateWithoutPushLogsInput>
+    create: XOR<PushDeviceCreateWithoutPushLogsInput, PushDeviceUncheckedCreateWithoutPushLogsInput>
+    where?: PushDeviceWhereInput
+  }
+
+  export type PushDeviceUpdateToOneWithWhereWithoutPushLogsInput = {
+    where?: PushDeviceWhereInput
+    data: XOR<PushDeviceUpdateWithoutPushLogsInput, PushDeviceUncheckedUpdateWithoutPushLogsInput>
+  }
+
+  export type PushDeviceUpdateWithoutPushLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutPushDevicesNestedInput
+  }
+
+  export type PushDeviceUncheckedUpdateWithoutPushLogsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type CommentCreateWithoutLikesInput = {
     id?: string
     content: string
@@ -19477,6 +23254,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19487,6 +23266,7 @@ export namespace Prisma {
     postLikes?: PostLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -19505,6 +23285,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19515,6 +23297,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -19584,6 +23367,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -19594,6 +23379,7 @@ export namespace Prisma {
     postLikes?: PostLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -19612,6 +23398,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -19622,6 +23410,7 @@ export namespace Prisma {
     postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -19681,6 +23470,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19691,6 +23482,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
@@ -19709,6 +23501,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19719,6 +23513,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
@@ -19800,6 +23595,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -19810,6 +23607,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -19828,6 +23626,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -19838,6 +23638,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -19856,6 +23657,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19867,6 +23670,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
   }
 
@@ -19884,6 +23688,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19895,6 +23701,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
   }
 
@@ -19917,6 +23724,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
@@ -19928,6 +23737,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
   }
 
@@ -19945,6 +23755,8 @@ export namespace Prisma {
     showUserData?: boolean
     experience?: number
     lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -19956,6 +23768,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
     sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
   }
 
@@ -19989,6 +23802,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -20000,6 +23815,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
   }
 
@@ -20017,6 +23833,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -20028,6 +23846,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
   }
 
@@ -20056,6 +23875,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -20067,6 +23888,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
 
@@ -20084,6 +23906,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -20095,6 +23919,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
 
@@ -20164,6 +23989,18 @@ export namespace Prisma {
     postId?: string | null
     commentId?: string | null
     createdAt?: Date | string
+  }
+
+  export type PushDeviceCreateManyUserInput = {
+    id?: string
+    registrationId: string
+    platform: $Enums.PushPlatform
+    appPackage: string
+    appVersion?: string | null
+    isActive?: boolean
+    lastSeenAt?: Date | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type FollowCreateManyFollowingInput = {
@@ -20382,6 +24219,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     receiver?: UserUpdateOneRequiredWithoutReceivedNotificationsNestedInput
     post?: PostUpdateOneWithoutNotificationsNestedInput
+    pushLogs?: PushLogUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateWithoutSenderInput = {
@@ -20392,6 +24230,7 @@ export namespace Prisma {
     postId?: NullableStringFieldUpdateOperationsInput | string | null
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateManyWithoutSenderInput = {
@@ -20412,6 +24251,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sender?: UserUpdateOneRequiredWithoutSentNotificationsNestedInput
     post?: PostUpdateOneWithoutNotificationsNestedInput
+    pushLogs?: PushLogUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateWithoutReceiverInput = {
@@ -20422,6 +24262,7 @@ export namespace Prisma {
     postId?: NullableStringFieldUpdateOperationsInput | string | null
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateManyWithoutReceiverInput = {
@@ -20432,6 +24273,44 @@ export namespace Prisma {
     postId?: NullableStringFieldUpdateOperationsInput | string | null
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushDeviceUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type PushDeviceUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutDeviceNestedInput
+  }
+
+  export type PushDeviceUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    platform?: EnumPushPlatformFieldUpdateOperationsInput | $Enums.PushPlatform
+    appPackage?: StringFieldUpdateOperationsInput | string
+    appVersion?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    lastSeenAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type FollowUpdateWithoutFollowingInput = {
@@ -20640,6 +24519,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sender?: UserUpdateOneRequiredWithoutSentNotificationsNestedInput
     receiver?: UserUpdateOneRequiredWithoutReceivedNotificationsNestedInput
+    pushLogs?: PushLogUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateWithoutPostInput = {
@@ -20650,6 +24530,7 @@ export namespace Prisma {
     receiverId?: StringFieldUpdateOperationsInput | string
     commentId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pushLogs?: PushLogUncheckedUpdateManyWithoutNotificationNestedInput
   }
 
   export type NotificationUncheckedUpdateManyWithoutPostInput = {
@@ -20736,6 +24617,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
@@ -20746,6 +24629,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
   }
@@ -20764,6 +24648,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -20774,6 +24660,7 @@ export namespace Prisma {
     commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
     sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
   }
@@ -20792,6 +24679,8 @@ export namespace Prisma {
     showUserData?: BoolFieldUpdateOperationsInput | boolean
     experience?: IntFieldUpdateOperationsInput | number
     lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -20864,6 +24753,118 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type PushLogCreateManyNotificationInput = {
+    id?: string
+    deviceId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogUpdateWithoutNotificationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    device?: PushDeviceUpdateOneRequiredWithoutPushLogsNestedInput
+  }
+
+  export type PushLogUncheckedUpdateWithoutNotificationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogUncheckedUpdateManyWithoutNotificationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    deviceId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogCreateManyDeviceInput = {
+    id?: string
+    notificationId: string
+    registrationId: string
+    requestId?: string | null
+    status?: $Enums.PushLogStatus
+    attemptCount?: number
+    error?: string | null
+    sentAt?: Date | string | null
+    nextRetryAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type PushLogUpdateWithoutDeviceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    notification?: NotificationUpdateOneRequiredWithoutPushLogsNestedInput
+  }
+
+  export type PushLogUncheckedUpdateWithoutDeviceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notificationId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PushLogUncheckedUpdateManyWithoutDeviceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    notificationId?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumPushLogStatusFieldUpdateOperationsInput | $Enums.PushLogStatus
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+    sentAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRetryAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
 
 
   /**
@@ -20885,6 +24886,14 @@ export namespace Prisma {
      * @deprecated Use CommentCountOutputTypeDefaultArgs instead
      */
     export type CommentCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = CommentCountOutputTypeDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use NotificationCountOutputTypeDefaultArgs instead
+     */
+    export type NotificationCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = NotificationCountOutputTypeDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use PushDeviceCountOutputTypeDefaultArgs instead
+     */
+    export type PushDeviceCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PushDeviceCountOutputTypeDefaultArgs<ExtArgs>
     /**
      * @deprecated Use UserDefaultArgs instead
      */
@@ -20917,6 +24926,14 @@ export namespace Prisma {
      * @deprecated Use NotificationDefaultArgs instead
      */
     export type NotificationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = NotificationDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use PushDeviceDefaultArgs instead
+     */
+    export type PushDeviceArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PushDeviceDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use PushLogDefaultArgs instead
+     */
+    export type PushLogArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PushLogDefaultArgs<ExtArgs>
     /**
      * @deprecated Use CommentLikeDefaultArgs instead
      */

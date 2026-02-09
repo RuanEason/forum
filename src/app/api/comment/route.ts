@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { rewardActionExperience } from "@/lib/experience";
+import { enqueueNotificationPush } from "@/lib/push";
 
 /**
  * 创建评论或回复
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       });
       
       if (parentComment && parentComment.authorId !== authorId) {
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
           data: {
             type: "REPLY_COMMENT",
             senderId: authorId,
@@ -110,6 +111,8 @@ export async function POST(request: NextRequest) {
             commentId: comment.id,
           }
         });
+
+        enqueueNotificationPush(notification.id);
       }
     } else {
       const post = await prisma.post.findUnique({
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
       });
       
       if (post && post.authorId !== authorId) {
-        await prisma.notification.create({
+        const notification = await prisma.notification.create({
           data: {
             type: "REPLY_POST",
             senderId: authorId,
@@ -127,6 +130,8 @@ export async function POST(request: NextRequest) {
             commentId: comment.id,
           }
         });
+
+        enqueueNotificationPush(notification.id);
       }
     }
 
