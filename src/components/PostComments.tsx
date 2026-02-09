@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
+import { createPortal } from "react-dom";
 import remarkGfm from "remark-gfm";
+import { ImagePlus, SendHorizontal } from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
 
@@ -143,7 +146,74 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isComposerActive, setIsComposerActive] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isComposerActive) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!composerRef.current) return;
+
+      if (composerRef.current.contains(event.target as Node)) {
+        return;
+      }
+
+      setIsComposerActive(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [isComposerActive]);
+
+  const appendContent = (text: string) => {
+    setContent((prev) => (prev.trim() ? `${prev}\n${text}` : text));
+    setIsComposerActive(true);
+  };
+
+  const uploadImage = async (file: File) => {
+    setIsUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "上传失败，请稍后重试");
+        return;
+      }
+
+      if (data.url) {
+        appendContent(`![${file.name}](${data.url})`);
+      }
+    } catch {
+      setError("图片上传失败，请稍后重试");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+
+    if (!file) return;
+
+    setError("");
+    await uploadImage(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +241,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
 
       if (response.ok) {
         setContent("");
+        setIsComposerActive(false);
         onCommentPosted?.();
       } else {
         setError(data.error || "发表评论失败");
@@ -188,6 +259,8 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
       e.currentTarget.form?.requestSubmit();
     }
   };
+
+  const isBusy = loading || isUploadingImage;
 
   if (!session) {
     return (
@@ -211,7 +284,10 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
         </h3>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="relative">
+        <div
+          ref={composerRef}
+          className="space-y-2"
+        >
           <textarea
             className="w-full px-4 py-2.5 bg-slate-100 rounded-lg text-xs sm:text-sm text-slate-700 border-transparent focus:bg-white focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
             rows={1}
@@ -223,9 +299,47 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsComposerActive(true)}
             disabled={loading}
           ></textarea>
+          {isComposerActive && (
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={isBusy}
+                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="上传图片"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={isBusy}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isBusy || !content.trim()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <SendHorizontal className="h-3.5 w-3.5" />
+                发送
+              </button>
+            </div>
+          )}
         </div>
+        {isUploadingImage && (
+          <p className="text-xs text-gray-500 mt-1">
+            图片上传中...
+          </p>
+        )}
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </form>
     </div>
@@ -249,6 +363,8 @@ function CommentItem({
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImageAlt, setPreviewImageAlt] = useState("评论图片预览");
 
   const displayedReplies = showAllReplies
     ? comment.replies
@@ -261,8 +377,65 @@ function CommentItem({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (previewImageUrl) {
+      document.body.style.overflow = "hidden";
+      document.body.classList.add("image-preview-active");
+    } else {
+      document.body.style.overflow = "";
+      document.body.classList.remove("image-preview-active");
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("image-preview-active");
+    };
+  }, [previewImageUrl]);
+
+  useEffect(() => {
+    if (!previewImageUrl) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPreviewImageUrl(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [previewImageUrl]);
+
   // 判断当前用户是否是帖子作者
   const isPostAuthor = currentUserId === postAuthorId;
+
+  const markdownComponents: Components = {
+    img: ({ src, alt }) => {
+      if (typeof src !== "string" || !src) return null;
+
+      return (
+        <button
+          type="button"
+          className="inline-block cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPreviewImageUrl(src);
+            setPreviewImageAlt(alt || "评论图片预览");
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt || "评论图片"}
+            className="max-h-72 w-auto rounded-md"
+            loading="lazy"
+          />
+        </button>
+      );
+    },
+  };
 
   return (
     <div id={`comment-${comment.id}`} className="border-t border-gray-200 pt-4">
@@ -298,17 +471,23 @@ function CommentItem({
       </div>
       {comment.parentId ? (
         <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {comment.content}
           </ReactMarkdown>
         </div>
       ) : (
         <div
           className="mt-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded prose prose-sm max-w-none break-words"
-          onClick={() => setShowReplyForm(!showReplyForm)}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest("img, a, button")) {
+              return;
+            }
+            setShowReplyForm(!showReplyForm);
+          }}
           title="点击回复"
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {comment.content}
           </ReactMarkdown>
         </div>
@@ -400,6 +579,35 @@ function CommentItem({
             </button>
           ) : null}
         </div>
+      )}
+      {mounted && previewImageUrl && createPortal(
+        <div
+          className="fixed inset-0 z-[2147483647] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <button
+            type="button"
+            className="absolute top-6 right-6 text-white bg-white/20 hover:bg-white/30 rounded-full p-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPreviewImageUrl(null);
+            }}
+            aria-label="关闭预览"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewImageUrl}
+            alt={previewImageAlt}
+            className="max-h-[90vh] max-w-[95vw] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>,
+        document.body
       )}
     </div>
   );
