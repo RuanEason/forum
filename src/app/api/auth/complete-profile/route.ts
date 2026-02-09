@@ -10,9 +10,10 @@ const MAX_URL_LENGTH = 500;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions);
+    const sessionUser = (session as { user?: { id?: string } } | null)?.user;
 
-    if (!session?.user?.id) {
+    if (!sessionUser?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: sessionUser.id },
       data: {
         name,
         avatar,
@@ -89,7 +90,18 @@ export async function POST(request: NextRequest) {
         postViewMode,
         coverImage,
         showUserData,
-      }
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+        bio: true,
+        postViewMode: true,
+        coverImage: true,
+        showUserData: true,
+        experience: true,
+      },
     });
 
     return NextResponse.json({ message: "Profile updated successfully", user }, { status: 200 });
