@@ -378,3 +378,84 @@
 3. 进入关注/粉丝页时调用 `GET /api/app/user/follows?...`。
 4. 关注按钮点击调用 `POST /api/app/user/follow`；取关调用 `DELETE /api/app/user/follow`。
 5. 设置页进入调用 `GET /api/app/user/settings`；保存调用 `PATCH /api/app/user/settings`。
+
+---
+
+## 7) App 评论接口（支持评论/回复带图）
+
+你问的这个点现在已补：`api/app` 下有评论接口了，评论和回复都支持图片。
+
+### 7.1 获取某帖子评论树
+
+#### `GET /api/app/comment?postId=...`
+
+- 返回结构与网站端详情页一致：顶层评论 + 每条评论下的 `replies`
+- 评论正文在 `content`，图片采用 Markdown 图片语法存储（和网站端一致）
+
+---
+
+### 7.2 发表评论 / 回复（可带图）
+
+#### `POST /api/app/comment`
+
+#### Body
+
+```json
+{
+  "postId": "帖子ID",
+  "content": "文字内容，可空",
+  "parentId": "父评论ID，可选，传了就是回复",
+  "images": [
+    "https://cdn.xxx.com/images/1.webp",
+    "https://cdn.xxx.com/images/2.webp"
+  ]
+}
+```
+
+#### 规则
+
+- `postId` 必填
+- `content` 和 `images` 至少要有一个（纯图片评论可 `content` 为空）
+- `images` 最多 9 张
+- 回复时 `parentId` 要属于同一个 `postId`
+
+#### 说明
+
+- 后端会把 `images` 自动转成 Markdown 图片块并拼到 `content` 中，和网站端渲染逻辑保持一致。
+
+---
+
+### 7.3 删除评论
+
+#### `DELETE /api/app/comment`
+
+```json
+{ "id": "评论ID" }
+```
+
+- 权限：评论作者或管理员
+
+---
+
+### 7.4 评论图片上传（App 专用入口）
+
+#### `POST /api/app/comment/upload`
+
+- 这是 `/api/upload` 的 App 别名入口，能力一致
+- `multipart/form-data`，字段 `file`
+- 允许图片类型：`jpeg/jpg/png/webp/gif`
+- 最大 `10MB`
+
+#### 返回
+
+```json
+{ "url": "https://cdn.xxx.com/images/xxx.webp" }
+```
+
+---
+
+### 7.5 评论带图推荐调用顺序
+
+1. 先调用 `POST /api/app/comment/upload` 上传每张图片，拿到 `url`。
+2. 再调用 `POST /api/app/comment`，把 `content + images[]` 一起提交。
+3. 刷新评论列表：`GET /api/app/comment?postId=...`。
