@@ -1,5 +1,17 @@
 import { prisma } from "@/lib/prisma";
 
+type PostAttachmentInput = {
+  url: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+};
+
+type CreatePostOptions = {
+  postType?: "TEXT" | "VIDEO";
+  videoId?: string | null;
+};
+
 export async function getPosts(topicId?: string) {
   return prisma.post.findMany({
     where: topicId ? { topicId } : undefined,
@@ -7,6 +19,7 @@ export async function getPosts(topicId?: string) {
       id: true,
       title: true,
       content: true,
+      postType: true,
       viewCount: true,
       pinned: true,
       pinnedAt: true,
@@ -55,6 +68,17 @@ export async function getPosts(topicId?: string) {
           name: true,
         },
       },
+      video: {
+        select: {
+          id: true,
+          status: true,
+          hlsMasterUrl: true,
+          coverUrl: true,
+          durationSec: true,
+          width: true,
+          height: true,
+        },
+      },
     },
     orderBy: [
       { pinned: 'desc' },    // 置顶的帖子排在前面
@@ -70,13 +94,16 @@ export async function createPost(
   authorId: string,
   images: string[] = [],
   topicId: string | null = null,
-  attachments: Array<{ url: string; fileName: string; fileSize: number; mimeType: string }> = []
+  attachments: PostAttachmentInput[] = [],
+  options: CreatePostOptions = {},
 ) {
   return prisma.post.create({
     data: {
       title: title || null,
       content,
       authorId,
+      postType: options.postType || "TEXT",
+      videoId: options.videoId || null,
       images: {
         create: images.map((url) => ({ url })),
       },
@@ -100,6 +127,7 @@ export async function getPostById(id: string) {
       id: true,
       title: true,
       content: true,
+      postType: true,
       pinned: true,
       pinnedAt: true,
       createdAt: true,
@@ -141,6 +169,17 @@ export async function getPostById(id: string) {
         select: {
           id: true,
           name: true,
+        },
+      },
+      video: {
+        select: {
+          id: true,
+          status: true,
+          hlsMasterUrl: true,
+          coverUrl: true,
+          durationSec: true,
+          width: true,
+          height: true,
         },
       },
       comments: {

@@ -24,6 +24,11 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type Post = $Result.DefaultSelection<Prisma.$PostPayload>
 /**
+ * Model VideoAsset
+ * 
+ */
+export type VideoAsset = $Result.DefaultSelection<Prisma.$VideoAssetPayload>
+/**
  * Model Topic
  * 
  */
@@ -83,7 +88,28 @@ export type Follow = $Result.DefaultSelection<Prisma.$FollowPayload>
  * Enums
  */
 export namespace $Enums {
-  export const NotificationType: {
+  export const PostType: {
+  TEXT: 'TEXT',
+  VIDEO: 'VIDEO'
+};
+
+export type PostType = (typeof PostType)[keyof typeof PostType]
+
+
+export const VideoStatus: {
+  INIT: 'INIT',
+  UPLOADING: 'UPLOADING',
+  UPLOADED: 'UPLOADED',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+  DELETED: 'DELETED'
+};
+
+export type VideoStatus = (typeof VideoStatus)[keyof typeof VideoStatus]
+
+
+export const NotificationType: {
   REPLY_POST: 'REPLY_POST',
   REPLY_COMMENT: 'REPLY_COMMENT',
   LIKE_POST: 'LIKE_POST',
@@ -115,6 +141,14 @@ export const PushLogStatus: {
 export type PushLogStatus = (typeof PushLogStatus)[keyof typeof PushLogStatus]
 
 }
+
+export type PostType = $Enums.PostType
+
+export const PostType: typeof $Enums.PostType
+
+export type VideoStatus = $Enums.VideoStatus
+
+export const VideoStatus: typeof $Enums.VideoStatus
 
 export type NotificationType = $Enums.NotificationType
 
@@ -269,6 +303,16 @@ export class PrismaClient<
     * ```
     */
   get post(): Prisma.PostDelegate<ExtArgs>;
+
+  /**
+   * `prisma.videoAsset`: Exposes CRUD operations for the **VideoAsset** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more VideoAssets
+    * const videoAssets = await prisma.videoAsset.findMany()
+    * ```
+    */
+  get videoAsset(): Prisma.VideoAssetDelegate<ExtArgs>;
 
   /**
    * `prisma.topic`: Exposes CRUD operations for the **Topic** model.
@@ -851,6 +895,7 @@ export namespace Prisma {
   export const ModelName: {
     User: 'User',
     Post: 'Post',
+    VideoAsset: 'VideoAsset',
     Topic: 'Topic',
     PostImage: 'PostImage',
     PostAttachment: 'PostAttachment',
@@ -878,7 +923,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     meta: {
-      modelProps: 'user' | 'post' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'pushDevice' | 'pushLog' | 'commentLike' | 'repost' | 'follow'
+      modelProps: 'user' | 'post' | 'videoAsset' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'pushDevice' | 'pushLog' | 'commentLike' | 'repost' | 'follow'
       txIsolationLevel: Prisma.TransactionIsolationLevel
     },
     model: {
@@ -1011,6 +1056,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PostCountArgs<ExtArgs>,
             result: $Utils.Optional<PostCountAggregateOutputType> | number
+          }
+        }
+      }
+      VideoAsset: {
+        payload: Prisma.$VideoAssetPayload<ExtArgs>
+        fields: Prisma.VideoAssetFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.VideoAssetFindUniqueArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.VideoAssetFindUniqueOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          findFirst: {
+            args: Prisma.VideoAssetFindFirstArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.VideoAssetFindFirstOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          findMany: {
+            args: Prisma.VideoAssetFindManyArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>[]
+          }
+          create: {
+            args: Prisma.VideoAssetCreateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          createMany: {
+            args: Prisma.VideoAssetCreateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          delete: {
+            args: Prisma.VideoAssetDeleteArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          update: {
+            args: Prisma.VideoAssetUpdateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          deleteMany: {
+            args: Prisma.VideoAssetDeleteManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          updateMany: {
+            args: Prisma.VideoAssetUpdateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          upsert: {
+            args: Prisma.VideoAssetUpsertArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$VideoAssetPayload>
+          }
+          aggregate: {
+            args: Prisma.VideoAssetAggregateArgs<ExtArgs>,
+            result: $Utils.Optional<AggregateVideoAsset>
+          }
+          groupBy: {
+            args: Prisma.VideoAssetGroupByArgs<ExtArgs>,
+            result: $Utils.Optional<VideoAssetGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.VideoAssetCountArgs<ExtArgs>,
+            result: $Utils.Optional<VideoAssetCountAggregateOutputType> | number
           }
         }
       }
@@ -1900,6 +2011,7 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     posts: number
+    videoAssets: number
     createdTopics: number
     topics: number
     comments: number
@@ -1915,6 +2027,7 @@ export namespace Prisma {
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     posts?: boolean | UserCountOutputTypeCountPostsArgs
+    videoAssets?: boolean | UserCountOutputTypeCountVideoAssetsArgs
     createdTopics?: boolean | UserCountOutputTypeCountCreatedTopicsArgs
     topics?: boolean | UserCountOutputTypeCountTopicsArgs
     comments?: boolean | UserCountOutputTypeCountCommentsArgs
@@ -1946,6 +2059,14 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountPostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PostWhereInput
+  }
+
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountVideoAssetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VideoAssetWhereInput
   }
 
 
@@ -2581,6 +2702,7 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     posts?: boolean | User$postsArgs<ExtArgs>
+    videoAssets?: boolean | User$videoAssetsArgs<ExtArgs>
     createdTopics?: boolean | User$createdTopicsArgs<ExtArgs>
     topics?: boolean | User$topicsArgs<ExtArgs>
     comments?: boolean | User$commentsArgs<ExtArgs>
@@ -2617,6 +2739,7 @@ export namespace Prisma {
 
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     posts?: boolean | User$postsArgs<ExtArgs>
+    videoAssets?: boolean | User$videoAssetsArgs<ExtArgs>
     createdTopics?: boolean | User$createdTopicsArgs<ExtArgs>
     topics?: boolean | User$topicsArgs<ExtArgs>
     comments?: boolean | User$commentsArgs<ExtArgs>
@@ -2636,6 +2759,7 @@ export namespace Prisma {
     name: "User"
     objects: {
       posts: Prisma.$PostPayload<ExtArgs>[]
+      videoAssets: Prisma.$VideoAssetPayload<ExtArgs>[]
       createdTopics: Prisma.$TopicPayload<ExtArgs>[]
       topics: Prisma.$TopicPayload<ExtArgs>[]
       comments: Prisma.$CommentPayload<ExtArgs>[]
@@ -3032,6 +3156,8 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
 
     posts<T extends User$postsArgs<ExtArgs> = {}>(args?: Subset<T, User$postsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, 'findMany'> | Null>;
+
+    videoAssets<T extends User$videoAssetsArgs<ExtArgs> = {}>(args?: Subset<T, User$videoAssetsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     createdTopics<T extends User$createdTopicsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdTopicsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TopicPayload<ExtArgs>, T, 'findMany'> | Null>;
 
@@ -3433,6 +3559,27 @@ export namespace Prisma {
 
 
   /**
+   * User.videoAssets
+   */
+  export type User$videoAssetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    where?: VideoAssetWhereInput
+    orderBy?: VideoAssetOrderByWithRelationInput | VideoAssetOrderByWithRelationInput[]
+    cursor?: VideoAssetWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VideoAssetScalarFieldEnum | VideoAssetScalarFieldEnum[]
+  }
+
+
+  /**
    * User.createdTopics
    */
   export type User$createdTopicsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3703,6 +3850,8 @@ export namespace Prisma {
     id: string | null
     title: string | null
     content: string | null
+    postType: $Enums.PostType | null
+    videoId: string | null
     authorId: string | null
     topicId: string | null
     viewCount: number | null
@@ -3716,6 +3865,8 @@ export namespace Prisma {
     id: string | null
     title: string | null
     content: string | null
+    postType: $Enums.PostType | null
+    videoId: string | null
     authorId: string | null
     topicId: string | null
     viewCount: number | null
@@ -3729,6 +3880,8 @@ export namespace Prisma {
     id: number
     title: number
     content: number
+    postType: number
+    videoId: number
     authorId: number
     topicId: number
     viewCount: number
@@ -3752,6 +3905,8 @@ export namespace Prisma {
     id?: true
     title?: true
     content?: true
+    postType?: true
+    videoId?: true
     authorId?: true
     topicId?: true
     viewCount?: true
@@ -3765,6 +3920,8 @@ export namespace Prisma {
     id?: true
     title?: true
     content?: true
+    postType?: true
+    videoId?: true
     authorId?: true
     topicId?: true
     viewCount?: true
@@ -3778,6 +3935,8 @@ export namespace Prisma {
     id?: true
     title?: true
     content?: true
+    postType?: true
+    videoId?: true
     authorId?: true
     topicId?: true
     viewCount?: true
@@ -3878,6 +4037,8 @@ export namespace Prisma {
     id: string
     title: string | null
     content: string
+    postType: $Enums.PostType
+    videoId: string | null
     authorId: string
     topicId: string | null
     viewCount: number
@@ -3910,6 +4071,8 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     content?: boolean
+    postType?: boolean
+    videoId?: boolean
     authorId?: boolean
     topicId?: boolean
     viewCount?: boolean
@@ -3918,6 +4081,7 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     author?: boolean | UserDefaultArgs<ExtArgs>
+    video?: boolean | Post$videoArgs<ExtArgs>
     comments?: boolean | Post$commentsArgs<ExtArgs>
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
@@ -3932,6 +4096,8 @@ export namespace Prisma {
     id?: boolean
     title?: boolean
     content?: boolean
+    postType?: boolean
+    videoId?: boolean
     authorId?: boolean
     topicId?: boolean
     viewCount?: boolean
@@ -3943,6 +4109,7 @@ export namespace Prisma {
 
   export type PostInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     author?: boolean | UserDefaultArgs<ExtArgs>
+    video?: boolean | Post$videoArgs<ExtArgs>
     comments?: boolean | Post$commentsArgs<ExtArgs>
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
@@ -3958,6 +4125,7 @@ export namespace Prisma {
     name: "Post"
     objects: {
       author: Prisma.$UserPayload<ExtArgs>
+      video: Prisma.$VideoAssetPayload<ExtArgs> | null
       comments: Prisma.$CommentPayload<ExtArgs>[]
       reposts: Prisma.$RepostPayload<ExtArgs>[]
       likes: Prisma.$PostLikePayload<ExtArgs>[]
@@ -3970,6 +4138,8 @@ export namespace Prisma {
       id: string
       title: string | null
       content: string
+      postType: $Enums.PostType
+      videoId: string | null
       authorId: string
       topicId: string | null
       viewCount: number
@@ -4344,6 +4514,8 @@ export namespace Prisma {
 
     author<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
 
+    video<T extends Post$videoArgs<ExtArgs> = {}>(args?: Subset<T, Post$videoArgs<ExtArgs>>): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findUniqueOrThrow'> | null, null, ExtArgs>;
+
     comments<T extends Post$commentsArgs<ExtArgs> = {}>(args?: Subset<T, Post$commentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     reposts<T extends Post$repostsArgs<ExtArgs> = {}>(args?: Subset<T, Post$repostsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RepostPayload<ExtArgs>, T, 'findMany'> | Null>;
@@ -4389,6 +4561,8 @@ export namespace Prisma {
     readonly id: FieldRef<"Post", 'String'>
     readonly title: FieldRef<"Post", 'String'>
     readonly content: FieldRef<"Post", 'String'>
+    readonly postType: FieldRef<"Post", 'PostType'>
+    readonly videoId: FieldRef<"Post", 'String'>
     readonly authorId: FieldRef<"Post", 'String'>
     readonly topicId: FieldRef<"Post", 'String'>
     readonly viewCount: FieldRef<"Post", 'Int'>
@@ -4708,6 +4882,22 @@ export namespace Prisma {
 
 
   /**
+   * Post.video
+   */
+  export type Post$videoArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    where?: VideoAssetWhereInput
+  }
+
+
+  /**
    * Post.comments
    */
   export type Post$commentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4861,6 +5051,1182 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well.
      */
     include?: PostInclude<ExtArgs> | null
+  }
+
+
+
+  /**
+   * Model VideoAsset
+   */
+
+  export type AggregateVideoAsset = {
+    _count: VideoAssetCountAggregateOutputType | null
+    _avg: VideoAssetAvgAggregateOutputType | null
+    _sum: VideoAssetSumAggregateOutputType | null
+    _min: VideoAssetMinAggregateOutputType | null
+    _max: VideoAssetMaxAggregateOutputType | null
+  }
+
+  export type VideoAssetAvgAggregateOutputType = {
+    fileSize: number | null
+    durationSec: number | null
+    width: number | null
+    height: number | null
+    bitrateKbps: number | null
+  }
+
+  export type VideoAssetSumAggregateOutputType = {
+    fileSize: bigint | null
+    durationSec: number | null
+    width: number | null
+    height: number | null
+    bitrateKbps: number | null
+  }
+
+  export type VideoAssetMinAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    bucket: string | null
+    region: string | null
+    rawObjectKey: string | null
+    rawUrl: string | null
+    mimeType: string | null
+    fileSize: bigint | null
+    hlsMasterObjectKey: string | null
+    hlsMasterUrl: string | null
+    coverObjectKey: string | null
+    coverUrl: string | null
+    durationSec: number | null
+    width: number | null
+    height: number | null
+    bitrateKbps: number | null
+    workflowRunId: string | null
+    status: $Enums.VideoStatus | null
+    errorCode: string | null
+    errorMessage: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type VideoAssetMaxAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    bucket: string | null
+    region: string | null
+    rawObjectKey: string | null
+    rawUrl: string | null
+    mimeType: string | null
+    fileSize: bigint | null
+    hlsMasterObjectKey: string | null
+    hlsMasterUrl: string | null
+    coverObjectKey: string | null
+    coverUrl: string | null
+    durationSec: number | null
+    width: number | null
+    height: number | null
+    bitrateKbps: number | null
+    workflowRunId: string | null
+    status: $Enums.VideoStatus | null
+    errorCode: string | null
+    errorMessage: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type VideoAssetCountAggregateOutputType = {
+    id: number
+    ownerId: number
+    bucket: number
+    region: number
+    rawObjectKey: number
+    rawUrl: number
+    mimeType: number
+    fileSize: number
+    hlsMasterObjectKey: number
+    hlsMasterUrl: number
+    coverObjectKey: number
+    coverUrl: number
+    durationSec: number
+    width: number
+    height: number
+    bitrateKbps: number
+    workflowRunId: number
+    status: number
+    errorCode: number
+    errorMessage: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type VideoAssetAvgAggregateInputType = {
+    fileSize?: true
+    durationSec?: true
+    width?: true
+    height?: true
+    bitrateKbps?: true
+  }
+
+  export type VideoAssetSumAggregateInputType = {
+    fileSize?: true
+    durationSec?: true
+    width?: true
+    height?: true
+    bitrateKbps?: true
+  }
+
+  export type VideoAssetMinAggregateInputType = {
+    id?: true
+    ownerId?: true
+    bucket?: true
+    region?: true
+    rawObjectKey?: true
+    rawUrl?: true
+    mimeType?: true
+    fileSize?: true
+    hlsMasterObjectKey?: true
+    hlsMasterUrl?: true
+    coverObjectKey?: true
+    coverUrl?: true
+    durationSec?: true
+    width?: true
+    height?: true
+    bitrateKbps?: true
+    workflowRunId?: true
+    status?: true
+    errorCode?: true
+    errorMessage?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type VideoAssetMaxAggregateInputType = {
+    id?: true
+    ownerId?: true
+    bucket?: true
+    region?: true
+    rawObjectKey?: true
+    rawUrl?: true
+    mimeType?: true
+    fileSize?: true
+    hlsMasterObjectKey?: true
+    hlsMasterUrl?: true
+    coverObjectKey?: true
+    coverUrl?: true
+    durationSec?: true
+    width?: true
+    height?: true
+    bitrateKbps?: true
+    workflowRunId?: true
+    status?: true
+    errorCode?: true
+    errorMessage?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type VideoAssetCountAggregateInputType = {
+    id?: true
+    ownerId?: true
+    bucket?: true
+    region?: true
+    rawObjectKey?: true
+    rawUrl?: true
+    mimeType?: true
+    fileSize?: true
+    hlsMasterObjectKey?: true
+    hlsMasterUrl?: true
+    coverObjectKey?: true
+    coverUrl?: true
+    durationSec?: true
+    width?: true
+    height?: true
+    bitrateKbps?: true
+    workflowRunId?: true
+    status?: true
+    errorCode?: true
+    errorMessage?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type VideoAssetAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VideoAsset to aggregate.
+     */
+    where?: VideoAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VideoAssets to fetch.
+     */
+    orderBy?: VideoAssetOrderByWithRelationInput | VideoAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: VideoAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VideoAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VideoAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned VideoAssets
+    **/
+    _count?: true | VideoAssetCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: VideoAssetAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: VideoAssetSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: VideoAssetMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: VideoAssetMaxAggregateInputType
+  }
+
+  export type GetVideoAssetAggregateType<T extends VideoAssetAggregateArgs> = {
+        [P in keyof T & keyof AggregateVideoAsset]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateVideoAsset[P]>
+      : GetScalarType<T[P], AggregateVideoAsset[P]>
+  }
+
+
+
+
+  export type VideoAssetGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VideoAssetWhereInput
+    orderBy?: VideoAssetOrderByWithAggregationInput | VideoAssetOrderByWithAggregationInput[]
+    by: VideoAssetScalarFieldEnum[] | VideoAssetScalarFieldEnum
+    having?: VideoAssetScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: VideoAssetCountAggregateInputType | true
+    _avg?: VideoAssetAvgAggregateInputType
+    _sum?: VideoAssetSumAggregateInputType
+    _min?: VideoAssetMinAggregateInputType
+    _max?: VideoAssetMaxAggregateInputType
+  }
+
+  export type VideoAssetGroupByOutputType = {
+    id: string
+    ownerId: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint
+    hlsMasterObjectKey: string | null
+    hlsMasterUrl: string | null
+    coverObjectKey: string | null
+    coverUrl: string | null
+    durationSec: number | null
+    width: number | null
+    height: number | null
+    bitrateKbps: number | null
+    workflowRunId: string | null
+    status: $Enums.VideoStatus
+    errorCode: string | null
+    errorMessage: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: VideoAssetCountAggregateOutputType | null
+    _avg: VideoAssetAvgAggregateOutputType | null
+    _sum: VideoAssetSumAggregateOutputType | null
+    _min: VideoAssetMinAggregateOutputType | null
+    _max: VideoAssetMaxAggregateOutputType | null
+  }
+
+  type GetVideoAssetGroupByPayload<T extends VideoAssetGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<VideoAssetGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof VideoAssetGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], VideoAssetGroupByOutputType[P]>
+            : GetScalarType<T[P], VideoAssetGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type VideoAssetSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    bucket?: boolean
+    region?: boolean
+    rawObjectKey?: boolean
+    rawUrl?: boolean
+    mimeType?: boolean
+    fileSize?: boolean
+    hlsMasterObjectKey?: boolean
+    hlsMasterUrl?: boolean
+    coverObjectKey?: boolean
+    coverUrl?: boolean
+    durationSec?: boolean
+    width?: boolean
+    height?: boolean
+    bitrateKbps?: boolean
+    workflowRunId?: boolean
+    status?: boolean
+    errorCode?: boolean
+    errorMessage?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    owner?: boolean | UserDefaultArgs<ExtArgs>
+    post?: boolean | VideoAsset$postArgs<ExtArgs>
+  }, ExtArgs["result"]["videoAsset"]>
+
+  export type VideoAssetSelectScalar = {
+    id?: boolean
+    ownerId?: boolean
+    bucket?: boolean
+    region?: boolean
+    rawObjectKey?: boolean
+    rawUrl?: boolean
+    mimeType?: boolean
+    fileSize?: boolean
+    hlsMasterObjectKey?: boolean
+    hlsMasterUrl?: boolean
+    coverObjectKey?: boolean
+    coverUrl?: boolean
+    durationSec?: boolean
+    width?: boolean
+    height?: boolean
+    bitrateKbps?: boolean
+    workflowRunId?: boolean
+    status?: boolean
+    errorCode?: boolean
+    errorMessage?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type VideoAssetInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    owner?: boolean | UserDefaultArgs<ExtArgs>
+    post?: boolean | VideoAsset$postArgs<ExtArgs>
+  }
+
+
+  export type $VideoAssetPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "VideoAsset"
+    objects: {
+      owner: Prisma.$UserPayload<ExtArgs>
+      post: Prisma.$PostPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      ownerId: string
+      bucket: string
+      region: string
+      rawObjectKey: string
+      rawUrl: string
+      mimeType: string
+      fileSize: bigint
+      hlsMasterObjectKey: string | null
+      hlsMasterUrl: string | null
+      coverObjectKey: string | null
+      coverUrl: string | null
+      durationSec: number | null
+      width: number | null
+      height: number | null
+      bitrateKbps: number | null
+      workflowRunId: string | null
+      status: $Enums.VideoStatus
+      errorCode: string | null
+      errorMessage: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["videoAsset"]>
+    composites: {}
+  }
+
+
+  type VideoAssetGetPayload<S extends boolean | null | undefined | VideoAssetDefaultArgs> = $Result.GetResult<Prisma.$VideoAssetPayload, S>
+
+  type VideoAssetCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<VideoAssetFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: VideoAssetCountAggregateInputType | true
+    }
+
+  export interface VideoAssetDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['VideoAsset'], meta: { name: 'VideoAsset' } }
+    /**
+     * Find zero or one VideoAsset that matches the filter.
+     * @param {VideoAssetFindUniqueArgs} args - Arguments to find a VideoAsset
+     * @example
+     * // Get one VideoAsset
+     * const videoAsset = await prisma.videoAsset.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends VideoAssetFindUniqueArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetFindUniqueArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findUnique'> | null, null, ExtArgs>
+
+    /**
+     * Find one VideoAsset that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {VideoAssetFindUniqueOrThrowArgs} args - Arguments to find a VideoAsset
+     * @example
+     * // Get one VideoAsset
+     * const videoAsset = await prisma.videoAsset.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends VideoAssetFindUniqueOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetFindUniqueOrThrowArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findUniqueOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find the first VideoAsset that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetFindFirstArgs} args - Arguments to find a VideoAsset
+     * @example
+     * // Get one VideoAsset
+     * const videoAsset = await prisma.videoAsset.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends VideoAssetFindFirstArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetFindFirstArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findFirst'> | null, null, ExtArgs>
+
+    /**
+     * Find the first VideoAsset that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetFindFirstOrThrowArgs} args - Arguments to find a VideoAsset
+     * @example
+     * // Get one VideoAsset
+     * const videoAsset = await prisma.videoAsset.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends VideoAssetFindFirstOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetFindFirstOrThrowArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findFirstOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find zero or more VideoAssets that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all VideoAssets
+     * const videoAssets = await prisma.videoAsset.findMany()
+     * 
+     * // Get first 10 VideoAssets
+     * const videoAssets = await prisma.videoAsset.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const videoAssetWithIdOnly = await prisma.videoAsset.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends VideoAssetFindManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetFindManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'findMany'>>
+
+    /**
+     * Create a VideoAsset.
+     * @param {VideoAssetCreateArgs} args - Arguments to create a VideoAsset.
+     * @example
+     * // Create one VideoAsset
+     * const VideoAsset = await prisma.videoAsset.create({
+     *   data: {
+     *     // ... data to create a VideoAsset
+     *   }
+     * })
+     * 
+    **/
+    create<T extends VideoAssetCreateArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetCreateArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'create'>, never, ExtArgs>
+
+    /**
+     * Create many VideoAssets.
+     *     @param {VideoAssetCreateManyArgs} args - Arguments to create many VideoAssets.
+     *     @example
+     *     // Create many VideoAssets
+     *     const videoAsset = await prisma.videoAsset.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends VideoAssetCreateManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetCreateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a VideoAsset.
+     * @param {VideoAssetDeleteArgs} args - Arguments to delete one VideoAsset.
+     * @example
+     * // Delete one VideoAsset
+     * const VideoAsset = await prisma.videoAsset.delete({
+     *   where: {
+     *     // ... filter to delete one VideoAsset
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends VideoAssetDeleteArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetDeleteArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'delete'>, never, ExtArgs>
+
+    /**
+     * Update one VideoAsset.
+     * @param {VideoAssetUpdateArgs} args - Arguments to update one VideoAsset.
+     * @example
+     * // Update one VideoAsset
+     * const videoAsset = await prisma.videoAsset.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends VideoAssetUpdateArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetUpdateArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'update'>, never, ExtArgs>
+
+    /**
+     * Delete zero or more VideoAssets.
+     * @param {VideoAssetDeleteManyArgs} args - Arguments to filter VideoAssets to delete.
+     * @example
+     * // Delete a few VideoAssets
+     * const { count } = await prisma.videoAsset.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends VideoAssetDeleteManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, VideoAssetDeleteManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more VideoAssets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many VideoAssets
+     * const videoAsset = await prisma.videoAsset.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends VideoAssetUpdateManyArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetUpdateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one VideoAsset.
+     * @param {VideoAssetUpsertArgs} args - Arguments to update or create a VideoAsset.
+     * @example
+     * // Update or create a VideoAsset
+     * const videoAsset = await prisma.videoAsset.upsert({
+     *   create: {
+     *     // ... data to create a VideoAsset
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the VideoAsset we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends VideoAssetUpsertArgs<ExtArgs>>(
+      args: SelectSubset<T, VideoAssetUpsertArgs<ExtArgs>>
+    ): Prisma__VideoAssetClient<$Result.GetResult<Prisma.$VideoAssetPayload<ExtArgs>, T, 'upsert'>, never, ExtArgs>
+
+    /**
+     * Count the number of VideoAssets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetCountArgs} args - Arguments to filter VideoAssets to count.
+     * @example
+     * // Count the number of VideoAssets
+     * const count = await prisma.videoAsset.count({
+     *   where: {
+     *     // ... the filter for the VideoAssets we want to count
+     *   }
+     * })
+    **/
+    count<T extends VideoAssetCountArgs>(
+      args?: Subset<T, VideoAssetCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], VideoAssetCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a VideoAsset.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends VideoAssetAggregateArgs>(args: Subset<T, VideoAssetAggregateArgs>): Prisma.PrismaPromise<GetVideoAssetAggregateType<T>>
+
+    /**
+     * Group by VideoAsset.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VideoAssetGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends VideoAssetGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: VideoAssetGroupByArgs['orderBy'] }
+        : { orderBy?: VideoAssetGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, VideoAssetGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetVideoAssetGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the VideoAsset model
+   */
+  readonly fields: VideoAssetFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for VideoAsset.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__VideoAssetClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise';
+
+    owner<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    post<T extends VideoAsset$postArgs<ExtArgs> = {}>(args?: Subset<T, VideoAsset$postArgs<ExtArgs>>): Prisma__PostClient<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, 'findUniqueOrThrow'> | null, null, ExtArgs>;
+
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+
+
+  /**
+   * Fields of the VideoAsset model
+   */ 
+  interface VideoAssetFieldRefs {
+    readonly id: FieldRef<"VideoAsset", 'String'>
+    readonly ownerId: FieldRef<"VideoAsset", 'String'>
+    readonly bucket: FieldRef<"VideoAsset", 'String'>
+    readonly region: FieldRef<"VideoAsset", 'String'>
+    readonly rawObjectKey: FieldRef<"VideoAsset", 'String'>
+    readonly rawUrl: FieldRef<"VideoAsset", 'String'>
+    readonly mimeType: FieldRef<"VideoAsset", 'String'>
+    readonly fileSize: FieldRef<"VideoAsset", 'BigInt'>
+    readonly hlsMasterObjectKey: FieldRef<"VideoAsset", 'String'>
+    readonly hlsMasterUrl: FieldRef<"VideoAsset", 'String'>
+    readonly coverObjectKey: FieldRef<"VideoAsset", 'String'>
+    readonly coverUrl: FieldRef<"VideoAsset", 'String'>
+    readonly durationSec: FieldRef<"VideoAsset", 'Float'>
+    readonly width: FieldRef<"VideoAsset", 'Int'>
+    readonly height: FieldRef<"VideoAsset", 'Int'>
+    readonly bitrateKbps: FieldRef<"VideoAsset", 'Int'>
+    readonly workflowRunId: FieldRef<"VideoAsset", 'String'>
+    readonly status: FieldRef<"VideoAsset", 'VideoStatus'>
+    readonly errorCode: FieldRef<"VideoAsset", 'String'>
+    readonly errorMessage: FieldRef<"VideoAsset", 'String'>
+    readonly createdAt: FieldRef<"VideoAsset", 'DateTime'>
+    readonly updatedAt: FieldRef<"VideoAsset", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+
+  /**
+   * VideoAsset findUnique
+   */
+  export type VideoAssetFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which VideoAsset to fetch.
+     */
+    where: VideoAssetWhereUniqueInput
+  }
+
+
+  /**
+   * VideoAsset findUniqueOrThrow
+   */
+  export type VideoAssetFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which VideoAsset to fetch.
+     */
+    where: VideoAssetWhereUniqueInput
+  }
+
+
+  /**
+   * VideoAsset findFirst
+   */
+  export type VideoAssetFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which VideoAsset to fetch.
+     */
+    where?: VideoAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VideoAssets to fetch.
+     */
+    orderBy?: VideoAssetOrderByWithRelationInput | VideoAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VideoAssets.
+     */
+    cursor?: VideoAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VideoAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VideoAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VideoAssets.
+     */
+    distinct?: VideoAssetScalarFieldEnum | VideoAssetScalarFieldEnum[]
+  }
+
+
+  /**
+   * VideoAsset findFirstOrThrow
+   */
+  export type VideoAssetFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which VideoAsset to fetch.
+     */
+    where?: VideoAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VideoAssets to fetch.
+     */
+    orderBy?: VideoAssetOrderByWithRelationInput | VideoAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VideoAssets.
+     */
+    cursor?: VideoAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VideoAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VideoAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VideoAssets.
+     */
+    distinct?: VideoAssetScalarFieldEnum | VideoAssetScalarFieldEnum[]
+  }
+
+
+  /**
+   * VideoAsset findMany
+   */
+  export type VideoAssetFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which VideoAssets to fetch.
+     */
+    where?: VideoAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VideoAssets to fetch.
+     */
+    orderBy?: VideoAssetOrderByWithRelationInput | VideoAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing VideoAssets.
+     */
+    cursor?: VideoAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VideoAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VideoAssets.
+     */
+    skip?: number
+    distinct?: VideoAssetScalarFieldEnum | VideoAssetScalarFieldEnum[]
+  }
+
+
+  /**
+   * VideoAsset create
+   */
+  export type VideoAssetCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * The data needed to create a VideoAsset.
+     */
+    data: XOR<VideoAssetCreateInput, VideoAssetUncheckedCreateInput>
+  }
+
+
+  /**
+   * VideoAsset createMany
+   */
+  export type VideoAssetCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many VideoAssets.
+     */
+    data: VideoAssetCreateManyInput | VideoAssetCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * VideoAsset update
+   */
+  export type VideoAssetUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * The data needed to update a VideoAsset.
+     */
+    data: XOR<VideoAssetUpdateInput, VideoAssetUncheckedUpdateInput>
+    /**
+     * Choose, which VideoAsset to update.
+     */
+    where: VideoAssetWhereUniqueInput
+  }
+
+
+  /**
+   * VideoAsset updateMany
+   */
+  export type VideoAssetUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update VideoAssets.
+     */
+    data: XOR<VideoAssetUpdateManyMutationInput, VideoAssetUncheckedUpdateManyInput>
+    /**
+     * Filter which VideoAssets to update
+     */
+    where?: VideoAssetWhereInput
+  }
+
+
+  /**
+   * VideoAsset upsert
+   */
+  export type VideoAssetUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * The filter to search for the VideoAsset to update in case it exists.
+     */
+    where: VideoAssetWhereUniqueInput
+    /**
+     * In case the VideoAsset found by the `where` argument doesn't exist, create a new VideoAsset with this data.
+     */
+    create: XOR<VideoAssetCreateInput, VideoAssetUncheckedCreateInput>
+    /**
+     * In case the VideoAsset was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<VideoAssetUpdateInput, VideoAssetUncheckedUpdateInput>
+  }
+
+
+  /**
+   * VideoAsset delete
+   */
+  export type VideoAssetDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
+    /**
+     * Filter which VideoAsset to delete.
+     */
+    where: VideoAssetWhereUniqueInput
+  }
+
+
+  /**
+   * VideoAsset deleteMany
+   */
+  export type VideoAssetDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VideoAssets to delete
+     */
+    where?: VideoAssetWhereInput
+  }
+
+
+  /**
+   * VideoAsset.post
+   */
+  export type VideoAsset$postArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Post
+     */
+    select?: PostSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: PostInclude<ExtArgs> | null
+    where?: PostWhereInput
+  }
+
+
+  /**
+   * VideoAsset without action
+   */
+  export type VideoAssetDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VideoAsset
+     */
+    select?: VideoAssetSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: VideoAssetInclude<ExtArgs> | null
   }
 
 
@@ -15520,6 +16886,8 @@ export namespace Prisma {
     id: 'id',
     title: 'title',
     content: 'content',
+    postType: 'postType',
+    videoId: 'videoId',
     authorId: 'authorId',
     topicId: 'topicId',
     viewCount: 'viewCount',
@@ -15530,6 +16898,34 @@ export namespace Prisma {
   };
 
   export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
+
+
+  export const VideoAssetScalarFieldEnum: {
+    id: 'id',
+    ownerId: 'ownerId',
+    bucket: 'bucket',
+    region: 'region',
+    rawObjectKey: 'rawObjectKey',
+    rawUrl: 'rawUrl',
+    mimeType: 'mimeType',
+    fileSize: 'fileSize',
+    hlsMasterObjectKey: 'hlsMasterObjectKey',
+    hlsMasterUrl: 'hlsMasterUrl',
+    coverObjectKey: 'coverObjectKey',
+    coverUrl: 'coverUrl',
+    durationSec: 'durationSec',
+    width: 'width',
+    height: 'height',
+    bitrateKbps: 'bitrateKbps',
+    workflowRunId: 'workflowRunId',
+    status: 'status',
+    errorCode: 'errorCode',
+    errorMessage: 'errorMessage',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type VideoAssetScalarFieldEnum = (typeof VideoAssetScalarFieldEnum)[keyof typeof VideoAssetScalarFieldEnum]
 
 
   export const TopicScalarFieldEnum: {
@@ -15720,6 +17116,34 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'PostType'
+   */
+  export type EnumPostTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostType'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt'
+   */
+  export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'VideoStatus'
+   */
+  export type EnumVideoStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VideoStatus'>
+    
+
+
+  /**
    * Reference to a field of type 'NotificationType'
    */
   export type EnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType'>
@@ -15737,13 +17161,6 @@ export namespace Prisma {
    * Reference to a field of type 'PushLogStatus'
    */
   export type EnumPushLogStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushLogStatus'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
   /**
    * Deep Input Types
@@ -15772,6 +17189,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     posts?: PostListRelationFilter
+    videoAssets?: VideoAssetListRelationFilter
     createdTopics?: TopicListRelationFilter
     topics?: TopicListRelationFilter
     comments?: CommentListRelationFilter
@@ -15804,6 +17222,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     posts?: PostOrderByRelationAggregateInput
+    videoAssets?: VideoAssetOrderByRelationAggregateInput
     createdTopics?: TopicOrderByRelationAggregateInput
     topics?: TopicOrderByRelationAggregateInput
     comments?: CommentOrderByRelationAggregateInput
@@ -15839,6 +17258,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     posts?: PostListRelationFilter
+    videoAssets?: VideoAssetListRelationFilter
     createdTopics?: TopicListRelationFilter
     topics?: TopicListRelationFilter
     comments?: CommentListRelationFilter
@@ -15907,6 +17327,8 @@ export namespace Prisma {
     id?: StringFilter<"Post"> | string
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
+    postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
+    videoId?: StringNullableFilter<"Post"> | string | null
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
@@ -15915,6 +17337,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
+    video?: XOR<VideoAssetNullableRelationFilter, VideoAssetWhereInput> | null
     comments?: CommentListRelationFilter
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
@@ -15928,6 +17351,8 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrderInput | SortOrder
     content?: SortOrder
+    postType?: SortOrder
+    videoId?: SortOrderInput | SortOrder
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
     viewCount?: SortOrder
@@ -15936,6 +17361,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     author?: UserOrderByWithRelationInput
+    video?: VideoAssetOrderByWithRelationInput
     comments?: CommentOrderByRelationAggregateInput
     reposts?: RepostOrderByRelationAggregateInput
     likes?: PostLikeOrderByRelationAggregateInput
@@ -15947,11 +17373,13 @@ export namespace Prisma {
 
   export type PostWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    videoId?: string
     AND?: PostWhereInput | PostWhereInput[]
     OR?: PostWhereInput[]
     NOT?: PostWhereInput | PostWhereInput[]
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
+    postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
@@ -15960,6 +17388,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
     author?: XOR<UserRelationFilter, UserWhereInput>
+    video?: XOR<VideoAssetNullableRelationFilter, VideoAssetWhereInput> | null
     comments?: CommentListRelationFilter
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
@@ -15967,12 +17396,14 @@ export namespace Prisma {
     attachments?: PostAttachmentListRelationFilter
     notifications?: NotificationListRelationFilter
     topic?: XOR<TopicNullableRelationFilter, TopicWhereInput> | null
-  }, "id">
+  }, "id" | "videoId">
 
   export type PostOrderByWithAggregationInput = {
     id?: SortOrder
     title?: SortOrderInput | SortOrder
     content?: SortOrder
+    postType?: SortOrder
+    videoId?: SortOrderInput | SortOrder
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
     viewCount?: SortOrder
@@ -15994,6 +17425,8 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Post"> | string
     title?: StringNullableWithAggregatesFilter<"Post"> | string | null
     content?: StringWithAggregatesFilter<"Post"> | string
+    postType?: EnumPostTypeWithAggregatesFilter<"Post"> | $Enums.PostType
+    videoId?: StringNullableWithAggregatesFilter<"Post"> | string | null
     authorId?: StringWithAggregatesFilter<"Post"> | string
     topicId?: StringNullableWithAggregatesFilter<"Post"> | string | null
     viewCount?: IntWithAggregatesFilter<"Post"> | number
@@ -16001,6 +17434,151 @@ export namespace Prisma {
     pinnedAt?: DateTimeNullableWithAggregatesFilter<"Post"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
+  }
+
+  export type VideoAssetWhereInput = {
+    AND?: VideoAssetWhereInput | VideoAssetWhereInput[]
+    OR?: VideoAssetWhereInput[]
+    NOT?: VideoAssetWhereInput | VideoAssetWhereInput[]
+    id?: StringFilter<"VideoAsset"> | string
+    ownerId?: StringFilter<"VideoAsset"> | string
+    bucket?: StringFilter<"VideoAsset"> | string
+    region?: StringFilter<"VideoAsset"> | string
+    rawObjectKey?: StringFilter<"VideoAsset"> | string
+    rawUrl?: StringFilter<"VideoAsset"> | string
+    mimeType?: StringFilter<"VideoAsset"> | string
+    fileSize?: BigIntFilter<"VideoAsset"> | bigint | number
+    hlsMasterObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    hlsMasterUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    coverObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    coverUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    durationSec?: FloatNullableFilter<"VideoAsset"> | number | null
+    width?: IntNullableFilter<"VideoAsset"> | number | null
+    height?: IntNullableFilter<"VideoAsset"> | number | null
+    bitrateKbps?: IntNullableFilter<"VideoAsset"> | number | null
+    workflowRunId?: StringNullableFilter<"VideoAsset"> | string | null
+    status?: EnumVideoStatusFilter<"VideoAsset"> | $Enums.VideoStatus
+    errorCode?: StringNullableFilter<"VideoAsset"> | string | null
+    errorMessage?: StringNullableFilter<"VideoAsset"> | string | null
+    createdAt?: DateTimeFilter<"VideoAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"VideoAsset"> | Date | string
+    owner?: XOR<UserRelationFilter, UserWhereInput>
+    post?: XOR<PostNullableRelationFilter, PostWhereInput> | null
+  }
+
+  export type VideoAssetOrderByWithRelationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    bucket?: SortOrder
+    region?: SortOrder
+    rawObjectKey?: SortOrder
+    rawUrl?: SortOrder
+    mimeType?: SortOrder
+    fileSize?: SortOrder
+    hlsMasterObjectKey?: SortOrderInput | SortOrder
+    hlsMasterUrl?: SortOrderInput | SortOrder
+    coverObjectKey?: SortOrderInput | SortOrder
+    coverUrl?: SortOrderInput | SortOrder
+    durationSec?: SortOrderInput | SortOrder
+    width?: SortOrderInput | SortOrder
+    height?: SortOrderInput | SortOrder
+    bitrateKbps?: SortOrderInput | SortOrder
+    workflowRunId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    errorCode?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    owner?: UserOrderByWithRelationInput
+    post?: PostOrderByWithRelationInput
+  }
+
+  export type VideoAssetWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    rawObjectKey?: string
+    AND?: VideoAssetWhereInput | VideoAssetWhereInput[]
+    OR?: VideoAssetWhereInput[]
+    NOT?: VideoAssetWhereInput | VideoAssetWhereInput[]
+    ownerId?: StringFilter<"VideoAsset"> | string
+    bucket?: StringFilter<"VideoAsset"> | string
+    region?: StringFilter<"VideoAsset"> | string
+    rawUrl?: StringFilter<"VideoAsset"> | string
+    mimeType?: StringFilter<"VideoAsset"> | string
+    fileSize?: BigIntFilter<"VideoAsset"> | bigint | number
+    hlsMasterObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    hlsMasterUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    coverObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    coverUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    durationSec?: FloatNullableFilter<"VideoAsset"> | number | null
+    width?: IntNullableFilter<"VideoAsset"> | number | null
+    height?: IntNullableFilter<"VideoAsset"> | number | null
+    bitrateKbps?: IntNullableFilter<"VideoAsset"> | number | null
+    workflowRunId?: StringNullableFilter<"VideoAsset"> | string | null
+    status?: EnumVideoStatusFilter<"VideoAsset"> | $Enums.VideoStatus
+    errorCode?: StringNullableFilter<"VideoAsset"> | string | null
+    errorMessage?: StringNullableFilter<"VideoAsset"> | string | null
+    createdAt?: DateTimeFilter<"VideoAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"VideoAsset"> | Date | string
+    owner?: XOR<UserRelationFilter, UserWhereInput>
+    post?: XOR<PostNullableRelationFilter, PostWhereInput> | null
+  }, "id" | "rawObjectKey">
+
+  export type VideoAssetOrderByWithAggregationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    bucket?: SortOrder
+    region?: SortOrder
+    rawObjectKey?: SortOrder
+    rawUrl?: SortOrder
+    mimeType?: SortOrder
+    fileSize?: SortOrder
+    hlsMasterObjectKey?: SortOrderInput | SortOrder
+    hlsMasterUrl?: SortOrderInput | SortOrder
+    coverObjectKey?: SortOrderInput | SortOrder
+    coverUrl?: SortOrderInput | SortOrder
+    durationSec?: SortOrderInput | SortOrder
+    width?: SortOrderInput | SortOrder
+    height?: SortOrderInput | SortOrder
+    bitrateKbps?: SortOrderInput | SortOrder
+    workflowRunId?: SortOrderInput | SortOrder
+    status?: SortOrder
+    errorCode?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: VideoAssetCountOrderByAggregateInput
+    _avg?: VideoAssetAvgOrderByAggregateInput
+    _max?: VideoAssetMaxOrderByAggregateInput
+    _min?: VideoAssetMinOrderByAggregateInput
+    _sum?: VideoAssetSumOrderByAggregateInput
+  }
+
+  export type VideoAssetScalarWhereWithAggregatesInput = {
+    AND?: VideoAssetScalarWhereWithAggregatesInput | VideoAssetScalarWhereWithAggregatesInput[]
+    OR?: VideoAssetScalarWhereWithAggregatesInput[]
+    NOT?: VideoAssetScalarWhereWithAggregatesInput | VideoAssetScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"VideoAsset"> | string
+    ownerId?: StringWithAggregatesFilter<"VideoAsset"> | string
+    bucket?: StringWithAggregatesFilter<"VideoAsset"> | string
+    region?: StringWithAggregatesFilter<"VideoAsset"> | string
+    rawObjectKey?: StringWithAggregatesFilter<"VideoAsset"> | string
+    rawUrl?: StringWithAggregatesFilter<"VideoAsset"> | string
+    mimeType?: StringWithAggregatesFilter<"VideoAsset"> | string
+    fileSize?: BigIntWithAggregatesFilter<"VideoAsset"> | bigint | number
+    hlsMasterObjectKey?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    hlsMasterUrl?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    coverObjectKey?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    coverUrl?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    durationSec?: FloatNullableWithAggregatesFilter<"VideoAsset"> | number | null
+    width?: IntNullableWithAggregatesFilter<"VideoAsset"> | number | null
+    height?: IntNullableWithAggregatesFilter<"VideoAsset"> | number | null
+    bitrateKbps?: IntNullableWithAggregatesFilter<"VideoAsset"> | number | null
+    workflowRunId?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    status?: EnumVideoStatusWithAggregatesFilter<"VideoAsset"> | $Enums.VideoStatus
+    errorCode?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    errorMessage?: StringNullableWithAggregatesFilter<"VideoAsset"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"VideoAsset"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"VideoAsset"> | Date | string
   }
 
   export type TopicWhereInput = {
@@ -16766,6 +18344,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -16798,6 +18377,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -16830,6 +18410,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -16862,6 +18443,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -16939,12 +18521,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
@@ -16958,6 +18542,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -16977,12 +18563,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -16996,6 +18584,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -17015,6 +18605,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -17028,6 +18620,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -17039,11 +18632,191 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type VideoAssetCreateInput = {
+    id?: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    owner: UserCreateNestedOneWithoutVideoAssetsInput
+    post?: PostCreateNestedOneWithoutVideoInput
+  }
+
+  export type VideoAssetUncheckedCreateInput = {
+    id?: string
+    ownerId: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    post?: PostUncheckedCreateNestedOneWithoutVideoInput
+  }
+
+  export type VideoAssetUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    owner?: UserUpdateOneRequiredWithoutVideoAssetsNestedInput
+    post?: PostUpdateOneWithoutVideoNestedInput
+  }
+
+  export type VideoAssetUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUncheckedUpdateOneWithoutVideoNestedInput
+  }
+
+  export type VideoAssetCreateManyInput = {
+    id?: string
+    ownerId: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type VideoAssetUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type VideoAssetUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -17859,6 +19632,12 @@ export namespace Prisma {
     none?: PostWhereInput
   }
 
+  export type VideoAssetListRelationFilter = {
+    every?: VideoAssetWhereInput
+    some?: VideoAssetWhereInput
+    none?: VideoAssetWhereInput
+  }
+
   export type TopicListRelationFilter = {
     every?: TopicWhereInput
     some?: TopicWhereInput
@@ -17913,6 +19692,10 @@ export namespace Prisma {
   }
 
   export type PostOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type VideoAssetOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -18104,9 +19887,21 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type EnumPostTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostType | EnumPostTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.PostType[]
+    notIn?: $Enums.PostType[]
+    not?: NestedEnumPostTypeFilter<$PrismaModel> | $Enums.PostType
+  }
+
   export type UserRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
+  }
+
+  export type VideoAssetNullableRelationFilter = {
+    is?: VideoAssetWhereInput | null
+    isNot?: VideoAssetWhereInput | null
   }
 
   export type PostImageListRelationFilter = {
@@ -18138,6 +19933,8 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     content?: SortOrder
+    postType?: SortOrder
+    videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
@@ -18155,6 +19952,8 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     content?: SortOrder
+    postType?: SortOrder
+    videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
@@ -18168,6 +19967,8 @@ export namespace Prisma {
     id?: SortOrder
     title?: SortOrder
     content?: SortOrder
+    postType?: SortOrder
+    videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
     viewCount?: SortOrder
@@ -18179,6 +19980,210 @@ export namespace Prisma {
 
   export type PostSumOrderByAggregateInput = {
     viewCount?: SortOrder
+  }
+
+  export type EnumPostTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostType | EnumPostTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.PostType[]
+    notIn?: $Enums.PostType[]
+    not?: NestedEnumPostTypeWithAggregatesFilter<$PrismaModel> | $Enums.PostType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPostTypeFilter<$PrismaModel>
+    _max?: NestedEnumPostTypeFilter<$PrismaModel>
+  }
+
+  export type BigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[]
+    notIn?: bigint[] | number[]
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type EnumVideoStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VideoStatus | EnumVideoStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VideoStatus[]
+    notIn?: $Enums.VideoStatus[]
+    not?: NestedEnumVideoStatusFilter<$PrismaModel> | $Enums.VideoStatus
+  }
+
+  export type PostNullableRelationFilter = {
+    is?: PostWhereInput | null
+    isNot?: PostWhereInput | null
+  }
+
+  export type VideoAssetCountOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    bucket?: SortOrder
+    region?: SortOrder
+    rawObjectKey?: SortOrder
+    rawUrl?: SortOrder
+    mimeType?: SortOrder
+    fileSize?: SortOrder
+    hlsMasterObjectKey?: SortOrder
+    hlsMasterUrl?: SortOrder
+    coverObjectKey?: SortOrder
+    coverUrl?: SortOrder
+    durationSec?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
+    bitrateKbps?: SortOrder
+    workflowRunId?: SortOrder
+    status?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type VideoAssetAvgOrderByAggregateInput = {
+    fileSize?: SortOrder
+    durationSec?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
+    bitrateKbps?: SortOrder
+  }
+
+  export type VideoAssetMaxOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    bucket?: SortOrder
+    region?: SortOrder
+    rawObjectKey?: SortOrder
+    rawUrl?: SortOrder
+    mimeType?: SortOrder
+    fileSize?: SortOrder
+    hlsMasterObjectKey?: SortOrder
+    hlsMasterUrl?: SortOrder
+    coverObjectKey?: SortOrder
+    coverUrl?: SortOrder
+    durationSec?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
+    bitrateKbps?: SortOrder
+    workflowRunId?: SortOrder
+    status?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type VideoAssetMinOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    bucket?: SortOrder
+    region?: SortOrder
+    rawObjectKey?: SortOrder
+    rawUrl?: SortOrder
+    mimeType?: SortOrder
+    fileSize?: SortOrder
+    hlsMasterObjectKey?: SortOrder
+    hlsMasterUrl?: SortOrder
+    coverObjectKey?: SortOrder
+    coverUrl?: SortOrder
+    durationSec?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
+    bitrateKbps?: SortOrder
+    workflowRunId?: SortOrder
+    status?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type VideoAssetSumOrderByAggregateInput = {
+    fileSize?: SortOrder
+    durationSec?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
+    bitrateKbps?: SortOrder
+  }
+
+  export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[]
+    notIn?: bigint[] | number[]
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type EnumVideoStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VideoStatus | EnumVideoStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VideoStatus[]
+    notIn?: $Enums.VideoStatus[]
+    not?: NestedEnumVideoStatusWithAggregatesFilter<$PrismaModel> | $Enums.VideoStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVideoStatusFilter<$PrismaModel>
+    _max?: NestedEnumVideoStatusFilter<$PrismaModel>
   }
 
   export type UserNullableRelationFilter = {
@@ -18364,11 +20369,6 @@ export namespace Prisma {
     in?: $Enums.NotificationType[]
     notIn?: $Enums.NotificationType[]
     not?: NestedEnumNotificationTypeFilter<$PrismaModel> | $Enums.NotificationType
-  }
-
-  export type PostNullableRelationFilter = {
-    is?: PostWhereInput | null
-    isNot?: PostWhereInput | null
   }
 
   export type PushLogListRelationFilter = {
@@ -18652,6 +20652,13 @@ export namespace Prisma {
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
   }
 
+  export type VideoAssetCreateNestedManyWithoutOwnerInput = {
+    create?: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput> | VideoAssetCreateWithoutOwnerInput[] | VideoAssetUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutOwnerInput | VideoAssetCreateOrConnectWithoutOwnerInput[]
+    createMany?: VideoAssetCreateManyOwnerInputEnvelope
+    connect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+  }
+
   export type TopicCreateNestedManyWithoutCreatorInput = {
     create?: XOR<TopicCreateWithoutCreatorInput, TopicUncheckedCreateWithoutCreatorInput> | TopicCreateWithoutCreatorInput[] | TopicUncheckedCreateWithoutCreatorInput[]
     connectOrCreate?: TopicCreateOrConnectWithoutCreatorInput | TopicCreateOrConnectWithoutCreatorInput[]
@@ -18733,6 +20740,13 @@ export namespace Prisma {
     connectOrCreate?: PostCreateOrConnectWithoutAuthorInput | PostCreateOrConnectWithoutAuthorInput[]
     createMany?: PostCreateManyAuthorInputEnvelope
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
+  }
+
+  export type VideoAssetUncheckedCreateNestedManyWithoutOwnerInput = {
+    create?: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput> | VideoAssetCreateWithoutOwnerInput[] | VideoAssetUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutOwnerInput | VideoAssetCreateOrConnectWithoutOwnerInput[]
+    createMany?: VideoAssetCreateManyOwnerInputEnvelope
+    connect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
   }
 
   export type TopicUncheckedCreateNestedManyWithoutCreatorInput = {
@@ -18851,6 +20865,20 @@ export namespace Prisma {
     update?: PostUpdateWithWhereUniqueWithoutAuthorInput | PostUpdateWithWhereUniqueWithoutAuthorInput[]
     updateMany?: PostUpdateManyWithWhereWithoutAuthorInput | PostUpdateManyWithWhereWithoutAuthorInput[]
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
+  }
+
+  export type VideoAssetUpdateManyWithoutOwnerNestedInput = {
+    create?: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput> | VideoAssetCreateWithoutOwnerInput[] | VideoAssetUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutOwnerInput | VideoAssetCreateOrConnectWithoutOwnerInput[]
+    upsert?: VideoAssetUpsertWithWhereUniqueWithoutOwnerInput | VideoAssetUpsertWithWhereUniqueWithoutOwnerInput[]
+    createMany?: VideoAssetCreateManyOwnerInputEnvelope
+    set?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    disconnect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    delete?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    connect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    update?: VideoAssetUpdateWithWhereUniqueWithoutOwnerInput | VideoAssetUpdateWithWhereUniqueWithoutOwnerInput[]
+    updateMany?: VideoAssetUpdateManyWithWhereWithoutOwnerInput | VideoAssetUpdateManyWithWhereWithoutOwnerInput[]
+    deleteMany?: VideoAssetScalarWhereInput | VideoAssetScalarWhereInput[]
   }
 
   export type TopicUpdateManyWithoutCreatorNestedInput = {
@@ -19020,6 +21048,20 @@ export namespace Prisma {
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
   }
 
+  export type VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput = {
+    create?: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput> | VideoAssetCreateWithoutOwnerInput[] | VideoAssetUncheckedCreateWithoutOwnerInput[]
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutOwnerInput | VideoAssetCreateOrConnectWithoutOwnerInput[]
+    upsert?: VideoAssetUpsertWithWhereUniqueWithoutOwnerInput | VideoAssetUpsertWithWhereUniqueWithoutOwnerInput[]
+    createMany?: VideoAssetCreateManyOwnerInputEnvelope
+    set?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    disconnect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    delete?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    connect?: VideoAssetWhereUniqueInput | VideoAssetWhereUniqueInput[]
+    update?: VideoAssetUpdateWithWhereUniqueWithoutOwnerInput | VideoAssetUpdateWithWhereUniqueWithoutOwnerInput[]
+    updateMany?: VideoAssetUpdateManyWithWhereWithoutOwnerInput | VideoAssetUpdateManyWithWhereWithoutOwnerInput[]
+    deleteMany?: VideoAssetScalarWhereInput | VideoAssetScalarWhereInput[]
+  }
+
   export type TopicUncheckedUpdateManyWithoutCreatorNestedInput = {
     create?: XOR<TopicCreateWithoutCreatorInput, TopicUncheckedCreateWithoutCreatorInput> | TopicCreateWithoutCreatorInput[] | TopicUncheckedCreateWithoutCreatorInput[]
     connectOrCreate?: TopicCreateOrConnectWithoutCreatorInput | TopicCreateOrConnectWithoutCreatorInput[]
@@ -19179,6 +21221,12 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type VideoAssetCreateNestedOneWithoutPostInput = {
+    create?: XOR<VideoAssetCreateWithoutPostInput, VideoAssetUncheckedCreateWithoutPostInput>
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutPostInput
+    connect?: VideoAssetWhereUniqueInput
+  }
+
   export type CommentCreateNestedManyWithoutPostInput = {
     create?: XOR<CommentCreateWithoutPostInput, CommentUncheckedCreateWithoutPostInput> | CommentCreateWithoutPostInput[] | CommentUncheckedCreateWithoutPostInput[]
     connectOrCreate?: CommentCreateOrConnectWithoutPostInput | CommentCreateOrConnectWithoutPostInput[]
@@ -19269,12 +21317,26 @@ export namespace Prisma {
     connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
   }
 
+  export type EnumPostTypeFieldUpdateOperationsInput = {
+    set?: $Enums.PostType
+  }
+
   export type UserUpdateOneRequiredWithoutPostsNestedInput = {
     create?: XOR<UserCreateWithoutPostsInput, UserUncheckedCreateWithoutPostsInput>
     connectOrCreate?: UserCreateOrConnectWithoutPostsInput
     upsert?: UserUpsertWithoutPostsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPostsInput, UserUpdateWithoutPostsInput>, UserUncheckedUpdateWithoutPostsInput>
+  }
+
+  export type VideoAssetUpdateOneWithoutPostNestedInput = {
+    create?: XOR<VideoAssetCreateWithoutPostInput, VideoAssetUncheckedCreateWithoutPostInput>
+    connectOrCreate?: VideoAssetCreateOrConnectWithoutPostInput
+    upsert?: VideoAssetUpsertWithoutPostInput
+    disconnect?: VideoAssetWhereInput | boolean
+    delete?: VideoAssetWhereInput | boolean
+    connect?: VideoAssetWhereUniqueInput
+    update?: XOR<XOR<VideoAssetUpdateToOneWithWhereWithoutPostInput, VideoAssetUpdateWithoutPostInput>, VideoAssetUncheckedUpdateWithoutPostInput>
   }
 
   export type CommentUpdateManyWithoutPostNestedInput = {
@@ -19453,6 +21515,80 @@ export namespace Prisma {
     update?: NotificationUpdateWithWhereUniqueWithoutPostInput | NotificationUpdateWithWhereUniqueWithoutPostInput[]
     updateMany?: NotificationUpdateManyWithWhereWithoutPostInput | NotificationUpdateManyWithWhereWithoutPostInput[]
     deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutVideoAssetsInput = {
+    create?: XOR<UserCreateWithoutVideoAssetsInput, UserUncheckedCreateWithoutVideoAssetsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVideoAssetsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type PostCreateNestedOneWithoutVideoInput = {
+    create?: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+    connectOrCreate?: PostCreateOrConnectWithoutVideoInput
+    connect?: PostWhereUniqueInput
+  }
+
+  export type PostUncheckedCreateNestedOneWithoutVideoInput = {
+    create?: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+    connectOrCreate?: PostCreateOrConnectWithoutVideoInput
+    connect?: PostWhereUniqueInput
+  }
+
+  export type BigIntFieldUpdateOperationsInput = {
+    set?: bigint | number
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type EnumVideoStatusFieldUpdateOperationsInput = {
+    set?: $Enums.VideoStatus
+  }
+
+  export type UserUpdateOneRequiredWithoutVideoAssetsNestedInput = {
+    create?: XOR<UserCreateWithoutVideoAssetsInput, UserUncheckedCreateWithoutVideoAssetsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVideoAssetsInput
+    upsert?: UserUpsertWithoutVideoAssetsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVideoAssetsInput, UserUpdateWithoutVideoAssetsInput>, UserUncheckedUpdateWithoutVideoAssetsInput>
+  }
+
+  export type PostUpdateOneWithoutVideoNestedInput = {
+    create?: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+    connectOrCreate?: PostCreateOrConnectWithoutVideoInput
+    upsert?: PostUpsertWithoutVideoInput
+    disconnect?: PostWhereInput | boolean
+    delete?: PostWhereInput | boolean
+    connect?: PostWhereUniqueInput
+    update?: XOR<XOR<PostUpdateToOneWithWhereWithoutVideoInput, PostUpdateWithoutVideoInput>, PostUncheckedUpdateWithoutVideoInput>
+  }
+
+  export type PostUncheckedUpdateOneWithoutVideoNestedInput = {
+    create?: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+    connectOrCreate?: PostCreateOrConnectWithoutVideoInput
+    upsert?: PostUpsertWithoutVideoInput
+    disconnect?: PostWhereInput | boolean
+    delete?: PostWhereInput | boolean
+    connect?: PostWhereUniqueInput
+    update?: XOR<XOR<PostUpdateToOneWithWhereWithoutVideoInput, PostUpdateWithoutVideoInput>, PostUncheckedUpdateWithoutVideoInput>
   }
 
   export type PostCreateNestedManyWithoutTopicInput = {
@@ -20175,6 +22311,110 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
+  export type NestedEnumPostTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostType | EnumPostTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.PostType[]
+    notIn?: $Enums.PostType[]
+    not?: NestedEnumPostTypeFilter<$PrismaModel> | $Enums.PostType
+  }
+
+  export type NestedEnumPostTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostType | EnumPostTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.PostType[]
+    notIn?: $Enums.PostType[]
+    not?: NestedEnumPostTypeWithAggregatesFilter<$PrismaModel> | $Enums.PostType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPostTypeFilter<$PrismaModel>
+    _max?: NestedEnumPostTypeFilter<$PrismaModel>
+  }
+
+  export type NestedBigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[]
+    notIn?: bigint[] | number[]
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedEnumVideoStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VideoStatus | EnumVideoStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VideoStatus[]
+    notIn?: $Enums.VideoStatus[]
+    not?: NestedEnumVideoStatusFilter<$PrismaModel> | $Enums.VideoStatus
+  }
+
+  export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[]
+    notIn?: bigint[] | number[]
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumVideoStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VideoStatus | EnumVideoStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VideoStatus[]
+    notIn?: $Enums.VideoStatus[]
+    not?: NestedEnumVideoStatusWithAggregatesFilter<$PrismaModel> | $Enums.VideoStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVideoStatusFilter<$PrismaModel>
+    _max?: NestedEnumVideoStatusFilter<$PrismaModel>
+  }
+
   export type NestedEnumNotificationTypeFilter<$PrismaModel = never> = {
     equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
     in?: $Enums.NotificationType[]
@@ -20230,11 +22470,13 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
@@ -20248,6 +22490,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     topicId?: string | null
     viewCount?: number
     pinned?: boolean
@@ -20269,6 +22513,66 @@ export namespace Prisma {
 
   export type PostCreateManyAuthorInputEnvelope = {
     data: PostCreateManyAuthorInput | PostCreateManyAuthorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type VideoAssetCreateWithoutOwnerInput = {
+    id?: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    post?: PostCreateNestedOneWithoutVideoInput
+  }
+
+  export type VideoAssetUncheckedCreateWithoutOwnerInput = {
+    id?: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    post?: PostUncheckedCreateNestedOneWithoutVideoInput
+  }
+
+  export type VideoAssetCreateOrConnectWithoutOwnerInput = {
+    where: VideoAssetWhereUniqueInput
+    create: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput>
+  }
+
+  export type VideoAssetCreateManyOwnerInputEnvelope = {
+    data: VideoAssetCreateManyOwnerInput | VideoAssetCreateManyOwnerInput[]
     skipDuplicates?: boolean
   }
 
@@ -20596,6 +22900,8 @@ export namespace Prisma {
     id?: StringFilter<"Post"> | string
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
+    postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
+    videoId?: StringNullableFilter<"Post"> | string | null
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
@@ -20603,6 +22909,50 @@ export namespace Prisma {
     pinnedAt?: DateTimeNullableFilter<"Post"> | Date | string | null
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
+  }
+
+  export type VideoAssetUpsertWithWhereUniqueWithoutOwnerInput = {
+    where: VideoAssetWhereUniqueInput
+    update: XOR<VideoAssetUpdateWithoutOwnerInput, VideoAssetUncheckedUpdateWithoutOwnerInput>
+    create: XOR<VideoAssetCreateWithoutOwnerInput, VideoAssetUncheckedCreateWithoutOwnerInput>
+  }
+
+  export type VideoAssetUpdateWithWhereUniqueWithoutOwnerInput = {
+    where: VideoAssetWhereUniqueInput
+    data: XOR<VideoAssetUpdateWithoutOwnerInput, VideoAssetUncheckedUpdateWithoutOwnerInput>
+  }
+
+  export type VideoAssetUpdateManyWithWhereWithoutOwnerInput = {
+    where: VideoAssetScalarWhereInput
+    data: XOR<VideoAssetUpdateManyMutationInput, VideoAssetUncheckedUpdateManyWithoutOwnerInput>
+  }
+
+  export type VideoAssetScalarWhereInput = {
+    AND?: VideoAssetScalarWhereInput | VideoAssetScalarWhereInput[]
+    OR?: VideoAssetScalarWhereInput[]
+    NOT?: VideoAssetScalarWhereInput | VideoAssetScalarWhereInput[]
+    id?: StringFilter<"VideoAsset"> | string
+    ownerId?: StringFilter<"VideoAsset"> | string
+    bucket?: StringFilter<"VideoAsset"> | string
+    region?: StringFilter<"VideoAsset"> | string
+    rawObjectKey?: StringFilter<"VideoAsset"> | string
+    rawUrl?: StringFilter<"VideoAsset"> | string
+    mimeType?: StringFilter<"VideoAsset"> | string
+    fileSize?: BigIntFilter<"VideoAsset"> | bigint | number
+    hlsMasterObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    hlsMasterUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    coverObjectKey?: StringNullableFilter<"VideoAsset"> | string | null
+    coverUrl?: StringNullableFilter<"VideoAsset"> | string | null
+    durationSec?: FloatNullableFilter<"VideoAsset"> | number | null
+    width?: IntNullableFilter<"VideoAsset"> | number | null
+    height?: IntNullableFilter<"VideoAsset"> | number | null
+    bitrateKbps?: IntNullableFilter<"VideoAsset"> | number | null
+    workflowRunId?: StringNullableFilter<"VideoAsset"> | string | null
+    status?: EnumVideoStatusFilter<"VideoAsset"> | $Enums.VideoStatus
+    errorCode?: StringNullableFilter<"VideoAsset"> | string | null
+    errorMessage?: StringNullableFilter<"VideoAsset"> | string | null
+    createdAt?: DateTimeFilter<"VideoAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"VideoAsset"> | Date | string
   }
 
   export type TopicUpsertWithWhereUniqueWithoutCreatorInput = {
@@ -20895,6 +23245,7 @@ export namespace Prisma {
     lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -20926,6 +23277,7 @@ export namespace Prisma {
     lastLikeRewardAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -20942,6 +23294,61 @@ export namespace Prisma {
   export type UserCreateOrConnectWithoutPostsInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutPostsInput, UserUncheckedCreateWithoutPostsInput>
+  }
+
+  export type VideoAssetCreateWithoutPostInput = {
+    id?: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    owner: UserCreateNestedOneWithoutVideoAssetsInput
+  }
+
+  export type VideoAssetUncheckedCreateWithoutPostInput = {
+    id?: string
+    ownerId: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type VideoAssetCreateOrConnectWithoutPostInput = {
+    where: VideoAssetWhereUniqueInput
+    create: XOR<VideoAssetCreateWithoutPostInput, VideoAssetUncheckedCreateWithoutPostInput>
   }
 
   export type CommentCreateWithoutPostInput = {
@@ -21160,6 +23567,7 @@ export namespace Prisma {
     lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -21191,6 +23599,7 @@ export namespace Prisma {
     lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -21202,6 +23611,67 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type VideoAssetUpsertWithoutPostInput = {
+    update: XOR<VideoAssetUpdateWithoutPostInput, VideoAssetUncheckedUpdateWithoutPostInput>
+    create: XOR<VideoAssetCreateWithoutPostInput, VideoAssetUncheckedCreateWithoutPostInput>
+    where?: VideoAssetWhereInput
+  }
+
+  export type VideoAssetUpdateToOneWithWhereWithoutPostInput = {
+    where?: VideoAssetWhereInput
+    data: XOR<VideoAssetUpdateWithoutPostInput, VideoAssetUncheckedUpdateWithoutPostInput>
+  }
+
+  export type VideoAssetUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    owner?: UserUpdateOneRequiredWithoutVideoAssetsNestedInput
+  }
+
+  export type VideoAssetUncheckedUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CommentUpsertWithWhereUniqueWithoutPostInput = {
@@ -21357,10 +23827,80 @@ export namespace Prisma {
     followers?: UserUncheckedUpdateManyWithoutTopicsNestedInput
   }
 
-  export type PostCreateWithoutTopicInput = {
+  export type UserCreateWithoutVideoAssetsInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostCreateNestedManyWithoutAuthorInput
+    createdTopics?: TopicCreateNestedManyWithoutCreatorInput
+    topics?: TopicCreateNestedManyWithoutFollowersInput
+    comments?: CommentCreateNestedManyWithoutAuthorInput
+    reposts?: RepostCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
+    following?: FollowCreateNestedManyWithoutFollowingInput
+    followers?: FollowCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserUncheckedCreateWithoutVideoAssetsInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
+    topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
+    comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
+    following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
+    followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserCreateOrConnectWithoutVideoAssetsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutVideoAssetsInput, UserUncheckedCreateWithoutVideoAssetsInput>
+  }
+
+  export type PostCreateWithoutVideoInput = {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -21373,12 +23913,186 @@ export namespace Prisma {
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
+    topic?: TopicCreateNestedOneWithoutPostsInput
+  }
+
+  export type PostUncheckedCreateWithoutVideoInput = {
+    id?: string
+    title?: string | null
+    content: string
+    postType?: $Enums.PostType
+    authorId: string
+    topicId?: string | null
+    viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutPostInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
+    likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
+  }
+
+  export type PostCreateOrConnectWithoutVideoInput = {
+    where: PostWhereUniqueInput
+    create: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+  }
+
+  export type UserUpsertWithoutVideoAssetsInput = {
+    update: XOR<UserUpdateWithoutVideoAssetsInput, UserUncheckedUpdateWithoutVideoAssetsInput>
+    create: XOR<UserCreateWithoutVideoAssetsInput, UserUncheckedCreateWithoutVideoAssetsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutVideoAssetsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutVideoAssetsInput, UserUncheckedUpdateWithoutVideoAssetsInput>
+  }
+
+  export type UserUpdateWithoutVideoAssetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUpdateManyWithoutAuthorNestedInput
+    createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
+    following?: FollowUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutVideoAssetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
+    following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type PostUpsertWithoutVideoInput = {
+    update: XOR<PostUpdateWithoutVideoInput, PostUncheckedUpdateWithoutVideoInput>
+    create: XOR<PostCreateWithoutVideoInput, PostUncheckedCreateWithoutVideoInput>
+    where?: PostWhereInput
+  }
+
+  export type PostUpdateToOneWithWhereWithoutVideoInput = {
+    where?: PostWhereInput
+    data: XOR<PostUpdateWithoutVideoInput, PostUncheckedUpdateWithoutVideoInput>
+  }
+
+  export type PostUpdateWithoutVideoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    comments?: CommentUpdateManyWithoutPostNestedInput
+    reposts?: RepostUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUpdateManyWithoutPostNestedInput
+    images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUpdateManyWithoutPostNestedInput
+    topic?: TopicUpdateOneWithoutPostsNestedInput
+  }
+
+  export type PostUncheckedUpdateWithoutVideoInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    authorId?: StringFieldUpdateOperationsInput | string
+    topicId?: NullableStringFieldUpdateOperationsInput | string | null
+    viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
+  }
+
+  export type PostCreateWithoutTopicInput = {
+    id?: string
+    title?: string | null
+    content: string
+    postType?: $Enums.PostType
+    viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
+    comments?: CommentCreateNestedManyWithoutPostInput
+    reposts?: RepostCreateNestedManyWithoutPostInput
+    likes?: PostLikeCreateNestedManyWithoutPostInput
+    images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
+    notifications?: NotificationCreateNestedManyWithoutPostInput
   }
 
   export type PostUncheckedCreateWithoutTopicInput = {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     viewCount?: number
     pinned?: boolean
@@ -21422,6 +24136,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
     reposts?: RepostCreateNestedManyWithoutUserInput
@@ -21453,6 +24168,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
     reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
@@ -21489,6 +24205,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
     reposts?: RepostCreateNestedManyWithoutUserInput
@@ -21520,6 +24237,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
     reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
@@ -21583,6 +24301,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
     reposts?: RepostUpdateManyWithoutUserNestedInput
@@ -21614,6 +24333,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
@@ -21669,12 +24389,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
@@ -21687,6 +24409,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -21721,12 +24445,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -21739,6 +24465,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -21757,12 +24485,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
@@ -21775,6 +24505,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -21809,12 +24541,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -21827,6 +24561,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -21845,12 +24581,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
@@ -21863,6 +24601,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -21901,6 +24641,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     reposts?: RepostCreateNestedManyWithoutUserInput
@@ -21932,6 +24673,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
@@ -22049,12 +24791,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
@@ -22067,6 +24811,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -22111,6 +24857,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     reposts?: RepostUpdateManyWithoutUserNestedInput
@@ -22142,6 +24889,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
@@ -22225,12 +24973,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
@@ -22243,6 +24993,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -22281,6 +25033,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -22312,6 +25065,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -22344,12 +25098,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
@@ -22362,6 +25118,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -22406,6 +25164,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -22437,6 +25196,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -22468,6 +25228,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -22499,6 +25260,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -22535,6 +25297,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -22566,6 +25329,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -22587,12 +25351,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
@@ -22605,6 +25371,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -22692,6 +25460,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -22723,6 +25492,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -22765,6 +25535,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -22796,6 +25567,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -22823,12 +25595,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -22841,6 +25615,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -22908,6 +25684,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -22939,6 +25716,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -23024,6 +25802,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -23055,6 +25834,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -23259,6 +26039,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -23290,6 +26071,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -23372,6 +26154,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -23403,6 +26186,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -23419,12 +26203,14 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
@@ -23437,6 +26223,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -23475,6 +26263,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -23506,6 +26295,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -23538,12 +26328,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
@@ -23556,6 +26348,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -23600,6 +26394,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -23631,6 +26426,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -23662,6 +26458,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -23693,6 +26490,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -23729,6 +26527,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicCreateNestedManyWithoutCreatorInput
     topics?: TopicCreateNestedManyWithoutFollowersInput
     comments?: CommentCreateNestedManyWithoutAuthorInput
@@ -23760,6 +26559,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
     createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
     topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
     comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -23807,6 +26607,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -23838,6 +26639,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -23880,6 +26682,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     topics?: TopicUpdateManyWithoutFollowersNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
@@ -23911,6 +26714,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -23927,10 +26731,36 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     topicId?: string | null
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type VideoAssetCreateManyOwnerInput = {
+    id?: string
+    bucket: string
+    region: string
+    rawObjectKey: string
+    rawUrl: string
+    mimeType: string
+    fileSize: bigint | number
+    hlsMasterObjectKey?: string | null
+    hlsMasterUrl?: string | null
+    coverObjectKey?: string | null
+    coverUrl?: string | null
+    durationSec?: number | null
+    width?: number | null
+    height?: number | null
+    bitrateKbps?: number | null
+    workflowRunId?: string | null
+    status?: $Enums.VideoStatus
+    errorCode?: string | null
+    errorMessage?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -24019,11 +26849,13 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -24037,6 +26869,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
@@ -24055,10 +26889,86 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type VideoAssetUpdateWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneWithoutVideoNestedInput
+  }
+
+  export type VideoAssetUncheckedUpdateWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUncheckedUpdateOneWithoutVideoNestedInput
+  }
+
+  export type VideoAssetUncheckedUpdateManyWithoutOwnerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    region?: StringFieldUpdateOperationsInput | string
+    rawObjectKey?: StringFieldUpdateOperationsInput | string
+    rawUrl?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    fileSize?: BigIntFieldUpdateOperationsInput | bigint | number
+    hlsMasterObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    hlsMasterUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    coverObjectKey?: NullableStringFieldUpdateOperationsInput | string | null
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    durationSec?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
+    bitrateKbps?: NullableIntFieldUpdateOperationsInput | number | null
+    workflowRunId?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumVideoStatusFieldUpdateOperationsInput | $Enums.VideoStatus
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -24547,6 +27457,8 @@ export namespace Prisma {
     id?: string
     title?: string | null
     content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
     authorId: string
     viewCount?: number
     pinned?: boolean
@@ -24559,12 +27471,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
@@ -24577,6 +27491,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
@@ -24595,6 +27511,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
@@ -24622,6 +27540,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
     comments?: CommentUpdateManyWithoutAuthorNestedInput
     reposts?: RepostUpdateManyWithoutUserNestedInput
@@ -24653,6 +27572,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
     createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
     comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
@@ -24902,6 +27822,10 @@ export namespace Prisma {
      * @deprecated Use PostDefaultArgs instead
      */
     export type PostArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PostDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use VideoAssetDefaultArgs instead
+     */
+    export type VideoAssetArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = VideoAssetDefaultArgs<ExtArgs>
     /**
      * @deprecated Use TopicDefaultArgs instead
      */

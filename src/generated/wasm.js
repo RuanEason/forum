@@ -131,11 +131,38 @@ exports.Prisma.PostScalarFieldEnum = {
   id: 'id',
   title: 'title',
   content: 'content',
+  postType: 'postType',
+  videoId: 'videoId',
   authorId: 'authorId',
   topicId: 'topicId',
   viewCount: 'viewCount',
   pinned: 'pinned',
   pinnedAt: 'pinnedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.VideoAssetScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  bucket: 'bucket',
+  region: 'region',
+  rawObjectKey: 'rawObjectKey',
+  rawUrl: 'rawUrl',
+  mimeType: 'mimeType',
+  fileSize: 'fileSize',
+  hlsMasterObjectKey: 'hlsMasterObjectKey',
+  hlsMasterUrl: 'hlsMasterUrl',
+  coverObjectKey: 'coverObjectKey',
+  coverUrl: 'coverUrl',
+  durationSec: 'durationSec',
+  width: 'width',
+  height: 'height',
+  bitrateKbps: 'bitrateKbps',
+  workflowRunId: 'workflowRunId',
+  status: 'status',
+  errorCode: 'errorCode',
+  errorMessage: 'errorMessage',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -254,6 +281,21 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.PostType = exports.$Enums.PostType = {
+  TEXT: 'TEXT',
+  VIDEO: 'VIDEO'
+};
+
+exports.VideoStatus = exports.$Enums.VideoStatus = {
+  INIT: 'INIT',
+  UPLOADING: 'UPLOADING',
+  UPLOADED: 'UPLOADED',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+  DELETED: 'DELETED'
+};
+
 exports.NotificationType = exports.$Enums.NotificationType = {
   REPLY_POST: 'REPLY_POST',
   REPLY_COMMENT: 'REPLY_COMMENT',
@@ -280,6 +322,7 @@ exports.PushLogStatus = exports.$Enums.PushLogStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Post: 'Post',
+  VideoAsset: 'VideoAsset',
   Topic: 'Topic',
   PostImage: 'PostImage',
   PostAttachment: 'PostAttachment',

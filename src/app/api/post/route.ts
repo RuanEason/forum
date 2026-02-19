@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { createPost, updatePost, deletePost, getPosts } from "@/lib/post";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -7,25 +7,33 @@ import { deleteFromCOS } from "@/lib/cos";
 import { rewardActionExperience } from "@/lib/experience";
 
 /**
- * 帖子字段最大长度限制
+ * 甯栧瓙瀛楁鏈€澶ч暱搴﹂檺鍒?
  */
 // Maximum field lengths
-/** @type {const} 帖子标题最大长度（字符数） */
+/** @type {const} 甯栧瓙鏍囬鏈€澶ч暱搴︼紙瀛楃鏁帮級 */
 const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
 const MAX_IMAGES = 10;
 const MAX_ATTACHMENTS = 5;
+const POST_TYPES = ["TEXT", "VIDEO"] as const;
+
+type SessionShape = {
+  user?: {
+    id?: string;
+    role?: string;
+  };
+} | null;
 
 /**
- * 获取帖子列表
- * 根据 URL 查询参数中的 topicId 筛选帖子
- * @param {NextRequest} request - Next.js 请求对象
- * @returns {Promise<NextResponse>} 包含帖子列表的 JSON 响应
- * @throws {500} 服务器内部错误时返回
+ * 鑾峰彇甯栧瓙鍒楄〃
+ * 鏍规嵁 URL 鏌ヨ鍙傛暟涓殑 topicId 绛涢€夊笘瀛?
+ * @param {NextRequest} request - Next.js 璇锋眰瀵硅薄
+ * @returns {Promise<NextResponse>} 鍖呭惈甯栧瓙鍒楄〃鐨?JSON 鍝嶅簲
+ * @throws {500} 鏈嶅姟鍣ㄥ唴閮ㄩ敊璇椂杩斿洖
  * @example
- * // 获取所有帖子
+ * // 鑾峰彇鎵€鏈夊笘瀛?
  * GET /api/post
- * // 按话题筛选
+ * // 鎸夎瘽棰樼瓫閫?
  * GET /pi/post?topicId=123
  */
 export async function GET(request: NextRequest) {
@@ -42,46 +50,46 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * 创建新帖子
- * 验证并创建新帖子，支持标题、内容、图片和话题关联
+ * 鍒涘缓鏂板笘瀛?
+ * 楠岃瘉骞跺垱寤烘柊甯栧瓙锛屾敮鎸佹爣棰樸€佸唴瀹广€佸浘鐗囧拰璇濋鍏宠仈
  *
- * @param {NextRequest} request - Next.js 请求对象
- * @param {Object} request.body - 包含帖子数据的请求体
- * @param {string} [request.body.title] - 帖子标题（可选）
- * @param {string} request.body.content - 帖子内容
- * @param {string[]} [request.body.images] - 图片 URL 数组（最多 10 张）
- * @param {Array<{url: string, fileName: string, fileSize: number, mimeType: string}>} [request.body.attachments] - 附件数组（最多 5 个）
- * @param {string} [request.body.topicId] - 关联话题 ID
- * @returns {Promise<NextResponse>} 201 创建成功，包含创建的帖子数据
- * @throws {401} Unauthorized - 用户未登录
- * @throws {400} Bad Request - 请求参数无效或验证失败
- * @throws {500} Internal Server Error - 服务器内部错误
+ * @param {NextRequest} request - Next.js 璇锋眰瀵硅薄
+ * @param {Object} request.body - 鍖呭惈甯栧瓙鏁版嵁鐨勮姹備綋
+ * @param {string} [request.body.title] - 甯栧瓙鏍囬锛堝彲閫夛級
+ * @param {string} request.body.content - 甯栧瓙鍐呭
+ * @param {string[]} [request.body.images] - 鍥剧墖 URL 鏁扮粍锛堟渶澶?10 寮狅級
+ * @param {Array<{url: string, fileName: string, fileSize: number, mimeType: string}>} [request.body.attachments] - 闄勪欢鏁扮粍锛堟渶澶?5 涓級
+ * @param {string} [request.body.topicId] - 鍏宠仈璇濋 ID
+ * @returns {Promise<NextResponse>} 201 鍒涘缓鎴愬姛锛屽寘鍚垱寤虹殑甯栧瓙鏁版嵁
+ * @throws {401} Unauthorized - 鐢ㄦ埛鏈櫥褰?
+ * @throws {400} Bad Request - 璇锋眰鍙傛暟鏃犳晥鎴栭獙璇佸け璐?
+ * @throws {500} Internal Server Error - 鏈嶅姟鍣ㄥ唴閮ㄩ敊璇?
  *
  * @example
- * // 创建纯文本帖子
+ * // 鍒涘缓绾枃鏈笘瀛?
  * POST /api/post
  * {
- *   "content": "这是我的第一篇帖子"
+ *   "content": "杩欐槸鎴戠殑绗竴绡囧笘瀛?
  * }
  *
- * // 创建带标题和图片的帖子
+ * // 鍒涘缓甯︽爣棰樺拰鍥剧墖鐨勫笘瀛?
  * POST /api/post
  * {
- *   "title": "标题",
- *   "content": "内容",
+ *   "title": "鏍囬",
+ *   "content": "鍐呭",
  *   "images": ["https://example.com/image1.jpg"],
  *   "topicId": "topic123"
  * }
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images, attachments, topicId } = await request.json();
+    const { title, content, images, attachments, topicId, postType, videoAssetId } = await request.json();
 
     // Validate title (optional)
     if (title !== undefined && title !== null) {
@@ -107,6 +115,26 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // Validate postType (optional)
+    if (postType !== undefined && postType !== null && typeof postType !== "string") {
+      return NextResponse.json({ error: "postType must be a string" }, { status: 400 });
+    }
+    const normalizedPostType = typeof postType === "string" ? postType.toUpperCase() : "TEXT";
+    if (!POST_TYPES.includes(normalizedPostType as (typeof POST_TYPES)[number])) {
+      return NextResponse.json(
+        { error: `postType must be one of ${POST_TYPES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    if (videoAssetId !== undefined && videoAssetId !== null && typeof videoAssetId !== "string") {
+      return NextResponse.json({ error: "videoAssetId must be a string" }, { status: 400 });
+    }
+
+    if (topicId !== undefined && topicId !== null && typeof topicId !== "string") {
+      return NextResponse.json({ error: "topicId must be a string" }, { status: 400 });
     }
 
     // Validate images (optional array of strings)
@@ -156,17 +184,84 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+    const normalizedContent = typeof content === "string" ? content : "";
+    const normalizedImages = Array.isArray(images) ? images : [];
+    const normalizedAttachments = Array.isArray(attachments) ? attachments : [];
 
-    // Require either content, images, or attachments
-    if ((!content || content.trim() === '') && (!images || images.length === 0) && (!attachments || attachments.length === 0)) {
-      return NextResponse.json(
-        { error: "Content, images, or attachments are required" },
-        { status: 400 }
+    let post;
+    if (normalizedPostType === "VIDEO") {
+      if (normalizedImages.length > 0) {
+        return NextResponse.json(
+          { error: "Video posts only support text + attachments, images are not allowed" },
+          { status: 400 },
+        );
+      }
+
+      const normalizedVideoAssetId = typeof videoAssetId === "string" ? videoAssetId.trim() : "";
+      if (!normalizedVideoAssetId) {
+        return NextResponse.json({ error: "videoAssetId is required for VIDEO post" }, { status: 400 });
+      }
+
+      const videoAsset = await prisma.videoAsset.findUnique({
+        where: { id: normalizedVideoAssetId },
+        select: {
+          id: true,
+          ownerId: true,
+          status: true,
+          post: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!videoAsset || videoAsset.ownerId !== session.user.id) {
+        return NextResponse.json({ error: "Video asset not found" }, { status: 404 });
+      }
+
+      if (videoAsset.status !== "READY") {
+        return NextResponse.json(
+          { error: `Video asset must be READY, current status: ${videoAsset.status}` },
+          { status: 400 },
+        );
+      }
+
+      if (videoAsset.post?.id) {
+        return NextResponse.json({ error: "Video asset has already been bound to a post" }, { status: 400 });
+      }
+
+      post = await createPost(
+        title,
+        normalizedContent,
+        session.user.id,
+        [],
+        topicId || null,
+        normalizedAttachments,
+        { postType: "VIDEO", videoId: videoAsset.id },
+      );
+    } else {
+      // TEXT 帖子：正文/图片/附件至少一个
+      if (
+        normalizedContent.trim() === ''
+        && normalizedImages.length === 0
+        && normalizedAttachments.length === 0
+      ) {
+        return NextResponse.json(
+          { error: "Content, images, or attachments are required" },
+          { status: 400 },
+        );
+      }
+
+      post = await createPost(
+        title,
+        normalizedContent,
+        session.user.id,
+        normalizedImages,
+        topicId || null,
+        normalizedAttachments,
       );
     }
-
-    // 传入 title
-    const post = await createPost(title, content, session.user.id, images, topicId, attachments);
 
     try {
       await rewardActionExperience(session.user.id, "post");
@@ -182,32 +277,32 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * 更新帖子
- * 只有帖子作者或管理员可以编辑帖子
+ * 鏇存柊甯栧瓙
+ * 鍙湁甯栧瓙浣滆€呮垨绠＄悊鍛樺彲浠ョ紪杈戝笘瀛?
  *
- * @param {NextRequest} request - Next.js 请求对象
- * @param {Object} request.body - 请求体
- * @param {string} request.body.id - 帖子 ID
- * @param {string} request.body.content - 更新的帖子内容
- * @param {string} [request.body.title] - 更新的帖子标题（可选）
- * @returns {Promise<NextResponse>} 200 更新成功，包含更新后的帖子数据
- * @throws {401} Unauthorized - 用户未登录
- * @throws {403} Forbidden - 无权限编辑（非作者且非管理员）
- * @throws {404} Not Found - 帖子不存在
- * @throws {400} Bad Request - 参数无效
- * @throws {500} Internal Server Error - 服务器内部错误
+ * @param {NextRequest} request - Next.js 璇锋眰瀵硅薄
+ * @param {Object} request.body - 璇锋眰浣?
+ * @param {string} request.body.id - 甯栧瓙 ID
+ * @param {string} request.body.content - 鏇存柊鐨勫笘瀛愬唴瀹?
+ * @param {string} [request.body.title] - 鏇存柊鐨勫笘瀛愭爣棰橈紙鍙€夛級
+ * @returns {Promise<NextResponse>} 200 鏇存柊鎴愬姛锛屽寘鍚洿鏂板悗鐨勫笘瀛愭暟鎹?
+ * @throws {401} Unauthorized - 鐢ㄦ埛鏈櫥褰?
+ * @throws {403} Forbidden - 鏃犳潈闄愮紪杈戯紙闈炰綔鑰呬笖闈炵鐞嗗憳锛?
+ * @throws {404} Not Found - 甯栧瓙涓嶅瓨鍦?
+ * @throws {400} Bad Request - 鍙傛暟鏃犳晥
+ * @throws {500} Internal Server Error - 鏈嶅姟鍣ㄥ唴閮ㄩ敊璇?
  *
  * @example
  * PUT /api/post
  * {
  *   "id": "post123",
- *   "title": "更新后的标题",
- *   "content": "更新后的内容"
+ *   "title": "鏇存柊鍚庣殑鏍囬",
+ *   "content": "鏇存柊鍚庣殑鍐呭"
  * }
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -230,7 +325,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // 只有作者或管理员才能编辑帖子
+    // 鍙湁浣滆€呮垨绠＄悊鍛樻墠鑳界紪杈戝笘瀛?
     if (existingPost.authorId !== session.user.id && session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -245,18 +340,18 @@ export async function PUT(request: NextRequest) {
 }
 
 /**
- * 删除帖子
- * 只有帖子作者或管理员可以删除帖子
+ * 鍒犻櫎甯栧瓙
+ * 鍙湁甯栧瓙浣滆€呮垨绠＄悊鍛樺彲浠ュ垹闄ゅ笘瀛?
  *
- * @param {NextRequest} request - Next.js 请求对象
- * @param {Object} request.body - 请求体
- * @param {string} request.body.id - 要删除的帖子 ID
- * @returns {Promise<NextResponse>} 200 删除成功
- * @throws {401} Unauthorized - 用户未登录
- * @throws {403} Forbidden - 无权限删除（非作者且非管理员）
- * @throws {404} Not Found - 帖子不存在
- * @throws {400} Bad Request - 参数无效
- * @throws {500} Internal Server Error - 服务器内部错误
+ * @param {NextRequest} request - Next.js 璇锋眰瀵硅薄
+ * @param {Object} request.body - 璇锋眰浣?
+ * @param {string} request.body.id - 瑕佸垹闄ょ殑甯栧瓙 ID
+ * @returns {Promise<NextResponse>} 200 鍒犻櫎鎴愬姛
+ * @throws {401} Unauthorized - 鐢ㄦ埛鏈櫥褰?
+ * @throws {403} Forbidden - 鏃犳潈闄愬垹闄わ紙闈炰綔鑰呬笖闈炵鐞嗗憳锛?
+ * @throws {404} Not Found - 甯栧瓙涓嶅瓨鍦?
+ * @throws {400} Bad Request - 鍙傛暟鏃犳晥
+ * @throws {500} Internal Server Error - 鏈嶅姟鍣ㄥ唴閮ㄩ敊璇?
  *
  * @example
  * DELETE /api/post
@@ -266,7 +361,7 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -290,12 +385,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // 只有作者或管理员才能删除帖子
+    // 鍙湁浣滆€呮垨绠＄悊鍛樻墠鑳藉垹闄ゅ笘瀛?
     if (existingPost.authorId !== session.user.id && session.user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 删除COS中的附件文件
+    // 鍒犻櫎COS涓殑闄勪欢鏂囦欢
     if (existingPost.attachments.length > 0) {
       for (const attachment of existingPost.attachments) {
         try {
@@ -308,7 +403,7 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // 删除COS中的图片文件
+    // 鍒犻櫎COS涓殑鍥剧墖鏂囦欢
     if (existingPost.images.length > 0) {
       for (const image of existingPost.images) {
         try {

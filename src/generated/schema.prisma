@@ -31,6 +31,7 @@ model User {
   dailyLikeRewardCount Int   @default(0)
   lastLikeRewardAt DateTime?
   posts        Post[]
+  videoAssets  VideoAsset[]
   createdTopics Topic[]      @relation("TopicCreator")
   topics       Topic[]       @relation("TopicFollows")
   comments     Comment[]
@@ -46,12 +47,30 @@ model User {
   updatedAt    DateTime      @updatedAt
 }
 
+enum PostType {
+  TEXT
+  VIDEO
+}
+
+enum VideoStatus {
+  INIT
+  UPLOADING
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
 model Post {
   id          String           @id @default(cuid())
   title       String?
   content     String           @db.Text
+  postType    PostType         @default(TEXT)
+  videoId     String?          @unique
   authorId    String
   author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  video       VideoAsset?      @relation(fields: [videoId], references: [id], onDelete: SetNull)
   comments    Comment[]
   reposts     Repost[]
   likes       PostLike[]
@@ -70,6 +89,41 @@ model Post {
   @@index([createdAt])
   @@index([topicId])
   @@index([pinned, pinnedAt])
+}
+
+model VideoAsset {
+  id                 String      @id @default(cuid())
+  ownerId            String
+  owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  post               Post?
+
+  bucket             String
+  region             String
+  rawObjectKey       String      @unique
+  rawUrl             String
+  mimeType           String
+  fileSize           BigInt
+
+  hlsMasterObjectKey String?
+  hlsMasterUrl       String?
+  coverObjectKey     String?
+  coverUrl           String?
+
+  durationSec        Float?
+  width              Int?
+  height             Int?
+  bitrateKbps        Int?
+
+  workflowRunId      String?
+  status             VideoStatus @default(INIT)
+  errorCode          String?
+  errorMessage       String?     @db.Text
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([ownerId, status])
+  @@index([createdAt])
 }
 
 model Topic {
