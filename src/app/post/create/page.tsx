@@ -519,24 +519,24 @@ export default function CreatePostPage() {
         throw new Error(stsData.error || "获取上传凭证失败");
       }
 
-      if (
-        !stsData.videoAssetId
-        || !stsData.objectKey
-        || !stsData.bucket
-        || !stsData.region
-        || !stsData.credentials
-      ) {
+      const videoAssetId = stsData.videoAssetId;
+      const objectKey = stsData.objectKey;
+      const bucket = stsData.bucket;
+      const region = stsData.region;
+      const credentials = stsData.credentials;
+
+      if (!videoAssetId || !objectKey || !bucket || !region || !credentials) {
         throw new Error("上传凭证响应不完整");
       }
 
-      setVideoAssetId(stsData.videoAssetId);
+      setVideoAssetId(videoAssetId);
 
       const cos = new COS({
-        SecretId: stsData.credentials.tmpSecretId,
-        SecretKey: stsData.credentials.tmpSecretKey,
-        SecurityToken: stsData.credentials.sessionToken,
-        StartTime: stsData.credentials.startTime,
-        ExpiredTime: stsData.credentials.expiredTime,
+        SecretId: credentials.tmpSecretId,
+        SecretKey: credentials.tmpSecretKey,
+        SecurityToken: credentials.sessionToken,
+        StartTime: credentials.startTime,
+        ExpiredTime: credentials.expiredTime,
       });
 
       videoCosRef.current = cos;
@@ -557,9 +557,9 @@ export default function CreatePostPage() {
           ) => void;
         }).sliceUploadFile(
           {
-            Bucket: stsData.bucket,
-            Region: stsData.region,
-            Key: stsData.objectKey,
+            Bucket: bucket,
+            Region: region,
+            Key: objectKey,
             Body: file,
             onTaskReady: (taskId: string) => {
               videoTaskIdRef.current = taskId;
@@ -591,8 +591,8 @@ export default function CreatePostPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          videoAssetId: stsData.videoAssetId,
-          objectKey: stsData.objectKey,
+          videoAssetId,
+          objectKey: objectKey,
           etag: uploadResult.ETag ?? null,
         }),
       });
@@ -604,7 +604,7 @@ export default function CreatePostPage() {
 
       setVideoStatus(normalizeVideoStatus(commitData.status));
       setVideoUploadMessage("视频转码处理中，请稍候...");
-      startVideoPolling(stsData.videoAssetId);
+      startVideoPolling(videoAssetId);
     } catch (uploadError) {
       console.error("Video upload error:", uploadError);
       setVideoStatus("FAILED");
