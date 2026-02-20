@@ -1,12 +1,125 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
+import COS from "cos-js-sdk-v5";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
-import { X, Loader2, ChevronDown, ChevronUp, Settings, Paperclip, FileText } from "lucide-react";
+import {
+  X,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Settings,
+  Paperclip,
+  UploadCloud,
+  Video,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+
+type PostMode = "TEXT" | "VIDEO";
+type VideoWorkflowStatus = "IDLE" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+
+type UploadedAttachment = {
+  url: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+};
+
+type VideoStatusResponse = {
+  id: string;
+  status?: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+  hlsMasterUrl?: string | null;
+  coverUrl?: string | null;
+  durationSec?: number | null;
+  width?: number | null;
+  height?: number | null;
+  bitrateKbps?: number | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+};
+
+type VideoStsResponse = {
+  videoAssetId: string;
+  objectKey: string;
+  bucket: string;
+  region: string;
+  credentials: {
+    tmpSecretId: string;
+    tmpSecretKey: string;
+    sessionToken: string;
+    startTime: number;
+    expiredTime: number;
+  };
+};
+
+type CosUploadProgress = {
+  percent?: number;
+};
+
+const MAX_TEXT_ATTACHMENTS = 5;
+const MAX_VIDEO_ATTACHMENTS = 5;
+const MAX_VIDEO_TITLE_LENGTH = 80;
+const MAX_VIDEO_DESC_LENGTH = 2000;
+
+function formatFileSize(size: number) {
+  if (!Number.isFinite(size) || size <= 0) {
+    return "0 B";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function normalizeVideoStatus(status?: string): VideoWorkflowStatus {
+  if (status === "UPLOADING" || status === "PROCESSING" || status === "READY" || status === "FAILED") {
+    return status;
+  }
+  return "PROCESSING";
+}
+
+function getVideoStatusMeta(status: VideoWorkflowStatus) {
+  switch (status) {
+    case "UPLOADING":
+      return {
+        label: "上传中",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+      };
+    case "PROCESSING":
+      return {
+        label: "转码中",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+      };
+    case "READY":
+      return {
+        label: "可发布",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      };
+    case "FAILED":
+      return {
+        label: "处理失败",
+        className: "bg-red-50 text-red-700 border-red-200",
+      };
+    default:
+      return {
+        label: "未上传",
+        className: "bg-gray-50 text-gray-600 border-gray-200",
+      };
+  }
+}
 
 export default function CreatePostPage() {
   const { data: session, status } = useSession();
@@ -14,27 +127,58 @@ export default function CreatePostPage() {
   const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const videoAttachmentInputRef = useRef<HTMLInputElement>(null);
+  const videoPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoCosRef = useRef<unknown>(null);
+  const videoTaskIdRef = useRef<string | null>(null);
+  const [postMode, setPostMode] = useState<PostMode>("TEXT");
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [selectedAttachments, setSelectedAttachments] = useState<Array<{ url: string; fileName: string; fileSize: number; mimeType: string }>>([]);
+  const [selectedAttachments, setSelectedAttachments] = useState<UploadedAttachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
   const [cancelRequested, setCancelRequested] = useState(false);
   const [error, setError] = useState("");
-  const abortControllerRef = useRef<AbortController | null>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [enableTitle, setEnableTitle] = useState(false);
+  const [videoTitle, setVideoTitle] = useState("");
+  const [videoDescription, setVideoDescription] = useState("");
+  const [videoTopicId, setVideoTopicId] = useState<string | null>(null);
+  const [videoAttachments, setVideoAttachments] = useState<UploadedAttachment[]>([]);
+  const [videoAssetId, setVideoAssetId] = useState<string | null>(null);
+  const [videoStatus, setVideoStatus] = useState<VideoWorkflowStatus>("IDLE");
+  const [videoMeta, setVideoMeta] = useState<VideoStatusResponse | null>(null);
+  const [videoFileName, setVideoFileName] = useState("");
+  const [videoFileSize, setVideoFileSize] = useState(0);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  const [videoUploadMessage, setVideoUploadMessage] = useState("");
+  const [videoUploadError, setVideoUploadError] = useState("");
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoAttachmentUploading, setVideoAttachmentUploading] = useState(false);
+  const stopVideoPolling = useCallback(() => {
+    if (videoPollTimerRef.current) {
+      clearInterval(videoPollTimerRef.current);
+      videoPollTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [status, router, pathname]);
+
+  useEffect(() => {
+    return () => {
+      stopVideoPolling();
+    };
+  }, [stopVideoPolling]);
 
   const uploadFile = async (file: File, endpoint: string, onProgress: (percent: number, status: string) => void) => {
     const formData = new FormData();
@@ -91,7 +235,7 @@ export default function CreatePostPage() {
             const response = JSON.parse(xhr.responseText);
             onProgress(100, "上传完成！");
             resolve(response);
-          } catch (e) {
+          } catch {
             reject(new Error("Invalid response"));
           }
         } else {
@@ -186,7 +330,7 @@ export default function CreatePostPage() {
 
     try {
       const files = Array.from(e.target.files);
-      const uploadedFiles: Array<{ url: string; fileName: string; fileSize: number; mimeType: string }> = [];
+      const uploadedFiles: UploadedAttachment[] = [];
       const totalFiles = files.length;
 
       for (let i = 0; i < totalFiles; i++) {
@@ -205,7 +349,7 @@ export default function CreatePostPage() {
             setUploadProgress(Math.round(overallProgress));
             setUploadStatus(`第 ${i + 1}/${totalFiles} 个附件: ${statusMsg}`);
           }
-        ) as any;
+        ) as UploadedAttachment;
 
         uploadedFiles.push(result);
       }
@@ -244,8 +388,22 @@ export default function CreatePostPage() {
     attachmentInputRef.current?.click();
   };
 
+  const triggerVideoUpload = () => {
+    videoFileInputRef.current?.click();
+  };
+
+  const triggerVideoAttachmentUpload = () => {
+    videoAttachmentInputRef.current?.click();
+  };
+
   const removeAttachment = (indexToRemove: number) => {
     setSelectedAttachments((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
+  const removeVideoAttachment = (indexToRemove: number) => {
+    setVideoAttachments((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
   };
@@ -260,24 +418,293 @@ export default function CreatePostPage() {
     }
   };
 
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const uploadVideoAttachment = async (file: File): Promise<UploadedAttachment> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload/attachment", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json() as UploadedAttachment & { error?: string };
+    if (!response.ok) {
+      throw new Error(data.error || "附件上传失败");
+    }
+
+    return {
+      url: data.url,
+      fileName: data.fileName,
+      fileSize: data.fileSize,
+      mimeType: data.mimeType,
+    };
+  };
+
+  const fetchVideoStatus = useCallback(
+    async (assetId: string) => {
+      const response = await fetch(`/api/video/${assetId}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await response.json() as VideoStatusResponse & { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "查询视频状态失败");
+      }
+
+      const normalizedStatus = normalizeVideoStatus(data.status);
+      setVideoStatus(normalizedStatus);
+      setVideoMeta(data);
+
+      if (normalizedStatus === "READY") {
+        setVideoUploadError("");
+        setVideoUploadMessage("视频处理完成，可以发布了");
+        stopVideoPolling();
+        return;
+      }
+
+      if (normalizedStatus === "FAILED") {
+        setVideoUploadMessage("");
+        setVideoUploadError(data.errorMessage || "视频处理失败，请重新上传");
+        stopVideoPolling();
+        return;
+      }
+
+      setVideoUploadMessage("视频转码处理中，请稍候...");
+    },
+    [stopVideoPolling],
+  );
+
+  const startVideoPolling = useCallback(
+    (assetId: string) => {
+      stopVideoPolling();
+      void fetchVideoStatus(assetId);
+      videoPollTimerRef.current = setInterval(() => {
+        void fetchVideoStatus(assetId);
+      }, 2500);
+    },
+    [fetchVideoStatus, stopVideoPolling],
+  );
+
+  const uploadVideoBySts = async (file: File) => {
     setError("");
-    if (!(session as any)?.user?.id) {
+    setVideoUploadError("");
+    stopVideoPolling();
+
+    setVideoUploading(true);
+    setVideoAssetId(null);
+    setVideoMeta(null);
+    setVideoStatus("UPLOADING");
+    setVideoFileName(file.name);
+    setVideoFileSize(file.size);
+    setVideoUploadProgress(0);
+    setVideoUploadMessage("正在申请上传凭证...");
+
+    try {
+      const stsResponse = await fetch("/api/video/sts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
+        }),
+      });
+
+      const stsData = await stsResponse.json() as Partial<VideoStsResponse> & { error?: string };
+
+      if (!stsResponse.ok) {
+        throw new Error(stsData.error || "获取上传凭证失败");
+      }
+
+      if (
+        !stsData.videoAssetId
+        || !stsData.objectKey
+        || !stsData.bucket
+        || !stsData.region
+        || !stsData.credentials
+      ) {
+        throw new Error("上传凭证响应不完整");
+      }
+
+      setVideoAssetId(stsData.videoAssetId);
+
+      const cos = new COS({
+        SecretId: stsData.credentials.tmpSecretId,
+        SecretKey: stsData.credentials.tmpSecretKey,
+        SecurityToken: stsData.credentials.sessionToken,
+        StartTime: stsData.credentials.startTime,
+        ExpiredTime: stsData.credentials.expiredTime,
+      });
+
+      videoCosRef.current = cos;
+      setVideoUploadMessage("视频上传中...");
+
+      const uploadResult = await new Promise<{ ETag?: string }>((resolve, reject) => {
+        (cos as {
+          sliceUploadFile: (
+            params: {
+              Bucket: string;
+              Region: string;
+              Key: string;
+              Body: File;
+              onTaskReady?: (taskId: string) => void;
+              onProgress?: (progressData: CosUploadProgress) => void;
+            },
+            callback: (error: unknown, data: { ETag?: string }) => void,
+          ) => void;
+        }).sliceUploadFile(
+          {
+            Bucket: stsData.bucket,
+            Region: stsData.region,
+            Key: stsData.objectKey,
+            Body: file,
+            onTaskReady: (taskId: string) => {
+              videoTaskIdRef.current = taskId;
+            },
+            onProgress: (progressData: CosUploadProgress) => {
+              const percent = Math.max(
+                0,
+                Math.min(100, Math.round((progressData.percent ?? 0) * 100)),
+              );
+              setVideoUploadProgress(percent);
+            },
+          },
+          (uploadError: unknown, data: { ETag?: string }) => {
+            if (uploadError) {
+              reject(uploadError);
+              return;
+            }
+            resolve(data || {});
+          },
+        );
+      });
+
+      setVideoUploadProgress(100);
+      setVideoUploadMessage("上传完成，提交处理任务...");
+
+      const commitResponse = await fetch("/api/video/commit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          videoAssetId: stsData.videoAssetId,
+          objectKey: stsData.objectKey,
+          etag: uploadResult.ETag ?? null,
+        }),
+      });
+
+      const commitData = await commitResponse.json() as { status?: string; error?: string };
+      if (!commitResponse.ok) {
+        throw new Error(commitData.error || "视频提交失败");
+      }
+
+      setVideoStatus(normalizeVideoStatus(commitData.status));
+      setVideoUploadMessage("视频转码处理中，请稍候...");
+      startVideoPolling(stsData.videoAssetId);
+    } catch (uploadError) {
+      console.error("Video upload error:", uploadError);
+      setVideoStatus("FAILED");
+      setVideoUploadProgress(0);
+      setVideoUploadMessage("");
+      setVideoUploadError(
+        uploadError instanceof Error ? uploadError.message : "视频上传失败，请稍后重试",
+      );
+    } finally {
+      setVideoUploading(false);
+      videoTaskIdRef.current = null;
+    }
+  };
+
+  const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadVideoBySts(file);
+
+    if (videoFileInputRef.current) {
+      videoFileInputRef.current.value = "";
+    }
+  };
+
+  const cancelVideoUpload = () => {
+    const taskId = videoTaskIdRef.current;
+    const cos = videoCosRef.current;
+
+    if (taskId && cos && typeof cos === "object" && "cancelTask" in cos) {
+      try {
+        (cos as { cancelTask: (id: string) => void }).cancelTask(taskId);
+      } catch (cancelError) {
+        console.error("Cancel video upload error:", cancelError);
+      }
+    }
+
+    setVideoUploading(false);
+    setVideoStatus("FAILED");
+    setVideoUploadProgress(0);
+    setVideoUploadMessage("");
+    setVideoUploadError("视频上传已取消，请重新上传");
+    videoTaskIdRef.current = null;
+  };
+
+  const handleVideoAttachmentSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    setError("");
+    setVideoUploadError("");
+
+    if (videoAttachments.length >= MAX_VIDEO_ATTACHMENTS) {
+      setVideoUploadError(`最多只能上传 ${MAX_VIDEO_ATTACHMENTS} 个附件`);
+      if (videoAttachmentInputRef.current) {
+        videoAttachmentInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setVideoAttachmentUploading(true);
+
+    try {
+      const files = Array.from(e.target.files);
+      const remain = MAX_VIDEO_ATTACHMENTS - videoAttachments.length;
+      const currentBatch = files.slice(0, remain);
+
+      const uploaded = await Promise.all(currentBatch.map((file) => uploadVideoAttachment(file)));
+      setVideoAttachments((prev) => [...prev, ...uploaded]);
+    } catch (uploadError) {
+      console.error("Video attachment upload error:", uploadError);
+      setVideoUploadError(
+        uploadError instanceof Error ? uploadError.message : "附件上传失败，请稍后重试",
+      );
+    } finally {
+      setVideoAttachmentUploading(false);
+      if (videoAttachmentInputRef.current) {
+        videoAttachmentInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleCreateTextPost = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError("");
+
+    if (!(session as { user?: { id?: string } } | null)?.user?.id) {
       setError("请先登录才能发布帖子");
       return;
     }
+
     if (!content.trim() && selectedImages.length === 0 && selectedAttachments.length === 0) {
       setError("帖子内容、图片或附件不能为空");
       return;
     }
 
-    if (selectedAttachments.length > 5) {
-      setError("最多只能上传 5 个附件");
+    if (selectedAttachments.length > MAX_TEXT_ATTACHMENTS) {
+      setError(`最多只能上传 ${MAX_TEXT_ATTACHMENTS} 个附件`);
       return;
     }
 
-    // 如果启用了标题但标题为空，则提示
     if (enableTitle && !title.trim()) {
       setError("请输入标题");
       return;
@@ -292,8 +719,8 @@ export default function CreatePostPage() {
         },
         body: JSON.stringify({
           title: enableTitle ? title : null,
-          content: content,
-          authorId: (session as any)?.user?.id,
+          content,
+          authorId: (session as { user?: { id?: string } } | null)?.user?.id,
           images: selectedImages,
           attachments: selectedAttachments,
           topicId: selectedTopicId,
@@ -314,6 +741,87 @@ export default function CreatePostPage() {
       setLoading(false);
     }
   };
+
+  const handleCreateVideoPost = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError("");
+    setVideoUploadError("");
+
+    if (!(session as { user?: { id?: string } } | null)?.user?.id) {
+      setError("请先登录才能发布帖子");
+      return;
+    }
+
+    if (!videoAssetId) {
+      setVideoUploadError("请先上传视频");
+      return;
+    }
+
+    if (videoStatus !== "READY") {
+      setVideoUploadError("视频仍在处理中，处理完成后才能发布");
+      return;
+    }
+
+    if (videoAttachments.length > MAX_VIDEO_ATTACHMENTS) {
+      setVideoUploadError(`最多只能上传 ${MAX_VIDEO_ATTACHMENTS} 个附件`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          postType: "VIDEO",
+          videoAssetId,
+          title: videoTitle.trim() ? videoTitle.trim() : null,
+          content: videoDescription,
+          attachments: videoAttachments,
+          topicId: videoTopicId,
+        }),
+      });
+
+      const data = await response.json() as { error?: string };
+
+      if (response.ok) {
+        router.push("/");
+        router.refresh();
+      } else {
+        setVideoUploadError(data.error || "发布视频失败");
+      }
+    } catch {
+      setVideoUploadError("网络错误，发布视频失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublish = () => {
+    if (postMode === "VIDEO") {
+      void handleCreateVideoPost();
+      return;
+    }
+
+    void handleCreateTextPost();
+  };
+
+  const canPublishText =
+    !loading
+    && !isUploading
+    && (content.trim().length > 0 || selectedImages.length > 0 || selectedAttachments.length > 0)
+    && (!enableTitle || title.trim().length > 0);
+
+  const canPublishVideo =
+    !loading
+    && !videoUploading
+    && !videoAttachmentUploading
+    && videoStatus === "READY"
+    && Boolean(videoAssetId);
+
+  const statusMeta = getVideoStatusMeta(videoStatus);
 
   if (status === "loading") {
     return (
@@ -342,15 +850,49 @@ export default function CreatePostPage() {
           <h1 className="text-lg font-semibold text-gray-900">发布动态</h1>
           <button
             type="button"
-            onClick={handleCreatePost}
-            disabled={loading || isUploading || (!content.trim() && selectedImages.length === 0)}
+            onClick={handlePublish}
+            disabled={postMode === "TEXT" ? !canPublishText : !canPublishVideo}
             className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "发布中..." : "发布"}
           </button>
         </div>
 
-        <form onSubmit={handleCreatePost} className="space-y-4">
+        <div className="mb-4 bg-white rounded-2xl shadow-sm p-1 border border-gray-100">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setPostMode("TEXT");
+                setError("");
+              }}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                postMode === "TEXT"
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              发文本
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPostMode("VIDEO");
+                setError("");
+              }}
+              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                postMode === "VIDEO"
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              发视频
+            </button>
+          </div>
+        </div>
+
+        {postMode === "TEXT" && (
+        <form onSubmit={handleCreateTextPost} className="space-y-4">
           {/* 主编辑区域 */}
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             {/* Markdown 编辑器 */}
@@ -366,7 +908,7 @@ export default function CreatePostPage() {
               isUploading={isUploading}
               onAttachmentClick={triggerAttachmentUpload}
               attachmentCount={selectedAttachments.length}
-              maxAttachments={5}
+              maxAttachments={MAX_TEXT_ATTACHMENTS}
               onCancelUpload={cancelUpload}
               uploadProgress={uploadProgress}
               uploadStatus={uploadStatus}
@@ -396,7 +938,7 @@ export default function CreatePostPage() {
               multiple
               className="hidden"
               onChange={handleAttachmentSelect}
-              disabled={loading || isUploading || selectedAttachments.length >= 5}
+              disabled={loading || isUploading || selectedAttachments.length >= MAX_TEXT_ATTACHMENTS}
             />
 
             {/* 图片上传区域 */}
@@ -510,17 +1052,278 @@ export default function CreatePostPage() {
             </div>
           )}
 
-          {/* 错误提示 */}
           {error && (
             <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
               {error}
             </div>
           )}
         </form>
+        )}
+
+        {postMode === "VIDEO" && (
+          <form onSubmit={handleCreateVideoPost} className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">上传视频</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    仅支持视频 + 文字 + 附件。视频会先上传并转码，完成后可发布。
+                  </p>
+                </div>
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusMeta.className}`}
+                >
+                  {statusMeta.label}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/60 p-4 sm:p-6">
+                {!videoFileName && (
+                  <div className="flex flex-col items-center justify-center text-center py-8 sm:py-10">
+                    <div className="w-14 h-14 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3">
+                      <UploadCloud className="w-7 h-7 text-gray-400" />
+                    </div>
+                    <p className="text-gray-700 text-sm sm:text-base">点击按钮选择并上传视频</p>
+                    <p className="text-xs text-gray-500 mt-1">支持 MP4 / MOV / AVI / WEBM，最大 2GB</p>
+                    <button
+                      type="button"
+                      onClick={triggerVideoUpload}
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      <Video className="w-4 h-4" />
+                      上传视频
+                    </button>
+                  </div>
+                )}
+
+                {videoFileName && (
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-gray-900 font-medium text-sm sm:text-base">
+                          <VideoFileBadgeIcon />
+                          <span className="truncate">{videoFileName}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatFileSize(videoFileSize)}
+                          {videoMeta?.durationSec ? ` · ${videoMeta.durationSec.toFixed(1)} 秒` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={triggerVideoUpload}
+                          disabled={videoUploading || loading}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          更换视频
+                        </button>
+                        {videoUploading && (
+                          <button
+                            type="button"
+                            onClick={cancelVideoUpload}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            取消上传
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {(videoUploading || videoStatus === "PROCESSING") && (
+                      <div className="space-y-2">
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          {videoStatus === "PROCESSING" ? (
+                            <div className="h-full w-1/3 bg-amber-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]" />
+                          ) : (
+                            <div
+                              className="h-full bg-blue-500 transition-all duration-200"
+                              style={{ width: `${videoUploadProgress}%` }}
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 flex items-center gap-1.5">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          {videoUploadMessage || "处理中..."}
+                        </p>
+                      </div>
+                    )}
+
+                    {videoStatus === "READY" && (
+                      <p className="text-xs text-emerald-700 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        视频处理完成，可以点击右上角“发布”。
+                      </p>
+                    )}
+
+                    {videoMeta?.coverUrl && (
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-black">
+                        <Image
+                          src={videoMeta.coverUrl}
+                          alt="视频封面预览"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={videoFileInputRef}
+                type="file"
+                accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                className="hidden"
+                onChange={handleVideoFileSelect}
+                disabled={videoUploading || loading}
+              />
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6 space-y-5">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">基本设置</h2>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="video-title" className="text-sm font-medium text-gray-700">
+                    标题（可选）
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {videoTitle.length}/{MAX_VIDEO_TITLE_LENGTH}
+                  </span>
+                </div>
+                <input
+                  id="video-title"
+                  type="text"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value.slice(0, MAX_VIDEO_TITLE_LENGTH))}
+                  placeholder="输入视频标题（可不填）"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="video-desc" className="text-sm font-medium text-gray-700">
+                    简介
+                  </label>
+                  <span className="text-xs text-gray-400">
+                    {videoDescription.length}/{MAX_VIDEO_DESC_LENGTH}
+                  </span>
+                </div>
+                <textarea
+                  id="video-desc"
+                  value={videoDescription}
+                  onChange={(e) => setVideoDescription(e.target.value.slice(0, MAX_VIDEO_DESC_LENGTH))}
+                  placeholder="补充一点视频说明，帮助大家更快理解内容"
+                  rows={6}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">话题（可选）</label>
+                <TopicSelector
+                  selectedTopicId={videoTopicId}
+                  onSelect={setVideoTopicId}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-sm font-medium text-gray-700">附件（可选）</label>
+                  <button
+                    type="button"
+                    onClick={triggerVideoAttachmentUpload}
+                    disabled={
+                      videoAttachmentUploading
+                      || loading
+                      || videoAttachments.length >= MAX_VIDEO_ATTACHMENTS
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {videoAttachmentUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Paperclip className="w-4 h-4" />
+                    )}
+                    添加附件
+                  </button>
+                </div>
+
+                <input
+                  ref={videoAttachmentInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleVideoAttachmentSelect}
+                  disabled={
+                    videoAttachmentUploading
+                    || loading
+                    || videoAttachments.length >= MAX_VIDEO_ATTACHMENTS
+                  }
+                />
+
+                {videoAttachments.length > 0 && (
+                  <div className="space-y-2">
+                    {videoAttachments.map((attachment, index) => (
+                      <div
+                        key={attachment.url + index}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-shrink-0 text-gray-500">
+                          <Paperclip className="h-5 w-5" />
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {attachment.fileName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeVideoAttachment(index)}
+                          className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {videoUploadError && (
+              <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                {videoUploadError}
+              </div>
+            )}
+
+            {error && (
+              <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                {error}
+              </div>
+            )}
+          </form>
+        )}
       </main>
     </div>
   );
 }
+
+function VideoFileBadgeIcon() {
+  return (
+    <span className="inline-flex items-center justify-center rounded bg-blue-100 text-blue-700 w-5 h-5">
+      <Video className="w-3.5 h-3.5" />
+    </span>
+  );
+}
+

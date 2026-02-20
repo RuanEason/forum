@@ -32,6 +32,23 @@ function firstString(source: unknown, paths: string[]): string | undefined {
   return undefined;
 }
 
+function firstStringFromSources(sources: unknown[], paths: string[]): string | undefined {
+  for (const source of sources) {
+    const value = firstString(source, paths);
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function pickFirstItem(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
 function collectPrimitiveValues(source: unknown, bucket: Array<{ key: string; value: Primitive }>, parentKey = "") {
   if (Array.isArray(source)) {
     source.forEach((item, index) => {
@@ -81,8 +98,38 @@ function extractNumber(
   return undefined;
 }
 
+function inferStatusFromEntries(entries: Array<{ key: string; value: Primitive }>): string | undefined {
+  for (const entry of entries) {
+    if (typeof entry.value !== "string") {
+      continue;
+    }
+
+    const key = entry.key.toLowerCase();
+    const value = entry.value.trim();
+    if (!value) {
+      continue;
+    }
+
+    if (!/(state|status|code|result)/.test(key)) {
+      continue;
+    }
+
+    if (isSuccessState(value) || isFailedState(value)) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 function extractCallbackPayload(body: unknown) {
-  const jobsDetail = getByPath(body, "JobsDetail") || getByPath(body, "jobsDetail") || body;
+  const jobsDetailRaw = getByPath(body, "JobsDetail")
+    || getByPath(body, "jobsDetail")
+    || getByPath(body, "Response.JobsDetail")
+    || getByPath(body, "response.JobsDetail")
+    || body;
+  const jobsDetail = pickFirstItem(jobsDetailRaw);
+  const sources = [body, jobsDetail];
   const entries: Array<{ key: string; value: Primitive }> = [];
   collectPrimitiveValues(body, entries);
 
@@ -92,39 +139,64 @@ function extractCallbackPayload(body: unknown) {
     .map((item) => item.trim())
     .filter(Boolean);
 
-  const workflowRunId = firstString(body, [
+  const workflowRunId = firstStringFromSources(sources, [
     "JobsDetail.WorkflowExecutionId",
     "JobsDetail.WorkflowRunId",
     "jobsDetail.WorkflowExecutionId",
     "jobsDetail.WorkflowRunId",
+    "Response.JobsDetail.WorkflowExecutionId",
+    "Response.JobsDetail.WorkflowRunId",
     "WorkflowExecutionId",
     "WorkflowRunId",
     "RunId",
+    "JobId",
+    "workflowExecutionId",
+    "workflowRunId",
+    "runId",
+    "jobId",
   ]);
 
-  const rawStatus = firstString(body, [
+  const rawStatus = firstStringFromSources(sources, [
     "JobsDetail.State",
     "JobsDetail.Status",
     "JobsDetail.Code",
     "jobsDetail.State",
     "jobsDetail.Status",
     "jobsDetail.Code",
+    "Response.JobsDetail.State",
+    "Response.JobsDetail.Status",
+    "Response.JobsDetail.Code",
     "State",
     "Status",
     "Code",
     "Result",
-  ]) || "UNKNOWN";
+    "state",
+    "status",
+    "code",
+    "result",
+  ]) || inferStatusFromEntries(entries) || "UNKNOWN";
 
-  const sourceKey = firstString(body, [
+  const sourceKey = firstStringFromSources(sources, [
     "JobsDetail.Object.Key",
     "JobsDetail.Input.Key",
     "JobsDetail.Input.Object",
+    "JobsDetail.Input.Object.Key",
     "jobsDetail.Object.Key",
     "jobsDetail.Input.Key",
     "jobsDetail.Input.Object",
+    "jobsDetail.Input.Object.Key",
+    "Response.JobsDetail.Object.Key",
+    "Response.JobsDetail.Input.Key",
+    "Response.JobsDetail.Input.Object",
+    "Response.JobsDetail.Input.Object.Key",
     "Object.Key",
     "Input.Key",
     "Input.Object",
+    "Input.Object.Key",
+    "Object",
+    "object",
+    "input.key",
+    "input.object",
   ]);
 
   const rawPrefixSource = sourceKey
@@ -145,18 +217,26 @@ function extractCallbackPayload(body: unknown) {
   const height = extractNumber(entries, [/height/]);
   const bitrateKbps = extractNumber(entries, [/bitrate/, /kbps/]);
 
-  const errorCode = firstString(body, [
+  const errorCode = firstStringFromSources(sources, [
     "JobsDetail.ErrorCode",
     "jobsDetail.ErrorCode",
+    "Response.JobsDetail.ErrorCode",
     "ErrorCode",
+    "errorCode",
+    "Code",
+    "code",
   ]);
-  const errorMessage = firstString(body, [
+  const errorMessage = firstStringFromSources(sources, [
     "JobsDetail.ErrorMessage",
     "JobsDetail.Message",
     "jobsDetail.ErrorMessage",
     "jobsDetail.Message",
+    "Response.JobsDetail.ErrorMessage",
+    "Response.JobsDetail.Message",
     "ErrorMessage",
     "Message",
+    "errorMessage",
+    "message",
   ]);
 
   const success = isSuccessState(rawStatus);
@@ -263,6 +343,23 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json({ ok: true, status: "READY" });
+    }
+
+    if (!parsed.failed) {
+      await prisma.videoAsset.update({
+        where: { id: videoAsset.id },
+        data: {
+          status: "FAILED",
+          workflowRunId: parsed.workflowRunId || undefined,
+          errorCode: "CALLBACK_PARSE_ERROR",
+          errorMessage: `Unable to determine workflow status from callback payload`,
+        },
+      });
+
+      return NextResponse.json(
+        { ok: false, error: "Unable to determine workflow status from callback payload" },
+        { status: 400 },
+      );
     }
 
     await prisma.videoAsset.update({
