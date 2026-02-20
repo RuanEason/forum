@@ -149,20 +149,28 @@ function selectBestHlsMasterObjectKey(values: string[]): string | undefined {
     return undefined;
   }
 
-  const explicitMaster = uniqueObjectKeys.find((candidate) => isExplicitMasterPlaylist(candidate));
+  const nonVariantObjectKeys = uniqueObjectKeys.filter((candidate) => !isVariantPlaylist(candidate));
+  if (!nonVariantObjectKeys.length) {
+    return undefined;
+  }
+
+  const explicitMaster = nonVariantObjectKeys.find((candidate) => isExplicitMasterPlaylist(candidate));
   if (explicitMaster) {
     return explicitMaster;
   }
 
-  const keywordMaster = uniqueObjectKeys.find((candidate) =>
-    hasMasterKeyword(candidate) && !isVariantPlaylist(candidate),
+  const keywordMaster = nonVariantObjectKeys.find((candidate) =>
+    hasMasterKeyword(candidate),
   );
   if (keywordMaster) {
     return keywordMaster;
   }
 
-  const nonVariant = uniqueObjectKeys.find((candidate) => !isVariantPlaylist(candidate));
-  return nonVariant || uniqueObjectKeys[0];
+  if (nonVariantObjectKeys.length === 1) {
+    return nonVariantObjectKeys[0];
+  }
+
+  return undefined;
 }
 
 function extractCallbackPayload(body: unknown) {
@@ -378,11 +386,11 @@ export async function POST(request: Request) {
           status: "FAILED",
           workflowRunId: parsed.workflowRunId || undefined,
           errorCode: "CALLBACK_PARSE_ERROR",
-          errorMessage: "Workflow succeeded but no m3u8 output path was found in callback payload",
+          errorMessage: "Workflow succeeded but no master m3u8 output path was found in callback payload",
         },
       });
 
-      return NextResponse.json({ ok: false, error: "Missing hls output in callback payload" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Missing master hls output in callback payload" }, { status: 400 });
     }
 
     if (parsed.success) {
