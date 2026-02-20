@@ -173,6 +173,66 @@ function selectBestHlsMasterObjectKey(values: string[]): string | undefined {
   return undefined;
 }
 
+function getWorkflowExecution(body: unknown): unknown {
+  return getByPath(body, "WorkflowExecution")
+    || getByPath(body, "workflowExecution")
+    || getByPath(body, "Response.WorkflowExecution")
+    || getByPath(body, "response.WorkflowExecution");
+}
+
+function collectWorkflowTaskResultValues(body: unknown): string[] {
+  const workflowExecution = getWorkflowExecution(body);
+  if (!isObject(workflowExecution)) {
+    return [];
+  }
+
+  const tasksRaw = workflowExecution.Tasks;
+  if (!Array.isArray(tasksRaw)) {
+    return [];
+  }
+
+  const values: string[] = [];
+
+  for (const task of tasksRaw) {
+    if (!isObject(task)) {
+      continue;
+    }
+
+    const state = typeof task.State === "string" ? task.State.trim() : "";
+    if (state && !isSuccessState(state)) {
+      continue;
+    }
+
+    const resultInfo = task.ResultInfo;
+    if (!isObject(resultInfo)) {
+      continue;
+    }
+
+    const objectInfoRaw = resultInfo.ObjectInfo;
+    const objectInfoList = Array.isArray(objectInfoRaw)
+      ? objectInfoRaw
+      : objectInfoRaw ? [objectInfoRaw] : [];
+
+    for (const objectInfo of objectInfoList) {
+      if (!isObject(objectInfo)) {
+        continue;
+      }
+
+      const objectName = typeof objectInfo.ObjectName === "string" ? objectInfo.ObjectName.trim() : "";
+      const objectUrl = typeof objectInfo.ObjectUrl === "string" ? objectInfo.ObjectUrl.trim() : "";
+
+      if (objectName) {
+        values.push(objectName);
+      }
+      if (objectUrl) {
+        values.push(objectUrl);
+      }
+    }
+  }
+
+  return values;
+}
+
 function extractCallbackPayload(body: unknown) {
   const jobsDetailRaw = getByPath(body, "JobsDetail")
     || getByPath(body, "jobsDetail")
@@ -180,21 +240,35 @@ function extractCallbackPayload(body: unknown) {
     || getByPath(body, "response.JobsDetail")
     || body;
   const jobsDetail = pickFirstItem(jobsDetailRaw);
-  const sources = [body, jobsDetail];
+  const workflowExecution = getWorkflowExecution(body);
+  const sources = [body, jobsDetail, workflowExecution];
   const entries: Array<{ key: string; value: Primitive }> = [];
   collectPrimitiveValues(body, entries);
+  const workflowTaskResultValues = collectWorkflowTaskResultValues(body);
 
-  const stringValues = entries
+  const primitiveStringValues = entries
     .map((item) => item.value)
     .filter((item): item is string => typeof item === "string")
     .map((item) => item.trim())
     .filter(Boolean);
+  const stringValues = [...workflowTaskResultValues, ...primitiveStringValues];
+
+  const eventName = firstStringFromSources(sources, [
+    "EventName",
+    "eventName",
+  ]);
 
   const workflowRunId = firstStringFromSources(sources, [
+    "WorkflowExecution.RunId",
+    "workflowExecution.RunId",
+    "Response.WorkflowExecution.RunId",
     "JobsDetail.WorkflowExecutionId",
     "JobsDetail.WorkflowRunId",
     "jobsDetail.WorkflowExecutionId",
     "jobsDetail.WorkflowRunId",
+    "JobsDetail.Workflow.RunId",
+    "jobsDetail.Workflow.RunId",
+    "Response.JobsDetail.Workflow.RunId",
     "Response.JobsDetail.WorkflowExecutionId",
     "Response.JobsDetail.WorkflowRunId",
     "WorkflowExecutionId",
@@ -208,6 +282,9 @@ function extractCallbackPayload(body: unknown) {
   ]);
 
   const rawStatus = firstStringFromSources(sources, [
+    "WorkflowExecution.State",
+    "workflowExecution.State",
+    "Response.WorkflowExecution.State",
     "JobsDetail.State",
     "JobsDetail.Status",
     "JobsDetail.Code",
@@ -228,6 +305,9 @@ function extractCallbackPayload(body: unknown) {
   ]) || inferStatusFromEntries(entries) || "UNKNOWN";
 
   const sourceKey = firstStringFromSources(sources, [
+    "WorkflowExecution.Object",
+    "workflowExecution.Object",
+    "Response.WorkflowExecution.Object",
     "JobsDetail.Object.Key",
     "JobsDetail.Input.Key",
     "JobsDetail.Input.Object",
@@ -313,6 +393,7 @@ function extractCallbackPayload(body: unknown) {
   const failed = isFailedState(rawStatus);
 
   return {
+    eventName,
     jobsDetail,
     workflowRunId,
     rawStatus,
@@ -371,6 +452,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Video asset not found" }, { status: 404 });
     }
 
+    if (parsed.eventName?.toLowerCase() === "workflowstart") {
+      return NextResponse.json({ ok: true, message: "WorkflowStart callback ignored" });
+    }
+
     if (videoAsset.status === "READY" && parsed.success) {
       return NextResponse.json({ ok: true, message: "Callback already applied (READY)" });
     }
@@ -380,6 +465,10 @@ export async function POST(request: Request) {
     }
 
     if (parsed.success && !parsed.hlsMasterObjectKey) {
+      if (parsed.eventName?.toLowerCase() === "taskfinish") {
+        return NextResponse.json({ ok: true, message: "TaskFinish callback without master ignored" });
+      }
+
       await prisma.videoAsset.update({
         where: { id: videoAsset.id },
         data: {
