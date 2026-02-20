@@ -23,6 +23,7 @@ import PostAttachments from "@/components/PostAttachments";
 import ArticleCatalog from "@/components/ArticleCatalog";
 import MobileArticleCatalog from "@/components/MobileArticleCatalog";
 import CatalogSidebar from "@/components/CatalogSidebar";
+import VideoPostDetail from "@/components/VideoPostDetail";
 import {
   createHeadingIdGenerator,
   extractMarkdownHeadings,
@@ -40,6 +41,7 @@ interface PostDetailProps {
   id: string;
   title: string | null;
   content: string;
+  postType: "TEXT" | "VIDEO";
   author: AuthorProps;
   createdAt: Date;
   viewCount: number;
@@ -58,6 +60,15 @@ interface PostDetailProps {
     downloadCount: number;
   }>;
   topic?: { id: string; name: string } | null;
+  video: {
+    id: string;
+    status: "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
+    hlsMasterUrl: string | null;
+    coverUrl: string | null;
+    durationSec: number | null;
+    width: number | null;
+    height: number | null;
+  } | null;
 }
 
 function getTextFromReactNode(node: ReactNode): string {
@@ -96,6 +107,9 @@ export async function generateMetadata({
   const description =
     post.content.slice(0, 150) + (post.content.length > 150 ? "..." : "");
   const images = post.images.map((img) => img.url);
+  if (post.postType === "VIDEO" && post.video?.coverUrl) {
+    images.unshift(post.video.coverUrl);
+  }
 
   return {
     title,
@@ -137,8 +151,14 @@ export default async function PostDetailPage({
     );
   }
 
-  const markdownHeadings = extractMarkdownHeadings(post.content);
-  const showToc = markdownHeadings.length > 0;
+  const isVideoPost = post.postType === "VIDEO";
+  const previewImages = post.images.map((img) => img.url);
+  if (isVideoPost && post.video?.coverUrl) {
+    previewImages.unshift(post.video.coverUrl);
+  }
+
+  const markdownHeadings = isVideoPost ? [] : extractMarkdownHeadings(post.content);
+  const showToc = !isVideoPost && markdownHeadings.length > 0;
   const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
   const generateHeadingId = createHeadingIdGenerator();
   const markdownComponents: Components = {
@@ -215,7 +235,7 @@ export default async function PostDetailPage({
       url: `/user/${post.author.id}`,
     },
     articleBody: post.content,
-    image: post.images.map((img) => img.url),
+    image: previewImages,
     interactionStatistic: [
       {
         "@type": "InteractionCounter",
@@ -236,6 +256,21 @@ export default async function PostDetailPage({
       encodingFormat: att.mimeType,
     })),
   };
+
+  if (isVideoPost) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
+        <ViewTracker postId={post.id} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
+          <VideoPostDetail post={post} sessionUser={session?.user} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">

@@ -122,6 +122,49 @@ function inferStatusFromEntries(entries: Array<{ key: string; value: Primitive }
   return undefined;
 }
 
+function isVariantPlaylist(objectKey: string): boolean {
+  const normalized = objectKey.toLowerCase();
+  return /(?:^|[\/_-])(144|180|240|360|480|540|720|1080|1440|2160)p(?:[._-]|$)/.test(normalized);
+}
+
+function isExplicitMasterPlaylist(objectKey: string): boolean {
+  const normalized = objectKey.toLowerCase();
+  return /(?:^|\/)[^/]*_master\.m3u8$/.test(normalized)
+    || /(?:^|\/)master\.m3u8$/.test(normalized);
+}
+
+function hasMasterKeyword(objectKey: string): boolean {
+  return /(?:^|[\/_-])master(?:[\/_.-]|$)/i.test(objectKey);
+}
+
+function selectBestHlsMasterObjectKey(values: string[]): string | undefined {
+  const objectKeys = values
+    .map((value) => value.trim())
+    .filter((value) => /\.m3u8(?:$|\?)/i.test(value))
+    .map((value) => normalizeObjectKey(value))
+    .filter(Boolean);
+
+  const uniqueObjectKeys = [...new Set(objectKeys)];
+  if (!uniqueObjectKeys.length) {
+    return undefined;
+  }
+
+  const explicitMaster = uniqueObjectKeys.find((candidate) => isExplicitMasterPlaylist(candidate));
+  if (explicitMaster) {
+    return explicitMaster;
+  }
+
+  const keywordMaster = uniqueObjectKeys.find((candidate) =>
+    hasMasterKeyword(candidate) && !isVariantPlaylist(candidate),
+  );
+  if (keywordMaster) {
+    return keywordMaster;
+  }
+
+  const nonVariant = uniqueObjectKeys.find((candidate) => !isVariantPlaylist(candidate));
+  return nonVariant || uniqueObjectKeys[0];
+}
+
 function extractCallbackPayload(body: unknown) {
   const jobsDetailRaw = getByPath(body, "JobsDetail")
     || getByPath(body, "jobsDetail")
@@ -204,7 +247,26 @@ function extractCallbackPayload(body: unknown) {
     || "";
 
   const normalizedSourceKey = normalizeObjectKey(rawPrefixSource);
-  const hlsMasterCandidate = stringValues.find((value) => value.toLowerCase().endsWith(".m3u8"));
+  const explicitPlaylistCandidate = firstStringFromSources(sources, [
+    "JobsDetail.Output.Playlist",
+    "JobsDetail.Output.Object",
+    "JobsDetail.Output.Key",
+    "jobsDetail.Output.Playlist",
+    "jobsDetail.Output.Object",
+    "jobsDetail.Output.Key",
+    "Response.JobsDetail.Output.Playlist",
+    "Response.JobsDetail.Output.Object",
+    "Response.JobsDetail.Output.Key",
+    "Output.Playlist",
+    "Output.Object",
+    "Output.Key",
+    "Playlist",
+    "playlist",
+  ]);
+  const hlsMasterCandidate = selectBestHlsMasterObjectKey([
+    ...(explicitPlaylistCandidate ? [explicitPlaylistCandidate] : []),
+    ...stringValues,
+  ]);
   const coverCandidate = stringValues.find((value) =>
     /\.(jpg|jpeg|png|webp)$/i.test(value),
   );

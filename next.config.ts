@@ -47,9 +47,18 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; img-src 'self' data: blob: https://*.githubusercontent.com https://cdn.zyg2024.top; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https:; font-src 'self' data:; media-src 'self' https://cdn.zyg2024.top; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;"
+            value: "default-src 'self'; img-src 'self' data: blob: https://*.githubusercontent.com https://cdn.zyg2024.top; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https:; font-src 'self' data:; media-src 'self' blob: https://cdn.zyg2024.top; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;"
           }
         ],
+      },
+    ];
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: "/video-proxy/:path*",
+        destination: "https://cdn.zyg2024.top/:path*",
       },
     ];
   },
