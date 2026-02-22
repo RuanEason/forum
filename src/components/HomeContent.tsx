@@ -29,6 +29,7 @@ interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  postType?: "TEXT" | "VIDEO";
   viewCount?: number;
   pinned?: boolean;
   pinnedAt?: string | null;
@@ -50,6 +51,9 @@ interface PostProps {
   images: {
     url: string;
   }[];
+  video?: {
+    coverUrl?: string | null;
+  } | null;
   topic?: {
     id: string;
     name: string;
@@ -261,10 +265,15 @@ export default function HomeContent({
                           {(viewMode === "content" ||
                             viewMode === "titleAndContent" ||
                             (viewMode === "both" && !post.title)) &&
-                            post.images &&
-                            post.images.length > 0 && (
+                            (
+                              (post.postType === "VIDEO" && Boolean(post.video?.coverUrl))
+                              || (post.images && post.images.length > 0)
+                            ) && (
                               <PostImages
-                                images={post.images.map((img) => img.url)}
+                                images={[
+                                  ...(post.postType === "VIDEO" && post.video?.coverUrl ? [post.video.coverUrl] : []),
+                                  ...post.images.map((img) => img.url),
+                                ]}
                               />
                             )}
                         </div>

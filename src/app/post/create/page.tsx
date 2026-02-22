@@ -66,6 +66,7 @@ const MAX_TEXT_ATTACHMENTS = 5;
 const MAX_VIDEO_ATTACHMENTS = 5;
 const MAX_VIDEO_TITLE_LENGTH = 80;
 const MAX_VIDEO_DESC_LENGTH = 2000;
+const MAX_VIDEO_COVER_SIZE = 10 * 1024 * 1024;
 
 function formatFileSize(size: number) {
   if (!Number.isFinite(size) || size <= 0) {
@@ -129,6 +130,7 @@ export default function CreatePostPage() {
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const videoAttachmentInputRef = useRef<HTMLInputElement>(null);
+  const videoCoverInputRef = useRef<HTMLInputElement>(null);
   const videoPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoCosRef = useRef<unknown>(null);
   const videoTaskIdRef = useRef<string | null>(null);
@@ -161,6 +163,8 @@ export default function CreatePostPage() {
   const [videoUploadError, setVideoUploadError] = useState("");
   const [videoUploading, setVideoUploading] = useState(false);
   const [videoAttachmentUploading, setVideoAttachmentUploading] = useState(false);
+  const [videoCoverUrl, setVideoCoverUrl] = useState<string | null>(null);
+  const [videoCoverUploading, setVideoCoverUploading] = useState(false);
   const stopVideoPolling = useCallback(() => {
     if (videoPollTimerRef.current) {
       clearInterval(videoPollTimerRef.current);
@@ -396,6 +400,10 @@ export default function CreatePostPage() {
     videoAttachmentInputRef.current?.click();
   };
 
+  const triggerVideoCoverUpload = () => {
+    videoCoverInputRef.current?.click();
+  };
+
   const removeAttachment = (indexToRemove: number) => {
     setSelectedAttachments((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
@@ -438,6 +446,74 @@ export default function CreatePostPage() {
       fileSize: data.fileSize,
       mimeType: data.mimeType,
     };
+  };
+
+  const uploadVideoCover = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json() as { url?: string; error?: string };
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || "视频封面上传失败");
+    }
+
+    return data.url;
+  };
+
+  const handleVideoCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!videoAssetId) {
+      setVideoUploadError("请先上传视频，再上传封面");
+      if (videoCoverInputRef.current) {
+        videoCoverInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setVideoUploadError("视频封面仅支持图片格式");
+      if (videoCoverInputRef.current) {
+        videoCoverInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (file.size > MAX_VIDEO_COVER_SIZE) {
+      setVideoUploadError(
+        `视频封面大小不能超过 ${(MAX_VIDEO_COVER_SIZE / 1024 / 1024).toFixed(0)}MB`,
+      );
+      if (videoCoverInputRef.current) {
+        videoCoverInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setVideoCoverUploading(true);
+    setVideoUploadError("");
+
+    try {
+      const coverUrl = await uploadVideoCover(file);
+      setVideoCoverUrl(coverUrl);
+    } catch (uploadError) {
+      console.error("Video cover upload error:", uploadError);
+      setVideoUploadError(
+        uploadError instanceof Error ? uploadError.message : "视频封面上传失败，请稍后重试",
+      );
+    } finally {
+      setVideoCoverUploading(false);
+      if (videoCoverInputRef.current) {
+        videoCoverInputRef.current.value = "";
+      }
+    }
   };
 
   const fetchVideoStatus = useCallback(
@@ -494,6 +570,7 @@ export default function CreatePostPage() {
     setVideoUploading(true);
     setVideoAssetId(null);
     setVideoMeta(null);
+    setVideoCoverUrl(null);
     setVideoStatus("UPLOADING");
     setVideoFileName(file.name);
     setVideoFileSize(file.size);
@@ -777,6 +854,7 @@ export default function CreatePostPage() {
         body: JSON.stringify({
           postType: "VIDEO",
           videoAssetId,
+          videoCoverUrl: videoCoverUrl?.trim() ? videoCoverUrl.trim() : undefined,
           title: videoTitle.trim() ? videoTitle.trim() : null,
           content: videoDescription,
           attachments: videoAttachments,
@@ -817,11 +895,14 @@ export default function CreatePostPage() {
   const canPublishVideo =
     !loading
     && !videoUploading
+    && !videoCoverUploading
     && !videoAttachmentUploading
     && videoStatus === "READY"
     && Boolean(videoAssetId);
 
   const statusMeta = getVideoStatusMeta(videoStatus);
+  const shouldShowVideoCoverUploader = Boolean(videoAssetId) && !videoUploading;
+  const effectiveVideoCoverUrl = videoCoverUrl || videoMeta?.coverUrl || null;
 
   if (status === "loading") {
     return (
@@ -1159,14 +1240,65 @@ export default function CreatePostPage() {
                       </p>
                     )}
 
-                    {videoMeta?.coverUrl && (
-                      <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-black">
-                        <Image
-                          src={videoMeta.coverUrl}
-                          alt="视频封面预览"
-                          fill
-                          className="object-cover"
+                    {shouldShowVideoCoverUploader && (
+                      <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">视频封面（可选）</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              未上传将使用自动截取的第一帧。
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={triggerVideoCoverUpload}
+                              disabled={videoCoverUploading || videoUploading || loading}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {videoCoverUploading ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <UploadCloud className="w-3.5 h-3.5" />
+                              )}
+                              {videoCoverUrl ? "更换封面" : "上传封面"}
+                            </button>
+                            {videoCoverUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setVideoCoverUrl(null)}
+                                disabled={videoCoverUploading || loading}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                使用默认
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <input
+                          ref={videoCoverInputRef}
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          onChange={handleVideoCoverSelect}
+                          disabled={videoCoverUploading || videoUploading || loading}
                         />
+
+                        {effectiveVideoCoverUrl ? (
+                          <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 bg-black">
+                            <Image
+                              src={effectiveVideoCoverUrl}
+                              alt={videoCoverUrl ? "自定义视频封面预览" : "视频封面预览"}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500">
+                            等待视频转码完成后，系统会自动生成封面预览。
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

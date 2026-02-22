@@ -15,6 +15,7 @@ const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
 const MAX_IMAGES = 10;
 const MAX_ATTACHMENTS = 5;
+const MAX_URL_LENGTH = 2048;
 const POST_TYPES = ["TEXT", "VIDEO"] as const;
 
 type SessionShape = {
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images, attachments, topicId, postType, videoAssetId } = await request.json();
+    const { title, content, images, attachments, topicId, postType, videoAssetId, videoCoverUrl } = await request.json();
 
     // Validate title (optional)
     if (title !== undefined && title !== null) {
@@ -131,6 +132,16 @@ export async function POST(request: NextRequest) {
 
     if (videoAssetId !== undefined && videoAssetId !== null && typeof videoAssetId !== "string") {
       return NextResponse.json({ error: "videoAssetId must be a string" }, { status: 400 });
+    }
+
+    if (videoCoverUrl !== undefined && videoCoverUrl !== null && typeof videoCoverUrl !== "string") {
+      return NextResponse.json({ error: "videoCoverUrl must be a string" }, { status: 400 });
+    }
+    if (typeof videoCoverUrl === "string" && videoCoverUrl.length > MAX_URL_LENGTH) {
+      return NextResponse.json(
+        { error: `videoCoverUrl must be less than ${MAX_URL_LENGTH} characters` },
+        { status: 400 },
+      );
     }
 
     if (topicId !== undefined && topicId !== null && typeof topicId !== "string") {
@@ -198,6 +209,7 @@ export async function POST(request: NextRequest) {
       }
 
       const normalizedVideoAssetId = typeof videoAssetId === "string" ? videoAssetId.trim() : "";
+      const normalizedVideoCoverUrl = typeof videoCoverUrl === "string" ? videoCoverUrl.trim() : "";
       if (!normalizedVideoAssetId) {
         return NextResponse.json({ error: "videoAssetId is required for VIDEO post" }, { status: 400 });
       }
@@ -229,6 +241,15 @@ export async function POST(request: NextRequest) {
 
       if (videoAsset.post?.id) {
         return NextResponse.json({ error: "Video asset has already been bound to a post" }, { status: 400 });
+      }
+
+      if (normalizedVideoCoverUrl) {
+        await prisma.videoAsset.update({
+          where: { id: videoAsset.id },
+          data: {
+            coverUrl: normalizedVideoCoverUrl,
+          },
+        });
       }
 
       post = await createPost(
