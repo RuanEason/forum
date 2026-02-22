@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -13,7 +14,7 @@ import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { Eye, MessageCircle, Plus } from "lucide-react";
+import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
 
@@ -261,21 +262,41 @@ export default function HomeContent({
                             )}
                           </div>
 
-                          {/* 图片显示逻辑 */}
+                          {/* 媒体显示逻辑：视频帖封面点击进详情，图片帖保留放大预览 */}
                           {(viewMode === "content" ||
                             viewMode === "titleAndContent" ||
-                            (viewMode === "both" && !post.title)) &&
-                            (
-                              (post.postType === "VIDEO" && Boolean(post.video?.coverUrl))
-                              || (post.images && post.images.length > 0)
-                            ) && (
-                              <PostImages
-                                images={[
-                                  ...(post.postType === "VIDEO" && post.video?.coverUrl ? [post.video.coverUrl] : []),
-                                  ...post.images.map((img) => img.url),
-                                ]}
-                              />
-                            )}
+                            (viewMode === "both" && !post.title)) && (
+                            <>
+                              {post.postType === "VIDEO" && post.video?.coverUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() => router.push(`/post/${post.id}`)}
+                                  className="group relative mt-3 block w-full aspect-video overflow-hidden rounded-lg border border-gray-200 bg-black"
+                                  aria-label="查看视频详情"
+                                >
+                                  <Image
+                                    src={post.video.coverUrl}
+                                    alt={post.title ? `${post.title} 视频封面` : "视频封面"}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+                                      <Play className="h-3.5 w-3.5" />
+                                      播放视频
+                                    </span>
+                                  </div>
+                                </button>
+                              )}
+                              {post.postType !== "VIDEO" &&
+                                post.images &&
+                                post.images.length > 0 && (
+                                  <PostImages images={post.images.map((img) => img.url)} />
+                                )}
+                            </>
+                          )}
                         </div>
 
                         <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-6 pt-2 border-t border-gray-50">
