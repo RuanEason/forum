@@ -17,6 +17,7 @@ type QualityOption = {
   label: string;
   levelIndex?: number;
   url?: string;
+  width?: number;
   height?: number;
   bitrate?: number;
   isAuto?: boolean;
@@ -31,6 +32,60 @@ interface VideoPlayerProps {
 const FAST_FORWARD_SECONDS = 5;
 const LONG_PRESS_MS = 220;
 const BOOST_RATE = 2;
+const CONTROL_HIDE_DELAY_MS = 2200;
+const HIGH_DEFAULT_ABR_ESTIMATE = 8_000_000;
+const MAX_INITIAL_OFFSET_SEC = 1.5;
+const COMMON_QUALITY_LINES = [480, 720, 1080, 2160] as const;
+
+function normalizeQualityLine(line?: number): number | undefined {
+  if (!line || !Number.isFinite(line) || line <= 0) return undefined;
+
+  let closest: number = COMMON_QUALITY_LINES[0];
+  for (const candidate of COMMON_QUALITY_LINES) {
+    if (Math.abs(candidate - line) < Math.abs(closest - line)) {
+      closest = candidate;
+    }
+  }
+
+  return closest;
+}
+
+function getDisplayQualityLine(width?: number, height?: number): number | undefined {
+  const normalizedWidth = Number.isFinite(width) && (width ?? 0) > 0 ? Number(width) : undefined;
+  const normalizedHeight = Number.isFinite(height) && (height ?? 0) > 0 ? Number(height) : undefined;
+  if (!normalizedWidth && !normalizedHeight) return undefined;
+
+  // Use the short edge so portrait 1080x1920 is displayed as 1080p.
+  const rawLine = normalizedWidth && normalizedHeight
+    ? Math.min(normalizedWidth, normalizedHeight)
+    : normalizedHeight ?? normalizedWidth;
+
+  return normalizeQualityLine(rawLine);
+}
+
+function buildQualityLabel(line?: number, fallbackIndex?: number): string {
+  if (line) {
+    if (line >= 2160) return "4K";
+    return `${line}p`;
+  }
+  return `清晰度 ${fallbackIndex ?? 1}`;
+}
+
+function dedupeQualityOptions(options: QualityOption[]): QualityOption[] {
+  const grouped = new Map<string, QualityOption>();
+
+  for (const option of options) {
+    const key = option.height ? `h-${option.height}` : option.url ?? option.id;
+    const existing = grouped.get(key);
+    if (!existing || (option.bitrate ?? 0) > (existing.bitrate ?? 0)) {
+      grouped.set(key, option);
+    }
+  }
+
+  return [...grouped.values()].sort(
+    (a, b) => (b.height ?? 0) - (a.height ?? 0) || (b.bitrate ?? 0) - (a.bitrate ?? 0),
+  );
+}
 
 function formatTime(totalSeconds: number): string {
   if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "00:00";
@@ -70,21 +125,20 @@ function parseMasterPlaylist(content: string, masterUrl: string): QualityOption[
     const uri = lines[i + 1];
     if (!uri || uri.startsWith("#")) continue;
 
-    const heightMatch = attrs.match(/RESOLUTION=\d+x(\d+)/i);
+    const resolutionMatch = attrs.match(/RESOLUTION=(\d+)x(\d+)/i);
     const bitrateMatch = attrs.match(/BANDWIDTH=(\d+)/i);
 
-    const height = heightMatch ? Number.parseInt(heightMatch[1], 10) : undefined;
+    const width = resolutionMatch ? Number.parseInt(resolutionMatch[1], 10) : undefined;
+    const encodedHeight = resolutionMatch ? Number.parseInt(resolutionMatch[2], 10) : undefined;
+    const height = getDisplayQualityLine(width, encodedHeight);
     const bitrate = bitrateMatch ? Number.parseInt(bitrateMatch[1], 10) : undefined;
     const resolved = new URL(uri, masterUrl).toString();
 
-    const labelParts = [];
-    if (height) labelParts.push(`${height}p`);
-    if (bitrate) labelParts.push(`${Math.round(bitrate / 1000)}kbps`);
-
     options.push({
       id: `native-${options.length}`,
-      label: labelParts.join(" · ") || `清晰度 ${options.length + 1}`,
+      label: buildQualityLabel(height, options.length + 1),
       url: resolved,
+      width,
       height,
       bitrate,
     });
@@ -98,9 +152,7 @@ function parseMasterPlaylist(content: string, masterUrl: string): QualityOption[
     }
   }
 
-  return [...uniqueByUrl.values()].sort(
-    (a, b) => (b.height ?? 0) - (a.height ?? 0) || (b.bitrate ?? 0) - (a.bitrate ?? 0),
-  );
+  return dedupeQualityOptions([...uniqueByUrl.values()]);
 }
 
 const DEFAULT_QUALITY_OPTION: QualityOption = {
@@ -114,6 +166,10 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const qualityMenuRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const controlsHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlsHoveredRef = useRef(false);
+  const timelineOffsetRef = useRef(0);
+  const shouldAutoplayRef = useRef(true);
 
   const rightKeyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rightKeyPressedRef = useRef(false);
@@ -138,6 +194,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   const [qualityOptions, setQualityOptions] = useState<QualityOption[]>([DEFAULT_QUALITY_OPTION]);
   const [selectedQualityId, setSelectedQualityId] = useState(DEFAULT_QUALITY_OPTION.id);
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   const selectedQualityLabel = useMemo(
     () => qualityOptions.find((option) => option.id === selectedQualityId)?.label ?? DEFAULT_QUALITY_OPTION.label,
@@ -156,20 +213,74 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     touchBoostTimerRef.current = null;
   }, []);
 
+  const clearControlsHideTimer = useCallback(() => {
+    if (!controlsHideTimerRef.current) return;
+    clearTimeout(controlsHideTimerRef.current);
+    controlsHideTimerRef.current = null;
+  }, []);
+
+  const normalizeDisplayedTime = useCallback((rawTime: number): number => {
+    if (!Number.isFinite(rawTime)) return 0;
+    const offset = timelineOffsetRef.current;
+    return Math.max(0, rawTime - offset);
+  }, []);
+
+  const normalizeDisplayedDuration = useCallback((rawDuration: number): number => {
+    if (!Number.isFinite(rawDuration) || rawDuration <= 0) return 0;
+    const offset = timelineOffsetRef.current;
+    return Math.max(0, rawDuration - offset);
+  }, []);
+
+  const scheduleControlsHide = useCallback(() => {
+    clearControlsHideTimer();
+
+    if (!isPlaying || qualityMenuOpen || controlsHoveredRef.current || errorText) {
+      setControlsVisible(true);
+      return;
+    }
+
+    controlsHideTimerRef.current = setTimeout(() => {
+      if (!controlsHoveredRef.current && !qualityMenuOpen) {
+        setControlsVisible(false);
+      }
+    }, CONTROL_HIDE_DELAY_MS);
+  }, [clearControlsHideTimer, errorText, isPlaying, qualityMenuOpen]);
+
+  const revealControlsTemporarily = useCallback(() => {
+    setControlsVisible(true);
+    scheduleControlsHide();
+  }, [scheduleControlsHide]);
+
+  const attemptAutoplay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || !shouldAutoplayRef.current || !video.paused) return;
+
+    void video.play()
+      .then(() => {
+        shouldAutoplayRef.current = false;
+      })
+      .catch(() => {
+        // Ignore autoplay errors (browser policy restrictions).
+      });
+  }, []);
+
   const seekTo = useCallback((time: number) => {
     const video = videoRef.current;
     if (!video || !Number.isFinite(video.duration)) return;
 
-    const clamped = Math.min(Math.max(time, 0), video.duration);
+    const actualTarget = timelineOffsetRef.current + Math.max(time, 0);
+    const minTime = Math.min(timelineOffsetRef.current, video.duration);
+    const clamped = Math.min(Math.max(actualTarget, minTime), video.duration);
     video.currentTime = clamped;
-    setCurrentTime(clamped);
-  }, []);
+    setCurrentTime(normalizeDisplayedTime(clamped));
+    revealControlsTemporarily();
+  }, [normalizeDisplayedTime, revealControlsTemporarily]);
 
   const seekBy = useCallback((delta: number) => {
     const video = videoRef.current;
     if (!video) return;
-    seekTo(video.currentTime + delta);
-  }, [seekTo]);
+    seekTo(normalizeDisplayedTime(video.currentTime) + delta);
+  }, [normalizeDisplayedTime, seekTo]);
 
   const startBoost = useCallback(() => {
     const video = videoRef.current;
@@ -219,12 +330,14 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    shouldAutoplayRef.current = false;
     if (video.paused) {
       void video.play().catch(() => undefined);
     } else {
       video.pause();
     }
-  }, []);
+    revealControlsTemporarily();
+  }, [revealControlsTemporarily]);
 
   const toggleMute = useCallback(() => {
     const video = videoRef.current;
@@ -232,7 +345,8 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
     video.muted = !video.muted;
     setIsMuted(video.muted);
-  }, []);
+    revealControlsTemporarily();
+  }, [revealControlsTemporarily]);
 
   const handleVolumeChange = useCallback((nextVolume: number) => {
     const video = videoRef.current;
@@ -242,7 +356,8 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     video.muted = nextVolume === 0;
     setVolume(nextVolume);
     setIsMuted(video.muted);
-  }, []);
+    revealControlsTemporarily();
+  }, [revealControlsTemporarily]);
 
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
@@ -250,11 +365,13 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
     if (!document.fullscreenElement) {
       await container.requestFullscreen().catch(() => undefined);
+      revealControlsTemporarily();
       return;
     }
 
     await document.exitFullscreen().catch(() => undefined);
-  }, []);
+    revealControlsTemporarily();
+  }, [revealControlsTemporarily]);
 
   const applyQualityOption = useCallback((option: QualityOption) => {
     const video = videoRef.current;
@@ -262,15 +379,43 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
     const hls = hlsRef.current;
     if (hls) {
+      const playbackAnchor = video.currentTime;
+      const shouldResume = !video.paused;
+
       if (option.isAuto) {
         hls.currentLevel = -1;
+        hls.nextLevel = -1;
+        hls.loadLevel = -1;
+        hls.autoLevelCapping = -1;
       } else if (typeof option.levelIndex === "number") {
-        hls.currentLevel = option.levelIndex;
+        hls.loadLevel = option.levelIndex;
         hls.nextLevel = option.levelIndex;
+        hls.startLoad(playbackAnchor);
+
+        const targetLevel = option.levelIndex;
+        const handleLevelSwitched = (_event: unknown, data: { level: number }) => {
+          if (data.level !== targetLevel) return;
+
+          if (Math.abs(video.currentTime - playbackAnchor) > 0.35) {
+            video.currentTime = playbackAnchor;
+          }
+
+          if (shouldResume) {
+            void video.play().catch(() => undefined);
+          }
+
+          hls.off(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        };
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        window.setTimeout(() => {
+          hls.off(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        }, 2500);
       }
 
       setSelectedQualityId(option.id);
       setQualityMenuOpen(false);
+      revealControlsTemporarily();
       return;
     }
 
@@ -283,7 +428,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     video.src = targetSrc;
     video.load();
     video.addEventListener(
-      "loadedmetadata",
+      "canplay",
       () => {
         if (Number.isFinite(currentPosition)) {
           video.currentTime = currentPosition;
@@ -297,7 +442,8 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
     setSelectedQualityId(option.id);
     setQualityMenuOpen(false);
-  }, [src]);
+    revealControlsTemporarily();
+  }, [revealControlsTemporarily, src]);
 
   const loadNativeQualityOptions = useCallback(async (masterUrl: string) => {
     try {
@@ -319,6 +465,9 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    shouldAutoplayRef.current = true;
+    timelineOffsetRef.current = 0;
+    clearControlsHideTimer();
     setErrorText(null);
     setIsReady(false);
     setCurrentTime(0);
@@ -326,6 +475,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     setBufferedTime(0);
     setQualityOptions([DEFAULT_QUALITY_OPTION]);
     setSelectedQualityId(DEFAULT_QUALITY_OPTION.id);
+    setControlsVisible(true);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -336,6 +486,8 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       const hls = new Hls({
         enableWorker: true,
         startLevel: -1,
+        testBandwidth: false,
+        abrEwmaDefaultEstimate: HIGH_DEFAULT_ABR_ESTIMATE,
       });
 
       hlsRef.current = hls;
@@ -348,27 +500,34 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         const options = hls.levels
           .map((level, levelIndex) => {
-            const height = level.height || undefined;
+            const width = level.width || undefined;
+            const height = getDisplayQualityLine(width, level.height || undefined);
             const bitrate = level.bitrate || undefined;
-            const parts = [];
-            if (height) parts.push(`${height}p`);
-            if (bitrate) parts.push(`${Math.round(bitrate / 1000)}kbps`);
 
             return {
               id: `hls-${levelIndex}`,
-              label: parts.join(" · ") || `清晰度 ${levelIndex + 1}`,
+              label: buildQualityLabel(height, levelIndex + 1),
               levelIndex,
+              width,
               height,
               bitrate,
             } satisfies QualityOption;
-          })
-          .sort(
-            (a, b) => (b.height ?? 0) - (a.height ?? 0) || (b.bitrate ?? 0) - (a.bitrate ?? 0),
-          );
+          });
 
-        if (options.length > 0) {
-          setQualityOptions([DEFAULT_QUALITY_OPTION, ...options]);
+        const dedupedOptions = dedupeQualityOptions(options);
+        if (dedupedOptions.length > 0) {
+          setQualityOptions([DEFAULT_QUALITY_OPTION, ...dedupedOptions]);
         }
+
+        if (hls.levels.length > 0) {
+          const preferredStartLevel = hls.levels.reduce((bestIndex, level, levelIndex, levels) => {
+            const bestBitrate = levels[bestIndex]?.bitrate ?? 0;
+            return (level.bitrate ?? 0) > bestBitrate ? levelIndex : bestIndex;
+          }, 0);
+          hls.nextLevel = preferredStartLevel;
+        }
+
+        attemptAutoplay();
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -401,6 +560,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
       void loadNativeQualityOptions(src);
+      attemptAutoplay();
     } else {
       video.src = src;
       setErrorText("当前浏览器不支持该视频格式");
@@ -412,27 +572,29 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
         hlsRef.current = null;
       }
     };
-  }, [loadNativeQualityOptions, src]);
+  }, [attemptAutoplay, clearControlsHideTimer, loadNativeQualityOptions, src]);
   /* eslint-enable react-hooks/set-state-in-effect */
-
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleLoadedMetadata = () => {
-      setDuration(Number.isFinite(video.duration) ? video.duration : 0);
-      setCurrentTime(video.currentTime || 0);
+      const initialTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+      timelineOffsetRef.current = initialTime > 0 && initialTime <= MAX_INITIAL_OFFSET_SEC ? initialTime : 0;
+
+      setDuration(normalizeDisplayedDuration(video.duration));
+      setCurrentTime(normalizeDisplayedTime(initialTime));
     };
     const handleDurationChange = () => {
-      setDuration(Number.isFinite(video.duration) ? video.duration : 0);
+      setDuration(normalizeDisplayedDuration(video.duration));
     };
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime || 0);
+      setCurrentTime(normalizeDisplayedTime(video.currentTime || 0));
     };
     const handleProgress = () => {
       try {
         if (video.buffered.length === 0) return;
-        setBufferedTime(video.buffered.end(video.buffered.length - 1));
+        setBufferedTime(normalizeDisplayedTime(video.buffered.end(video.buffered.length - 1)));
       } catch {
         // Ignore buffered range access errors.
       }
@@ -440,7 +602,10 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);
-    const handleCanPlay = () => setIsReady(true);
+    const handleCanPlay = () => {
+      setIsReady(true);
+      attemptAutoplay();
+    };
     const handlePlaying = () => setIsReady(true);
     const handleWaiting = () => setIsReady(false);
     const handleVolume = () => {
@@ -478,7 +643,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       video.removeEventListener("volumechange", handleVolume);
       video.removeEventListener("error", handleError);
     };
-  }, []);
+  }, [attemptAutoplay, normalizeDisplayedDuration, normalizeDisplayedTime]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -555,13 +720,23 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     };
   }, [qualityMenuOpen]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    scheduleControlsHide();
+    return () => {
+      clearControlsHideTimer();
+    };
+  }, [clearControlsHideTimer, qualityMenuOpen, scheduleControlsHide]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   useEffect(() => {
     return () => {
+      clearControlsHideTimer();
       clearRightKeyTimer();
       clearTouchBoostTimer();
       stopBoost();
     };
-  }, [clearRightKeyTimer, clearTouchBoostTimer, stopBoost]);
+  }, [clearControlsHideTimer, clearRightKeyTimer, clearTouchBoostTimer, stopBoost]);
 
   const playedPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const bufferedPercent = duration > 0 ? Math.min(100, (bufferedTime / duration) * 100) : 0;
@@ -570,10 +745,13 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     <div
       ref={containerRef}
       className="relative overflow-hidden rounded-lg bg-black aspect-video border border-gray-200"
+      onMouseEnter={revealControlsTemporarily}
+      onMouseMove={revealControlsTemporarily}
     >
       <div
         className="absolute inset-0 z-10"
         onPointerDown={(event) => {
+          revealControlsTemporarily();
           if (event.pointerType === "mouse") return;
           if (!containerRef.current) return;
 
@@ -603,8 +781,9 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       <video
         ref={videoRef}
         className="h-full w-full"
+        autoPlay
         playsInline
-        preload="metadata"
+        preload="auto"
         poster={poster || undefined}
       />
 
@@ -629,7 +808,20 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       )}
 
       <div
-        className="absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pt-8 text-white"
+        className={`absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pt-8 text-white transition-all duration-300 ${
+          controlsVisible || !isPlaying || qualityMenuOpen
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-2 pointer-events-none"
+        }`}
+        onPointerEnter={() => {
+          controlsHoveredRef.current = true;
+          setControlsVisible(true);
+          clearControlsHideTimer();
+        }}
+        onPointerLeave={() => {
+          controlsHoveredRef.current = false;
+          scheduleControlsHide();
+        }}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
@@ -679,7 +871,11 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
           <div ref={qualityMenuRef} className="relative">
             <button
               type="button"
-              onClick={() => setQualityMenuOpen((open) => !open)}
+              onClick={() => {
+                setQualityMenuOpen((open) => !open);
+                setControlsVisible(true);
+                clearControlsHideTimer();
+              }}
               className="inline-flex h-8 items-center gap-1 rounded-md bg-black/35 px-2 text-xs hover:bg-black/55 transition-colors"
               aria-label="切换清晰度"
             >

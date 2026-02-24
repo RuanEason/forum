@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  serverExternalPackages: ["@ffmpeg-installer/ffmpeg"],
 
   images: {
     // 允许从腾讯云 CDN 加载图片
