@@ -787,7 +787,6 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
         poster={poster || undefined}
       />
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/50" />
 
       {isBoosting && (
         <div className="absolute right-3 top-3 z-30 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white">
