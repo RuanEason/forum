@@ -32,10 +32,15 @@ interface VideoPlayerProps {
 const FAST_FORWARD_SECONDS = 5;
 const LONG_PRESS_MS = 220;
 const BOOST_RATE = 2;
-const CONTROL_HIDE_DELAY_MS = 2200;
+const CONTROL_HIDE_DELAY_MS = 1000;
 const HIGH_DEFAULT_ABR_ESTIMATE = 8_000_000;
 const MAX_INITIAL_OFFSET_SEC = 1.5;
 const COMMON_QUALITY_LINES = [480, 720, 1080, 2160] as const;
+const QUALITY_NOTICE_DURATION_MS = 1000;
+const QUALITY_SWITCH_TIMEOUT_MS = 3500;
+const AUTO_QUALITY_SAFETY_FACTOR = 0.8;
+const DOUBLE_TAP_THRESHOLD_MS = 260;
+const VOLUME_STEP = 0.05;
 
 function normalizeQualityLine(line?: number): number | undefined {
   if (!line || !Number.isFinite(line) || line <= 0) return undefined;
@@ -155,6 +160,44 @@ function parseMasterPlaylist(content: string, masterUrl: string): QualityOption[
   return dedupeQualityOptions([...uniqueByUrl.values()]);
 }
 
+type ConnectionInfoLike = {
+  downlink?: number;
+};
+
+type NavigatorWithConnection = Navigator & {
+  connection?: ConnectionInfoLike;
+  mozConnection?: ConnectionInfoLike;
+  webkitConnection?: ConnectionInfoLike;
+};
+
+function getNetworkDownlinkBps(): number | undefined {
+  if (typeof navigator === "undefined") return undefined;
+
+  const nav = navigator as NavigatorWithConnection;
+  const downlinkMbps = nav.connection?.downlink ?? nav.mozConnection?.downlink ?? nav.webkitConnection?.downlink;
+  if (!Number.isFinite(downlinkMbps) || (downlinkMbps ?? 0) <= 0) return undefined;
+
+  return Number(downlinkMbps) * 1_000_000;
+}
+
+function pickAutoLevelByBandwidth(levels: Array<{ bitrate?: number }>, bandwidthBps: number): number {
+  if (levels.length === 0) return -1;
+
+  const safeBandwidth = Math.max(0, bandwidthBps * AUTO_QUALITY_SAFETY_FACTOR);
+  let matchedIndex = -1;
+
+  for (let i = 0; i < levels.length; i += 1) {
+    const bitrate = levels[i]?.bitrate;
+    if (!Number.isFinite(bitrate)) continue;
+    if ((bitrate ?? 0) <= safeBandwidth) {
+      matchedIndex = i;
+    }
+  }
+
+  if (matchedIndex >= 0) return matchedIndex;
+  return 0;
+}
+
 const DEFAULT_QUALITY_OPTION: QualityOption = {
   id: "auto",
   label: "自动",
@@ -177,6 +220,11 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   const touchBoostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchBoostingRef = useRef(false);
   const suppressNextClickRef = useRef(false);
+  const lastPointerTypeRef = useRef<string | null>(null);
+  const lastTouchTapAtRef = useRef(0);
+  const qualityNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qualitySwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qualitySwitchCleanupRef = useRef<(() => void) | null>(null);
 
   const boostingRef = useRef(false);
   const previousPlaybackRateRef = useRef(1);
@@ -195,6 +243,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   const [selectedQualityId, setSelectedQualityId] = useState(DEFAULT_QUALITY_OPTION.id);
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [qualityNotice, setQualityNotice] = useState<string | null>(null);
 
   const selectedQualityLabel = useMemo(
     () => qualityOptions.find((option) => option.id === selectedQualityId)?.label ?? DEFAULT_QUALITY_OPTION.label,
@@ -218,6 +267,35 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     clearTimeout(controlsHideTimerRef.current);
     controlsHideTimerRef.current = null;
   }, []);
+
+  const clearQualityNoticeTimer = useCallback(() => {
+    if (!qualityNoticeTimerRef.current) return;
+    clearTimeout(qualityNoticeTimerRef.current);
+    qualityNoticeTimerRef.current = null;
+  }, []);
+
+  const clearQualitySwitchTimeout = useCallback(() => {
+    if (!qualitySwitchTimeoutRef.current) return;
+    clearTimeout(qualitySwitchTimeoutRef.current);
+    qualitySwitchTimeoutRef.current = null;
+  }, []);
+
+  const clearQualitySwitchCleanup = useCallback(() => {
+    if (!qualitySwitchCleanupRef.current) return;
+    qualitySwitchCleanupRef.current();
+    qualitySwitchCleanupRef.current = null;
+  }, []);
+
+  const showQualityNotice = useCallback((message: string, autoHideMs = 0) => {
+    clearQualityNoticeTimer();
+    setQualityNotice(message);
+
+    if (autoHideMs <= 0) return;
+    qualityNoticeTimerRef.current = setTimeout(() => {
+      setQualityNotice(null);
+      qualityNoticeTimerRef.current = null;
+    }, autoHideMs);
+  }, [clearQualityNoticeTimer]);
 
   const normalizeDisplayedTime = useCallback((rawTime: number): number => {
     if (!Number.isFinite(rawTime)) return 0;
@@ -306,6 +384,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     if (!touchBoostingRef.current) return;
 
     touchBoostingRef.current = false;
+    lastTouchTapAtRef.current = 0;
     stopBoost();
   }, [clearTouchBoostTimer, stopBoost]);
 
@@ -377,40 +456,86 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    clearQualitySwitchCleanup();
+    clearQualitySwitchTimeout();
+
+    const showSwitchingNotice = () => {
+      showQualityNotice("\u6b63\u5728\u5207\u6362\u6e05\u6670\u5ea6...");
+    };
+    const showSwitchedNotice = () => {
+      showQualityNotice("\u6e05\u6670\u5ea6\u5207\u6362\u5b8c\u6210", QUALITY_NOTICE_DURATION_MS);
+    };
+
     const hls = hlsRef.current;
     if (hls) {
       const playbackAnchor = video.currentTime;
       const shouldResume = !video.paused;
+      const completeSwitch = () => {
+        clearQualitySwitchCleanup();
+        clearQualitySwitchTimeout();
+
+        if (Math.abs(video.currentTime - playbackAnchor) > 0.35) {
+          video.currentTime = playbackAnchor;
+        }
+
+        if (shouldResume) {
+          void video.play().catch(() => undefined);
+        }
+
+        showSwitchedNotice();
+      };
 
       if (option.isAuto) {
+        showSwitchingNotice();
+
+        const networkEstimate = getNetworkDownlinkBps();
+        const bandwidthEstimate = Number.isFinite(hls.bandwidthEstimate)
+          ? hls.bandwidthEstimate
+          : (networkEstimate ?? HIGH_DEFAULT_ABR_ESTIMATE);
+
+        const preferredLevel = pickAutoLevelByBandwidth(hls.levels, bandwidthEstimate);
         hls.currentLevel = -1;
         hls.nextLevel = -1;
         hls.loadLevel = -1;
         hls.autoLevelCapping = -1;
-      } else if (typeof option.levelIndex === "number") {
-        hls.loadLevel = option.levelIndex;
-        hls.nextLevel = option.levelIndex;
+        if (preferredLevel >= 0) {
+          hls.nextAutoLevel = preferredLevel;
+        }
         hls.startLoad(playbackAnchor);
 
-        const targetLevel = option.levelIndex;
-        const handleLevelSwitched = (_event: unknown, data: { level: number }) => {
-          if (data.level !== targetLevel) return;
-
-          if (Math.abs(video.currentTime - playbackAnchor) > 0.35) {
-            video.currentTime = playbackAnchor;
-          }
-
-          if (shouldResume) {
-            void video.play().catch(() => undefined);
-          }
-
-          hls.off(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        const handleLevelSwitched = () => {
+          completeSwitch();
         };
 
         hls.on(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
-        window.setTimeout(() => {
+        qualitySwitchCleanupRef.current = () => {
           hls.off(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
-        }, 2500);
+        };
+        qualitySwitchTimeoutRef.current = setTimeout(() => {
+          completeSwitch();
+        }, 1500);
+      } else if (typeof option.levelIndex === "number") {
+        const targetLevel = option.levelIndex;
+        showSwitchingNotice();
+
+        const handleLevelSwitched = (_event: unknown, data: { level: number }) => {
+          if (data.level !== targetLevel) return;
+          completeSwitch();
+        };
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        qualitySwitchCleanupRef.current = () => {
+          hls.off(Hls.Events.LEVEL_SWITCHED, handleLevelSwitched);
+        };
+        qualitySwitchTimeoutRef.current = setTimeout(() => {
+          completeSwitch();
+        }, QUALITY_SWITCH_TIMEOUT_MS);
+
+        // `currentLevel` triggers an immediate switch and flushes old buffered quality.
+        hls.currentLevel = targetLevel;
+        hls.nextLevel = targetLevel;
+        hls.loadLevel = targetLevel;
+        hls.startLoad(playbackAnchor);
       }
 
       setSelectedQualityId(option.id);
@@ -424,6 +549,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
     const currentPosition = video.currentTime;
     const shouldResume = !video.paused;
+    showSwitchingNotice();
 
     video.src = targetSrc;
     video.load();
@@ -436,6 +562,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
         if (shouldResume) {
           void video.play().catch(() => undefined);
         }
+        showSwitchedNotice();
       },
       { once: true },
     );
@@ -443,7 +570,13 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     setSelectedQualityId(option.id);
     setQualityMenuOpen(false);
     revealControlsTemporarily();
-  }, [revealControlsTemporarily, src]);
+  }, [
+    clearQualitySwitchCleanup,
+    clearQualitySwitchTimeout,
+    revealControlsTemporarily,
+    showQualityNotice,
+    src,
+  ]);
 
   const loadNativeQualityOptions = useCallback(async (masterUrl: string) => {
     try {
@@ -468,6 +601,9 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     shouldAutoplayRef.current = true;
     timelineOffsetRef.current = 0;
     clearControlsHideTimer();
+    clearQualityNoticeTimer();
+    clearQualitySwitchTimeout();
+    clearQualitySwitchCleanup();
     setErrorText(null);
     setIsReady(false);
     setCurrentTime(0);
@@ -475,7 +611,9 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     setBufferedTime(0);
     setQualityOptions([DEFAULT_QUALITY_OPTION]);
     setSelectedQualityId(DEFAULT_QUALITY_OPTION.id);
+    setQualityMenuOpen(false);
     setControlsVisible(true);
+    setQualityNotice(null);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -483,11 +621,14 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     }
 
     if (Hls.isSupported()) {
+      const downlinkEstimate = getNetworkDownlinkBps();
+      const abrEstimate = Math.max(downlinkEstimate ?? 0, HIGH_DEFAULT_ABR_ESTIMATE);
+
       const hls = new Hls({
         enableWorker: true,
         startLevel: -1,
-        testBandwidth: false,
-        abrEwmaDefaultEstimate: HIGH_DEFAULT_ABR_ESTIMATE,
+        testBandwidth: true,
+        abrEwmaDefaultEstimate: abrEstimate,
       });
 
       hlsRef.current = hls;
@@ -520,11 +661,12 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
         }
 
         if (hls.levels.length > 0) {
-          const preferredStartLevel = hls.levels.reduce((bestIndex, level, levelIndex, levels) => {
-            const bestBitrate = levels[bestIndex]?.bitrate ?? 0;
-            return (level.bitrate ?? 0) > bestBitrate ? levelIndex : bestIndex;
-          }, 0);
-          hls.nextLevel = preferredStartLevel;
+          const estimatedBandwidth = downlinkEstimate ?? hls.abrEwmaDefaultEstimate ?? HIGH_DEFAULT_ABR_ESTIMATE;
+          const preferredStartLevel = pickAutoLevelByBandwidth(hls.levels, estimatedBandwidth);
+          if (preferredStartLevel >= 0) {
+            hls.startLevel = preferredStartLevel;
+            hls.nextAutoLevel = preferredStartLevel;
+          }
         }
 
         attemptAutoplay();
@@ -567,12 +709,23 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
     }
 
     return () => {
+      clearQualitySwitchCleanup();
+      clearQualitySwitchTimeout();
+      clearQualityNoticeTimer();
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
     };
-  }, [attemptAutoplay, clearControlsHideTimer, loadNativeQualityOptions, src]);
+  }, [
+    attemptAutoplay,
+    clearControlsHideTimer,
+    clearQualityNoticeTimer,
+    clearQualitySwitchCleanup,
+    clearQualitySwitchTimeout,
+    loadNativeQualityOptions,
+    src,
+  ]);
   /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => {
     const video = videoRef.current;
@@ -659,7 +812,38 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isInteractiveTarget(event.target)) return;
-      if (!videoRef.current) return;
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (event.code === "Space") {
+        if (event.repeat) return;
+        event.preventDefault();
+        togglePlay();
+        return;
+      }
+
+      if (event.key === "f" || event.key === "F") {
+        if (event.repeat) return;
+        event.preventDefault();
+        void toggleFullscreen();
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        const baseVolume = video.muted ? 0 : video.volume;
+        const nextVolume = Math.min(1, baseVolume + VOLUME_STEP);
+        handleVolumeChange(nextVolume);
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        const baseVolume = video.muted ? 0 : video.volume;
+        const nextVolume = Math.max(0, baseVolume - VOLUME_STEP);
+        handleVolumeChange(nextVolume);
+        return;
+      }
 
       if (event.key === "ArrowLeft") {
         if (event.repeat) return;
@@ -703,7 +887,16 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [clearRightKeyTimer, endTouchBoost, releaseRightKey, seekBy, startBoost]);
+  }, [
+    clearRightKeyTimer,
+    endTouchBoost,
+    handleVolumeChange,
+    releaseRightKey,
+    seekBy,
+    startBoost,
+    toggleFullscreen,
+    togglePlay,
+  ]);
 
   useEffect(() => {
     if (!qualityMenuOpen) return;
@@ -732,11 +925,22 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   useEffect(() => {
     return () => {
       clearControlsHideTimer();
+      clearQualityNoticeTimer();
+      clearQualitySwitchCleanup();
+      clearQualitySwitchTimeout();
       clearRightKeyTimer();
       clearTouchBoostTimer();
       stopBoost();
     };
-  }, [clearControlsHideTimer, clearRightKeyTimer, clearTouchBoostTimer, stopBoost]);
+  }, [
+    clearControlsHideTimer,
+    clearQualityNoticeTimer,
+    clearQualitySwitchCleanup,
+    clearQualitySwitchTimeout,
+    clearRightKeyTimer,
+    clearTouchBoostTimer,
+    stopBoost,
+  ]);
 
   const playedPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const bufferedPercent = duration > 0 ? Math.min(100, (bufferedTime / duration) * 100) : 0;
@@ -744,20 +948,25 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden rounded-lg bg-black aspect-video border border-gray-200"
-      onMouseEnter={revealControlsTemporarily}
+      className={`relative overflow-hidden bg-black ${
+        isFullscreen
+          ? "h-full w-full rounded-none border-0"
+          : "aspect-video rounded-lg border border-gray-200"
+      }`}
       onMouseMove={revealControlsTemporarily}
+      onMouseLeave={() => {
+        controlsHoveredRef.current = false;
+        clearControlsHideTimer();
+        setQualityMenuOpen(false);
+        setControlsVisible(false);
+      }}
     >
       <div
         className="absolute inset-0 z-10"
         onPointerDown={(event) => {
+          lastPointerTypeRef.current = event.pointerType;
           revealControlsTemporarily();
           if (event.pointerType === "mouse") return;
-          if (!containerRef.current) return;
-
-          const rect = containerRef.current.getBoundingClientRect();
-          const onRightHalf = event.clientX >= rect.left + rect.width / 2;
-          if (!onRightHalf) return;
 
           clearTouchBoostTimer();
           touchBoostTimerRef.current = setTimeout(() => {
@@ -774,7 +983,22 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
             suppressNextClickRef.current = false;
             return;
           }
-          togglePlay();
+
+          if (lastPointerTypeRef.current === "mouse") {
+            togglePlay();
+            return;
+          }
+
+          const now = Date.now();
+          const isDoubleTap = now - lastTouchTapAtRef.current <= DOUBLE_TAP_THRESHOLD_MS;
+          if (isDoubleTap) {
+            lastTouchTapAtRef.current = 0;
+            togglePlay();
+            return;
+          }
+
+          lastTouchTapAtRef.current = now;
+          revealControlsTemporarily();
         }}
       />
 
@@ -791,6 +1015,12 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       {isBoosting && (
         <div className="absolute right-3 top-3 z-30 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white">
           2x 倍速
+        </div>
+      )}
+
+      {qualityNotice && (
+        <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2 rounded-md bg-black/70 px-3 py-1 text-xs font-medium text-white">
+          {qualityNotice}
         </div>
       )}
 
