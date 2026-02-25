@@ -41,6 +41,13 @@ const QUALITY_SWITCH_TIMEOUT_MS = 3500;
 const AUTO_QUALITY_SAFETY_FACTOR = 0.8;
 const DOUBLE_TAP_THRESHOLD_MS = 260;
 const VOLUME_STEP = 0.05;
+const FALLBACK_BITRATE_BY_QUALITY_LINE: Record<number, number> = {
+  360: 900_000,
+  480: 1_500_000,
+  720: 3_000_000,
+  1080: 6_000_000,
+  2160: 20_000_000,
+};
 
 function normalizeQualityLine(line?: number): number | undefined {
   if (!line || !Number.isFinite(line) || line <= 0) return undefined;
@@ -180,16 +187,92 @@ function getNetworkDownlinkBps(): number | undefined {
   return Number(downlinkMbps) * 1_000_000;
 }
 
-function pickAutoLevelByBandwidth(levels: Array<{ bitrate?: number }>, bandwidthBps: number): number {
+type LevelBitrateLike = {
+  bitrate?: number;
+  averageBitrate?: number;
+  realBitrate?: number;
+  maxBitrate?: number;
+};
+
+type LevelWithResolutionLike = LevelBitrateLike & {
+  width?: number;
+  height?: number;
+};
+
+type LevelBitrateSource = "bitrate" | "averageBitrate" | "realBitrate" | "maxBitrate" | "none";
+
+type ResolvedLevelBitrate = {
+  bitrateBps: number;
+  source: LevelBitrateSource;
+};
+
+function resolveLevelBitrate(level: LevelBitrateLike): ResolvedLevelBitrate {
+  const candidates: Array<{ key: LevelBitrateSource; value?: number }> = [
+    { key: "bitrate", value: level.bitrate },
+    { key: "averageBitrate", value: level.averageBitrate },
+    { key: "realBitrate", value: level.realBitrate },
+    { key: "maxBitrate", value: level.maxBitrate },
+  ];
+
+  for (const candidate of candidates) {
+    if (Number.isFinite(candidate.value) && (candidate.value ?? 0) > 0) {
+      return {
+        bitrateBps: Number(candidate.value),
+        source: candidate.key,
+      };
+    }
+  }
+
+  return {
+    bitrateBps: 0,
+    source: "none",
+  };
+}
+
+function estimateHeuristicLevelBitrate(level: LevelWithResolutionLike, levelIndex: number, totalLevels: number): number {
+  const qualityLine = getDisplayQualityLine(level.width, level.height);
+  if (qualityLine && FALLBACK_BITRATE_BY_QUALITY_LINE[qualityLine]) {
+    return FALLBACK_BITRATE_BY_QUALITY_LINE[qualityLine];
+  }
+
+  if (totalLevels > 1) {
+    const ratio = levelIndex / (totalLevels - 1);
+    return Math.round(900_000 + ratio * 11_000_000);
+  }
+
+  return 2_000_000;
+}
+
+function ensureLevelBitrates(levels: LevelWithResolutionLike[]): void {
+  for (let i = 0; i < levels.length; i += 1) {
+    const level = levels[i] ?? {};
+    const resolved = resolveLevelBitrate(level);
+    if (resolved.source !== "none" && resolved.bitrateBps > 0) continue;
+
+    const fallbackBitrate = estimateHeuristicLevelBitrate(level, i, levels.length);
+    level.bitrate = fallbackBitrate;
+    if (!Number.isFinite(level.averageBitrate) || (level.averageBitrate ?? 0) <= 0) {
+      level.averageBitrate = fallbackBitrate;
+    }
+    if (!Number.isFinite(level.realBitrate) || (level.realBitrate ?? 0) <= 0) {
+      level.realBitrate = fallbackBitrate;
+    }
+    if (!Number.isFinite(level.maxBitrate) || (level.maxBitrate ?? 0) <= 0) {
+      level.maxBitrate = Math.round(fallbackBitrate * 1.15);
+    }
+  }
+}
+
+function pickAutoLevelByBandwidth(levels: LevelBitrateLike[], bandwidthBps: number): number {
   if (levels.length === 0) return -1;
 
   const safeBandwidth = Math.max(0, bandwidthBps * AUTO_QUALITY_SAFETY_FACTOR);
   let matchedIndex = -1;
 
   for (let i = 0; i < levels.length; i += 1) {
-    const bitrate = levels[i]?.bitrate;
-    if (!Number.isFinite(bitrate)) continue;
-    if ((bitrate ?? 0) <= safeBandwidth) {
+    const resolved = resolveLevelBitrate(levels[i] ?? {});
+    if (!Number.isFinite(resolved.bitrateBps) || resolved.bitrateBps <= 0) continue;
+    if (resolved.bitrateBps <= safeBandwidth) {
       matchedIndex = i;
     }
   }
@@ -487,6 +570,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
       if (option.isAuto) {
         showSwitchingNotice();
+        ensureLevelBitrates(hls.levels as unknown as LevelWithResolutionLike[]);
 
         const networkEstimate = getNetworkDownlinkBps();
         const bandwidthEstimate = Number.isFinite(hls.bandwidthEstimate)
@@ -639,11 +723,13 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
       });
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        ensureLevelBitrates(hls.levels as unknown as LevelWithResolutionLike[]);
+
         const options = hls.levels
           .map((level, levelIndex) => {
             const width = level.width || undefined;
             const height = getDisplayQualityLine(width, level.height || undefined);
-            const bitrate = level.bitrate || undefined;
+            const bitrate = resolveLevelBitrate(level).bitrateBps || undefined;
 
             return {
               id: `hls-${levelIndex}`,
