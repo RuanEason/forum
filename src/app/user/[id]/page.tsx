@@ -20,7 +20,7 @@ interface UserStats {
   followingCount: number;
 }
 
-// 获取用户基本信息（（用于 metadata 和页面）
+// 获取用户基本信息（用于 metadata 和页面）
 async function getUserBasicInfo(id: string) {
   return prisma.user.findUnique({
     where: { id },
@@ -137,7 +137,7 @@ export async function generateMetadata({
 
   const title = `${user.name || "匿名用户"} 的个人主页`;
   const description =
-    user.bio || `查看 ${user.name || "匿名用户"} 在同学论坛发布的帖子和动态。`;
+    user.bio || `查看 ${user.name || "匿名用户"} 在 Slept论坛网发布的帖子和动态。`;
 
   return {
     title,

@@ -10,6 +10,7 @@ import type {
 } from "@/generated";
 import SearchResultSwitcher from "@/components/SearchResultSwitcher";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -269,7 +270,7 @@ export async function generateMetadata({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
-}) {
+}): Promise<Metadata> {
   const params = await searchParams;
   const query = params.q?.trim();
 

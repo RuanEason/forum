@@ -49,6 +49,14 @@ const DEFAULT_DANMAKU_COLOR = "#FFFFFF";
 const DEFAULT_FONT_SIZE = 24;
 const MIN_FONT_SIZE = 16;
 const MAX_FONT_SIZE = 36;
+const DEFAULT_LANE_HEIGHT = 32;
+const MOBILE_INLINE_LANE_HEIGHT = 26;
+const MOBILE_INLINE_PLAYER_MAX_WIDTH_PX = 640;
+const MOBILE_INLINE_FONT_SCALE_BASE_WIDTH = 540;
+const MOBILE_INLINE_FONT_SCALE_MIN = 0.62;
+const MOBILE_INLINE_FONT_SCALE_MAX = 0.78;
+const MOBILE_INLINE_MIN_FONT_SIZE = 12;
+const MOBILE_INLINE_MAX_FONT_SIZE = 24;
 
 const densityMultiplierMap: Record<DensityOption, number> = {
   LOW: 0.6,
@@ -244,13 +252,30 @@ export default function VideoDanmaku({
   const nowMs = Math.max(0, Math.round(currentTime * 1000));
   const areaRatio = areaRatioMap[area];
   const layerHeight = containerSize.height * areaRatio;
-  const laneHeight = 32;
+  const isCompactInlinePlayer = !isFullscreen
+    && containerSize.width > 0
+    && containerSize.width <= MOBILE_INLINE_PLAYER_MAX_WIDTH_PX;
+  const compactFontScale = isCompactInlinePlayer
+    ? clamp(
+      containerSize.width / MOBILE_INLINE_FONT_SCALE_BASE_WIDTH,
+      MOBILE_INLINE_FONT_SCALE_MIN,
+      MOBILE_INLINE_FONT_SCALE_MAX,
+    )
+    : 1;
+  const laneHeight = isCompactInlinePlayer ? MOBILE_INLINE_LANE_HEIGHT : DEFAULT_LANE_HEIGHT;
   const laneCount = Math.max(1, Math.floor(layerHeight / laneHeight));
   const densityMultiplier = densityMultiplierMap[density];
   const maxVisible = Math.max(6, Math.floor(laneCount * 2 * densityMultiplier));
 
   const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number): ActiveDanmaku => {
-    const fontSize = clamp(item.fontSize || DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    const baseFontSize = clamp(item.fontSize || DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE);
+    const fontSize = isCompactInlinePlayer
+      ? clamp(
+        Math.round(baseFontSize * compactFontScale),
+        MOBILE_INLINE_MIN_FONT_SIZE,
+        MOBILE_INLINE_MAX_FONT_SIZE,
+      )
+      : baseFontSize;
     const laneIndex = hashToPositiveInt(item.id) % laneCount;
     const top = laneIndex * laneHeight + 4;
     const approxWidth = Math.max(120, item.content.length * fontSize * 0.7 + 40);
@@ -264,7 +289,7 @@ export default function VideoDanmaku({
       elapsedMs: clamp(Math.round(elapsedMs), 0, DANMAKU_DURATION_MS),
       colorValue: item.color || DEFAULT_DANMAKU_COLOR,
     };
-  }, [containerSize.width, laneCount, laneHeight]);
+  }, [compactFontScale, containerSize.width, isCompactInlinePlayer, laneCount, laneHeight]);
 
   useEffect(() => {
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
@@ -523,7 +548,7 @@ export default function VideoDanmaku({
                 event.preventDefault();
                 void sendDanmaku();
               }}
-              placeholder="发个友善的弹幕见证当下"
+              placeholder="发个友善的弹幕吧我(～﹃～)~zZ"
               className={inputClass}
             />
 

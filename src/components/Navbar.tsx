@@ -149,7 +149,7 @@ export default function Navbar() {
               <Image src="/logo.png" alt="Logo" fill className="object-cover" />
             </div>
             <span className="text-xl font-bold text-gray-900 tracking-tight">
-              同学论坛
+              Slept论坛
             </span>
           </Link>
 
