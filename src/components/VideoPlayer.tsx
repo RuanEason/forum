@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import VideoDanmaku from "@/components/VideoDanmaku";
 
 type QualityOption = {
   id: string;
@@ -24,6 +25,7 @@ type QualityOption = {
 };
 
 interface VideoPlayerProps {
+  postId: string;
   src: string;
   poster?: string | null;
   title?: string | null;
@@ -287,7 +289,7 @@ const DEFAULT_QUALITY_OPTION: QualityOption = {
   isAuto: true,
 };
 
-export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
+export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const qualityMenuRef = useRef<HTMLDivElement>(null);
@@ -327,6 +329,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [qualityNotice, setQualityNotice] = useState<string | null>(null);
+  const [fullscreenDanmakuComposerOpen, setFullscreenDanmakuComposerOpen] = useState(false);
 
   const selectedQualityLabel = useMemo(
     () => qualityOptions.find((option) => option.id === selectedQualityId)?.label ?? DEFAULT_QUALITY_OPTION.label,
@@ -887,6 +890,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
+      setFullscreenDanmakuComposerOpen(false);
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -1030,23 +1034,25 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
   const playedPercent = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const bufferedPercent = duration > 0 ? Math.min(100, (bufferedTime / duration) * 100) : 0;
+  const showDanmakuControls = controlsVisible || !isPlaying || qualityMenuOpen;
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative overflow-hidden bg-black ${
-        isFullscreen
-          ? "h-full w-full rounded-none border-0"
-          : "aspect-video rounded-lg border border-gray-200"
-      }`}
-      onMouseMove={revealControlsTemporarily}
-      onMouseLeave={() => {
-        controlsHoveredRef.current = false;
-        clearControlsHideTimer();
-        setQualityMenuOpen(false);
-        setControlsVisible(false);
-      }}
-    >
+    <div className={isFullscreen ? "h-full w-full" : "pb-[84px]"}>
+      <div
+        ref={containerRef}
+        className={`relative bg-black ${
+          isFullscreen
+            ? "h-full w-full overflow-hidden rounded-none border-0"
+            : "aspect-video overflow-visible rounded-lg border border-gray-200"
+        }`}
+        onMouseMove={revealControlsTemporarily}
+        onMouseLeave={() => {
+          controlsHoveredRef.current = false;
+          clearControlsHideTimer();
+          setQualityMenuOpen(false);
+          setControlsVisible(false);
+        }}
+      >
       <div
         className="absolute inset-0 z-10"
         onPointerDown={(event) => {
@@ -1074,7 +1080,6 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
             togglePlay();
             return;
           }
-
           const now = Date.now();
           const isDoubleTap = now - lastTouchTapAtRef.current <= DOUBLE_TAP_THRESHOLD_MS;
           if (isDoubleTap) {
@@ -1095,6 +1100,17 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
         playsInline
         preload="auto"
         poster={poster || undefined}
+      />
+
+      <VideoDanmaku
+        postId={postId}
+        currentTime={currentTime}
+        duration={duration}
+        containerRef={containerRef}
+        isFullscreen={isFullscreen}
+        isPlaying={isPlaying}
+        controlsVisible={showDanmakuControls}
+        composerOpen={fullscreenDanmakuComposerOpen}
       />
 
 
@@ -1124,7 +1140,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
 
       <div
         className={`absolute inset-x-0 bottom-0 z-30 px-3 pb-3 pt-8 text-white transition-all duration-300 ${
-          controlsVisible || !isPlaying || qualityMenuOpen
+          showDanmakuControls
             ? "opacity-100 translate-y-0"
             : "opacity-0 translate-y-2 pointer-events-none"
         }`}
@@ -1176,6 +1192,22 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
           <div className="text-sm tabular-nums whitespace-nowrap">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
+
+          {isFullscreen && (
+            <button
+              type="button"
+              onClick={() => {
+                setFullscreenDanmakuComposerOpen((open) => !open);
+              }}
+              className={`inline-flex h-8 shrink-0 items-center justify-center rounded-lg border px-3 text-xs font-medium backdrop-blur-md transition ${
+                fullscreenDanmakuComposerOpen
+                  ? "border-cyan-300/70 bg-cyan-500/20 text-cyan-100 hover:bg-cyan-500/30"
+                  : "border-white/25 bg-black/55 text-white/90 hover:bg-black/70"
+              }`}
+            >
+              {fullscreenDanmakuComposerOpen ? "\u9690\u85cf\u5f39\u5e55\u8f93\u5165" : "\u53d1\u9001\u5f39\u5e55"}
+            </button>
+          )}
 
           <div className="hidden min-w-0 flex-1 md:block">
             <p className="truncate text-sm font-medium text-white/90">
@@ -1250,6 +1282,7 @@ export default function VideoPlayer({ src, poster, title }: VideoPlayerProps) {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

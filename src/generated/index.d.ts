@@ -24,6 +24,11 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type Post = $Result.DefaultSelection<Prisma.$PostPayload>
 /**
+ * Model Danmaku
+ * 
+ */
+export type Danmaku = $Result.DefaultSelection<Prisma.$DanmakuPayload>
+/**
  * Model VideoAsset
  * 
  */
@@ -96,6 +101,13 @@ export namespace $Enums {
 export type PostType = (typeof PostType)[keyof typeof PostType]
 
 
+export const DanmakuType: {
+  SCROLL: 'SCROLL'
+};
+
+export type DanmakuType = (typeof DanmakuType)[keyof typeof DanmakuType]
+
+
 export const VideoStatus: {
   INIT: 'INIT',
   UPLOADING: 'UPLOADING',
@@ -145,6 +157,10 @@ export type PushLogStatus = (typeof PushLogStatus)[keyof typeof PushLogStatus]
 export type PostType = $Enums.PostType
 
 export const PostType: typeof $Enums.PostType
+
+export type DanmakuType = $Enums.DanmakuType
+
+export const DanmakuType: typeof $Enums.DanmakuType
 
 export type VideoStatus = $Enums.VideoStatus
 
@@ -303,6 +319,16 @@ export class PrismaClient<
     * ```
     */
   get post(): Prisma.PostDelegate<ExtArgs>;
+
+  /**
+   * `prisma.danmaku`: Exposes CRUD operations for the **Danmaku** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Danmakus
+    * const danmakus = await prisma.danmaku.findMany()
+    * ```
+    */
+  get danmaku(): Prisma.DanmakuDelegate<ExtArgs>;
 
   /**
    * `prisma.videoAsset`: Exposes CRUD operations for the **VideoAsset** model.
@@ -895,6 +921,7 @@ export namespace Prisma {
   export const ModelName: {
     User: 'User',
     Post: 'Post',
+    Danmaku: 'Danmaku',
     VideoAsset: 'VideoAsset',
     Topic: 'Topic',
     PostImage: 'PostImage',
@@ -923,7 +950,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     meta: {
-      modelProps: 'user' | 'post' | 'videoAsset' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'pushDevice' | 'pushLog' | 'commentLike' | 'repost' | 'follow'
+      modelProps: 'user' | 'post' | 'danmaku' | 'videoAsset' | 'topic' | 'postImage' | 'postAttachment' | 'comment' | 'postLike' | 'notification' | 'pushDevice' | 'pushLog' | 'commentLike' | 'repost' | 'follow'
       txIsolationLevel: Prisma.TransactionIsolationLevel
     },
     model: {
@@ -1056,6 +1083,72 @@ export namespace Prisma {
           count: {
             args: Prisma.PostCountArgs<ExtArgs>,
             result: $Utils.Optional<PostCountAggregateOutputType> | number
+          }
+        }
+      }
+      Danmaku: {
+        payload: Prisma.$DanmakuPayload<ExtArgs>
+        fields: Prisma.DanmakuFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DanmakuFindUniqueArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DanmakuFindUniqueOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          findFirst: {
+            args: Prisma.DanmakuFindFirstArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DanmakuFindFirstOrThrowArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          findMany: {
+            args: Prisma.DanmakuFindManyArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>[]
+          }
+          create: {
+            args: Prisma.DanmakuCreateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          createMany: {
+            args: Prisma.DanmakuCreateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          delete: {
+            args: Prisma.DanmakuDeleteArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          update: {
+            args: Prisma.DanmakuUpdateArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          deleteMany: {
+            args: Prisma.DanmakuDeleteManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DanmakuUpdateManyArgs<ExtArgs>,
+            result: Prisma.BatchPayload
+          }
+          upsert: {
+            args: Prisma.DanmakuUpsertArgs<ExtArgs>,
+            result: $Utils.PayloadToResult<Prisma.$DanmakuPayload>
+          }
+          aggregate: {
+            args: Prisma.DanmakuAggregateArgs<ExtArgs>,
+            result: $Utils.Optional<AggregateDanmaku>
+          }
+          groupBy: {
+            args: Prisma.DanmakuGroupByArgs<ExtArgs>,
+            result: $Utils.Optional<DanmakuGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DanmakuCountArgs<ExtArgs>,
+            result: $Utils.Optional<DanmakuCountAggregateOutputType> | number
           }
         }
       }
@@ -2023,6 +2116,7 @@ export namespace Prisma {
     pushDevices: number
     following: number
     followers: number
+    danmakus: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2039,6 +2133,7 @@ export namespace Prisma {
     pushDevices?: boolean | UserCountOutputTypeCountPushDevicesArgs
     following?: boolean | UserCountOutputTypeCountFollowingArgs
     followers?: boolean | UserCountOutputTypeCountFollowersArgs
+    danmakus?: boolean | UserCountOutputTypeCountDanmakusArgs
   }
 
   // Custom InputTypes
@@ -2158,6 +2253,14 @@ export namespace Prisma {
   }
 
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountDanmakusArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DanmakuWhereInput
+  }
+
+
 
   /**
    * Count Type PostCountOutputType
@@ -2167,6 +2270,7 @@ export namespace Prisma {
     comments: number
     reposts: number
     likes: number
+    danmakus: number
     images: number
     attachments: number
     notifications: number
@@ -2176,6 +2280,7 @@ export namespace Prisma {
     comments?: boolean | PostCountOutputTypeCountCommentsArgs
     reposts?: boolean | PostCountOutputTypeCountRepostsArgs
     likes?: boolean | PostCountOutputTypeCountLikesArgs
+    danmakus?: boolean | PostCountOutputTypeCountDanmakusArgs
     images?: boolean | PostCountOutputTypeCountImagesArgs
     attachments?: boolean | PostCountOutputTypeCountAttachmentsArgs
     notifications?: boolean | PostCountOutputTypeCountNotificationsArgs
@@ -2215,6 +2320,14 @@ export namespace Prisma {
    */
   export type PostCountOutputTypeCountLikesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PostLikeWhereInput
+  }
+
+
+  /**
+   * PostCountOutputType without action
+   */
+  export type PostCountOutputTypeCountDanmakusArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DanmakuWhereInput
   }
 
 
@@ -2714,6 +2827,7 @@ export namespace Prisma {
     pushDevices?: boolean | User$pushDevicesArgs<ExtArgs>
     following?: boolean | User$followingArgs<ExtArgs>
     followers?: boolean | User$followersArgs<ExtArgs>
+    danmakus?: boolean | User$danmakusArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -2751,6 +2865,7 @@ export namespace Prisma {
     pushDevices?: boolean | User$pushDevicesArgs<ExtArgs>
     following?: boolean | User$followingArgs<ExtArgs>
     followers?: boolean | User$followersArgs<ExtArgs>
+    danmakus?: boolean | User$danmakusArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -2771,6 +2886,7 @@ export namespace Prisma {
       pushDevices: Prisma.$PushDevicePayload<ExtArgs>[]
       following: Prisma.$FollowPayload<ExtArgs>[]
       followers: Prisma.$FollowPayload<ExtArgs>[]
+      danmakus: Prisma.$DanmakuPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -3180,6 +3296,8 @@ export namespace Prisma {
     following<T extends User$followingArgs<ExtArgs> = {}>(args?: Subset<T, User$followingArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     followers<T extends User$followersArgs<ExtArgs> = {}>(args?: Subset<T, User$followersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FollowPayload<ExtArgs>, T, 'findMany'> | Null>;
+
+    danmakus<T extends User$danmakusArgs<ExtArgs> = {}>(args?: Subset<T, User$danmakusArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -3811,6 +3929,27 @@ export namespace Prisma {
 
 
   /**
+   * User.danmakus
+   */
+  export type User$danmakusArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    where?: DanmakuWhereInput
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    cursor?: DanmakuWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DanmakuScalarFieldEnum | DanmakuScalarFieldEnum[]
+  }
+
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4085,6 +4224,7 @@ export namespace Prisma {
     comments?: boolean | Post$commentsArgs<ExtArgs>
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
+    danmakus?: boolean | Post$danmakusArgs<ExtArgs>
     images?: boolean | Post$imagesArgs<ExtArgs>
     attachments?: boolean | Post$attachmentsArgs<ExtArgs>
     notifications?: boolean | Post$notificationsArgs<ExtArgs>
@@ -4113,6 +4253,7 @@ export namespace Prisma {
     comments?: boolean | Post$commentsArgs<ExtArgs>
     reposts?: boolean | Post$repostsArgs<ExtArgs>
     likes?: boolean | Post$likesArgs<ExtArgs>
+    danmakus?: boolean | Post$danmakusArgs<ExtArgs>
     images?: boolean | Post$imagesArgs<ExtArgs>
     attachments?: boolean | Post$attachmentsArgs<ExtArgs>
     notifications?: boolean | Post$notificationsArgs<ExtArgs>
@@ -4129,6 +4270,7 @@ export namespace Prisma {
       comments: Prisma.$CommentPayload<ExtArgs>[]
       reposts: Prisma.$RepostPayload<ExtArgs>[]
       likes: Prisma.$PostLikePayload<ExtArgs>[]
+      danmakus: Prisma.$DanmakuPayload<ExtArgs>[]
       images: Prisma.$PostImagePayload<ExtArgs>[]
       attachments: Prisma.$PostAttachmentPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
@@ -4521,6 +4663,8 @@ export namespace Prisma {
     reposts<T extends Post$repostsArgs<ExtArgs> = {}>(args?: Subset<T, Post$repostsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RepostPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     likes<T extends Post$likesArgs<ExtArgs> = {}>(args?: Subset<T, Post$likesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostLikePayload<ExtArgs>, T, 'findMany'> | Null>;
+
+    danmakus<T extends Post$danmakusArgs<ExtArgs> = {}>(args?: Subset<T, Post$danmakusArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findMany'> | Null>;
 
     images<T extends Post$imagesArgs<ExtArgs> = {}>(args?: Subset<T, Post$imagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostImagePayload<ExtArgs>, T, 'findMany'> | Null>;
 
@@ -4961,6 +5105,27 @@ export namespace Prisma {
 
 
   /**
+   * Post.danmakus
+   */
+  export type Post$danmakusArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    where?: DanmakuWhereInput
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    cursor?: DanmakuWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DanmakuScalarFieldEnum | DanmakuScalarFieldEnum[]
+  }
+
+
+  /**
    * Post.images
    */
   export type Post$imagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5051,6 +5216,1038 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well.
      */
     include?: PostInclude<ExtArgs> | null
+  }
+
+
+
+  /**
+   * Model Danmaku
+   */
+
+  export type AggregateDanmaku = {
+    _count: DanmakuCountAggregateOutputType | null
+    _avg: DanmakuAvgAggregateOutputType | null
+    _sum: DanmakuSumAggregateOutputType | null
+    _min: DanmakuMinAggregateOutputType | null
+    _max: DanmakuMaxAggregateOutputType | null
+  }
+
+  export type DanmakuAvgAggregateOutputType = {
+    timeMs: number | null
+    fontSize: number | null
+  }
+
+  export type DanmakuSumAggregateOutputType = {
+    timeMs: number | null
+    fontSize: number | null
+  }
+
+  export type DanmakuMinAggregateOutputType = {
+    id: string | null
+    postId: string | null
+    userId: string | null
+    anonId: string | null
+    content: string | null
+    timeMs: number | null
+    type: $Enums.DanmakuType | null
+    color: string | null
+    fontSize: number | null
+    createdAt: Date | null
+  }
+
+  export type DanmakuMaxAggregateOutputType = {
+    id: string | null
+    postId: string | null
+    userId: string | null
+    anonId: string | null
+    content: string | null
+    timeMs: number | null
+    type: $Enums.DanmakuType | null
+    color: string | null
+    fontSize: number | null
+    createdAt: Date | null
+  }
+
+  export type DanmakuCountAggregateOutputType = {
+    id: number
+    postId: number
+    userId: number
+    anonId: number
+    content: number
+    timeMs: number
+    type: number
+    color: number
+    fontSize: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type DanmakuAvgAggregateInputType = {
+    timeMs?: true
+    fontSize?: true
+  }
+
+  export type DanmakuSumAggregateInputType = {
+    timeMs?: true
+    fontSize?: true
+  }
+
+  export type DanmakuMinAggregateInputType = {
+    id?: true
+    postId?: true
+    userId?: true
+    anonId?: true
+    content?: true
+    timeMs?: true
+    type?: true
+    color?: true
+    fontSize?: true
+    createdAt?: true
+  }
+
+  export type DanmakuMaxAggregateInputType = {
+    id?: true
+    postId?: true
+    userId?: true
+    anonId?: true
+    content?: true
+    timeMs?: true
+    type?: true
+    color?: true
+    fontSize?: true
+    createdAt?: true
+  }
+
+  export type DanmakuCountAggregateInputType = {
+    id?: true
+    postId?: true
+    userId?: true
+    anonId?: true
+    content?: true
+    timeMs?: true
+    type?: true
+    color?: true
+    fontSize?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type DanmakuAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Danmaku to aggregate.
+     */
+    where?: DanmakuWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Danmakus to fetch.
+     */
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DanmakuWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Danmakus from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Danmakus.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Danmakus
+    **/
+    _count?: true | DanmakuCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DanmakuAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DanmakuSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DanmakuMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DanmakuMaxAggregateInputType
+  }
+
+  export type GetDanmakuAggregateType<T extends DanmakuAggregateArgs> = {
+        [P in keyof T & keyof AggregateDanmaku]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDanmaku[P]>
+      : GetScalarType<T[P], AggregateDanmaku[P]>
+  }
+
+
+
+
+  export type DanmakuGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DanmakuWhereInput
+    orderBy?: DanmakuOrderByWithAggregationInput | DanmakuOrderByWithAggregationInput[]
+    by: DanmakuScalarFieldEnum[] | DanmakuScalarFieldEnum
+    having?: DanmakuScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DanmakuCountAggregateInputType | true
+    _avg?: DanmakuAvgAggregateInputType
+    _sum?: DanmakuSumAggregateInputType
+    _min?: DanmakuMinAggregateInputType
+    _max?: DanmakuMaxAggregateInputType
+  }
+
+  export type DanmakuGroupByOutputType = {
+    id: string
+    postId: string
+    userId: string | null
+    anonId: string | null
+    content: string
+    timeMs: number
+    type: $Enums.DanmakuType
+    color: string
+    fontSize: number
+    createdAt: Date
+    _count: DanmakuCountAggregateOutputType | null
+    _avg: DanmakuAvgAggregateOutputType | null
+    _sum: DanmakuSumAggregateOutputType | null
+    _min: DanmakuMinAggregateOutputType | null
+    _max: DanmakuMaxAggregateOutputType | null
+  }
+
+  type GetDanmakuGroupByPayload<T extends DanmakuGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DanmakuGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DanmakuGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DanmakuGroupByOutputType[P]>
+            : GetScalarType<T[P], DanmakuGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DanmakuSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    postId?: boolean
+    userId?: boolean
+    anonId?: boolean
+    content?: boolean
+    timeMs?: boolean
+    type?: boolean
+    color?: boolean
+    fontSize?: boolean
+    createdAt?: boolean
+    post?: boolean | PostDefaultArgs<ExtArgs>
+    user?: boolean | Danmaku$userArgs<ExtArgs>
+  }, ExtArgs["result"]["danmaku"]>
+
+  export type DanmakuSelectScalar = {
+    id?: boolean
+    postId?: boolean
+    userId?: boolean
+    anonId?: boolean
+    content?: boolean
+    timeMs?: boolean
+    type?: boolean
+    color?: boolean
+    fontSize?: boolean
+    createdAt?: boolean
+  }
+
+  export type DanmakuInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    post?: boolean | PostDefaultArgs<ExtArgs>
+    user?: boolean | Danmaku$userArgs<ExtArgs>
+  }
+
+
+  export type $DanmakuPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Danmaku"
+    objects: {
+      post: Prisma.$PostPayload<ExtArgs>
+      user: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      postId: string
+      userId: string | null
+      anonId: string | null
+      content: string
+      timeMs: number
+      type: $Enums.DanmakuType
+      color: string
+      fontSize: number
+      createdAt: Date
+    }, ExtArgs["result"]["danmaku"]>
+    composites: {}
+  }
+
+
+  type DanmakuGetPayload<S extends boolean | null | undefined | DanmakuDefaultArgs> = $Result.GetResult<Prisma.$DanmakuPayload, S>
+
+  type DanmakuCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<DanmakuFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: DanmakuCountAggregateInputType | true
+    }
+
+  export interface DanmakuDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Danmaku'], meta: { name: 'Danmaku' } }
+    /**
+     * Find zero or one Danmaku that matches the filter.
+     * @param {DanmakuFindUniqueArgs} args - Arguments to find a Danmaku
+     * @example
+     * // Get one Danmaku
+     * const danmaku = await prisma.danmaku.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends DanmakuFindUniqueArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuFindUniqueArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findUnique'> | null, null, ExtArgs>
+
+    /**
+     * Find one Danmaku that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {DanmakuFindUniqueOrThrowArgs} args - Arguments to find a Danmaku
+     * @example
+     * // Get one Danmaku
+     * const danmaku = await prisma.danmaku.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends DanmakuFindUniqueOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuFindUniqueOrThrowArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findUniqueOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find the first Danmaku that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuFindFirstArgs} args - Arguments to find a Danmaku
+     * @example
+     * // Get one Danmaku
+     * const danmaku = await prisma.danmaku.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends DanmakuFindFirstArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuFindFirstArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findFirst'> | null, null, ExtArgs>
+
+    /**
+     * Find the first Danmaku that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuFindFirstOrThrowArgs} args - Arguments to find a Danmaku
+     * @example
+     * // Get one Danmaku
+     * const danmaku = await prisma.danmaku.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends DanmakuFindFirstOrThrowArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuFindFirstOrThrowArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findFirstOrThrow'>, never, ExtArgs>
+
+    /**
+     * Find zero or more Danmakus that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Danmakus
+     * const danmakus = await prisma.danmaku.findMany()
+     * 
+     * // Get first 10 Danmakus
+     * const danmakus = await prisma.danmaku.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const danmakuWithIdOnly = await prisma.danmaku.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends DanmakuFindManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuFindManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'findMany'>>
+
+    /**
+     * Create a Danmaku.
+     * @param {DanmakuCreateArgs} args - Arguments to create a Danmaku.
+     * @example
+     * // Create one Danmaku
+     * const Danmaku = await prisma.danmaku.create({
+     *   data: {
+     *     // ... data to create a Danmaku
+     *   }
+     * })
+     * 
+    **/
+    create<T extends DanmakuCreateArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuCreateArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'create'>, never, ExtArgs>
+
+    /**
+     * Create many Danmakus.
+     *     @param {DanmakuCreateManyArgs} args - Arguments to create many Danmakus.
+     *     @example
+     *     // Create many Danmakus
+     *     const danmaku = await prisma.danmaku.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends DanmakuCreateManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuCreateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Danmaku.
+     * @param {DanmakuDeleteArgs} args - Arguments to delete one Danmaku.
+     * @example
+     * // Delete one Danmaku
+     * const Danmaku = await prisma.danmaku.delete({
+     *   where: {
+     *     // ... filter to delete one Danmaku
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends DanmakuDeleteArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuDeleteArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'delete'>, never, ExtArgs>
+
+    /**
+     * Update one Danmaku.
+     * @param {DanmakuUpdateArgs} args - Arguments to update one Danmaku.
+     * @example
+     * // Update one Danmaku
+     * const danmaku = await prisma.danmaku.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends DanmakuUpdateArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuUpdateArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'update'>, never, ExtArgs>
+
+    /**
+     * Delete zero or more Danmakus.
+     * @param {DanmakuDeleteManyArgs} args - Arguments to filter Danmakus to delete.
+     * @example
+     * // Delete a few Danmakus
+     * const { count } = await prisma.danmaku.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends DanmakuDeleteManyArgs<ExtArgs>>(
+      args?: SelectSubset<T, DanmakuDeleteManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Danmakus.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Danmakus
+     * const danmaku = await prisma.danmaku.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends DanmakuUpdateManyArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuUpdateManyArgs<ExtArgs>>
+    ): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Danmaku.
+     * @param {DanmakuUpsertArgs} args - Arguments to update or create a Danmaku.
+     * @example
+     * // Update or create a Danmaku
+     * const danmaku = await prisma.danmaku.upsert({
+     *   create: {
+     *     // ... data to create a Danmaku
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Danmaku we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends DanmakuUpsertArgs<ExtArgs>>(
+      args: SelectSubset<T, DanmakuUpsertArgs<ExtArgs>>
+    ): Prisma__DanmakuClient<$Result.GetResult<Prisma.$DanmakuPayload<ExtArgs>, T, 'upsert'>, never, ExtArgs>
+
+    /**
+     * Count the number of Danmakus.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuCountArgs} args - Arguments to filter Danmakus to count.
+     * @example
+     * // Count the number of Danmakus
+     * const count = await prisma.danmaku.count({
+     *   where: {
+     *     // ... the filter for the Danmakus we want to count
+     *   }
+     * })
+    **/
+    count<T extends DanmakuCountArgs>(
+      args?: Subset<T, DanmakuCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DanmakuCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Danmaku.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DanmakuAggregateArgs>(args: Subset<T, DanmakuAggregateArgs>): Prisma.PrismaPromise<GetDanmakuAggregateType<T>>
+
+    /**
+     * Group by Danmaku.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DanmakuGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DanmakuGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DanmakuGroupByArgs['orderBy'] }
+        : { orderBy?: DanmakuGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DanmakuGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDanmakuGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Danmaku model
+   */
+  readonly fields: DanmakuFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Danmaku.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DanmakuClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: 'PrismaPromise';
+
+    post<T extends PostDefaultArgs<ExtArgs> = {}>(args?: Subset<T, PostDefaultArgs<ExtArgs>>): Prisma__PostClient<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, 'findUniqueOrThrow'> | Null, Null, ExtArgs>;
+
+    user<T extends Danmaku$userArgs<ExtArgs> = {}>(args?: Subset<T, Danmaku$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, 'findUniqueOrThrow'> | null, null, ExtArgs>;
+
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+
+
+  /**
+   * Fields of the Danmaku model
+   */ 
+  interface DanmakuFieldRefs {
+    readonly id: FieldRef<"Danmaku", 'String'>
+    readonly postId: FieldRef<"Danmaku", 'String'>
+    readonly userId: FieldRef<"Danmaku", 'String'>
+    readonly anonId: FieldRef<"Danmaku", 'String'>
+    readonly content: FieldRef<"Danmaku", 'String'>
+    readonly timeMs: FieldRef<"Danmaku", 'Int'>
+    readonly type: FieldRef<"Danmaku", 'DanmakuType'>
+    readonly color: FieldRef<"Danmaku", 'String'>
+    readonly fontSize: FieldRef<"Danmaku", 'Int'>
+    readonly createdAt: FieldRef<"Danmaku", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+
+  /**
+   * Danmaku findUnique
+   */
+  export type DanmakuFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter, which Danmaku to fetch.
+     */
+    where: DanmakuWhereUniqueInput
+  }
+
+
+  /**
+   * Danmaku findUniqueOrThrow
+   */
+  export type DanmakuFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter, which Danmaku to fetch.
+     */
+    where: DanmakuWhereUniqueInput
+  }
+
+
+  /**
+   * Danmaku findFirst
+   */
+  export type DanmakuFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter, which Danmaku to fetch.
+     */
+    where?: DanmakuWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Danmakus to fetch.
+     */
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Danmakus.
+     */
+    cursor?: DanmakuWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Danmakus from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Danmakus.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Danmakus.
+     */
+    distinct?: DanmakuScalarFieldEnum | DanmakuScalarFieldEnum[]
+  }
+
+
+  /**
+   * Danmaku findFirstOrThrow
+   */
+  export type DanmakuFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter, which Danmaku to fetch.
+     */
+    where?: DanmakuWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Danmakus to fetch.
+     */
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Danmakus.
+     */
+    cursor?: DanmakuWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Danmakus from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Danmakus.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Danmakus.
+     */
+    distinct?: DanmakuScalarFieldEnum | DanmakuScalarFieldEnum[]
+  }
+
+
+  /**
+   * Danmaku findMany
+   */
+  export type DanmakuFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter, which Danmakus to fetch.
+     */
+    where?: DanmakuWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Danmakus to fetch.
+     */
+    orderBy?: DanmakuOrderByWithRelationInput | DanmakuOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Danmakus.
+     */
+    cursor?: DanmakuWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Danmakus from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Danmakus.
+     */
+    skip?: number
+    distinct?: DanmakuScalarFieldEnum | DanmakuScalarFieldEnum[]
+  }
+
+
+  /**
+   * Danmaku create
+   */
+  export type DanmakuCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Danmaku.
+     */
+    data: XOR<DanmakuCreateInput, DanmakuUncheckedCreateInput>
+  }
+
+
+  /**
+   * Danmaku createMany
+   */
+  export type DanmakuCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Danmakus.
+     */
+    data: DanmakuCreateManyInput | DanmakuCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * Danmaku update
+   */
+  export type DanmakuUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Danmaku.
+     */
+    data: XOR<DanmakuUpdateInput, DanmakuUncheckedUpdateInput>
+    /**
+     * Choose, which Danmaku to update.
+     */
+    where: DanmakuWhereUniqueInput
+  }
+
+
+  /**
+   * Danmaku updateMany
+   */
+  export type DanmakuUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Danmakus.
+     */
+    data: XOR<DanmakuUpdateManyMutationInput, DanmakuUncheckedUpdateManyInput>
+    /**
+     * Filter which Danmakus to update
+     */
+    where?: DanmakuWhereInput
+  }
+
+
+  /**
+   * Danmaku upsert
+   */
+  export type DanmakuUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Danmaku to update in case it exists.
+     */
+    where: DanmakuWhereUniqueInput
+    /**
+     * In case the Danmaku found by the `where` argument doesn't exist, create a new Danmaku with this data.
+     */
+    create: XOR<DanmakuCreateInput, DanmakuUncheckedCreateInput>
+    /**
+     * In case the Danmaku was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DanmakuUpdateInput, DanmakuUncheckedUpdateInput>
+  }
+
+
+  /**
+   * Danmaku delete
+   */
+  export type DanmakuDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
+    /**
+     * Filter which Danmaku to delete.
+     */
+    where: DanmakuWhereUniqueInput
+  }
+
+
+  /**
+   * Danmaku deleteMany
+   */
+  export type DanmakuDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Danmakus to delete
+     */
+    where?: DanmakuWhereInput
+  }
+
+
+  /**
+   * Danmaku.user
+   */
+  export type Danmaku$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+
+  /**
+   * Danmaku without action
+   */
+  export type DanmakuDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Danmaku
+     */
+    select?: DanmakuSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: DanmakuInclude<ExtArgs> | null
   }
 
 
@@ -16900,6 +18097,22 @@ export namespace Prisma {
   export type PostScalarFieldEnum = (typeof PostScalarFieldEnum)[keyof typeof PostScalarFieldEnum]
 
 
+  export const DanmakuScalarFieldEnum: {
+    id: 'id',
+    postId: 'postId',
+    userId: 'userId',
+    anonId: 'anonId',
+    content: 'content',
+    timeMs: 'timeMs',
+    type: 'type',
+    color: 'color',
+    fontSize: 'fontSize',
+    createdAt: 'createdAt'
+  };
+
+  export type DanmakuScalarFieldEnum = (typeof DanmakuScalarFieldEnum)[keyof typeof DanmakuScalarFieldEnum]
+
+
   export const VideoAssetScalarFieldEnum: {
     id: 'id',
     ownerId: 'ownerId',
@@ -17123,6 +18336,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'DanmakuType'
+   */
+  export type EnumDanmakuTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DanmakuType'>
+    
+
+
+  /**
    * Reference to a field of type 'BigInt'
    */
   export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
@@ -17201,6 +18421,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceListRelationFilter
     following?: FollowListRelationFilter
     followers?: FollowListRelationFilter
+    danmakus?: DanmakuListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -17234,6 +18455,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceOrderByRelationAggregateInput
     following?: FollowOrderByRelationAggregateInput
     followers?: FollowOrderByRelationAggregateInput
+    danmakus?: DanmakuOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -17270,6 +18492,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceListRelationFilter
     following?: FollowListRelationFilter
     followers?: FollowListRelationFilter
+    danmakus?: DanmakuListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -17341,6 +18564,7 @@ export namespace Prisma {
     comments?: CommentListRelationFilter
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
+    danmakus?: DanmakuListRelationFilter
     images?: PostImageListRelationFilter
     attachments?: PostAttachmentListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -17365,6 +18589,7 @@ export namespace Prisma {
     comments?: CommentOrderByRelationAggregateInput
     reposts?: RepostOrderByRelationAggregateInput
     likes?: PostLikeOrderByRelationAggregateInput
+    danmakus?: DanmakuOrderByRelationAggregateInput
     images?: PostImageOrderByRelationAggregateInput
     attachments?: PostAttachmentOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
@@ -17392,6 +18617,7 @@ export namespace Prisma {
     comments?: CommentListRelationFilter
     reposts?: RepostListRelationFilter
     likes?: PostLikeListRelationFilter
+    danmakus?: DanmakuListRelationFilter
     images?: PostImageListRelationFilter
     attachments?: PostAttachmentListRelationFilter
     notifications?: NotificationListRelationFilter
@@ -17434,6 +18660,91 @@ export namespace Prisma {
     pinnedAt?: DateTimeNullableWithAggregatesFilter<"Post"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Post"> | Date | string
+  }
+
+  export type DanmakuWhereInput = {
+    AND?: DanmakuWhereInput | DanmakuWhereInput[]
+    OR?: DanmakuWhereInput[]
+    NOT?: DanmakuWhereInput | DanmakuWhereInput[]
+    id?: StringFilter<"Danmaku"> | string
+    postId?: StringFilter<"Danmaku"> | string
+    userId?: StringNullableFilter<"Danmaku"> | string | null
+    anonId?: StringNullableFilter<"Danmaku"> | string | null
+    content?: StringFilter<"Danmaku"> | string
+    timeMs?: IntFilter<"Danmaku"> | number
+    type?: EnumDanmakuTypeFilter<"Danmaku"> | $Enums.DanmakuType
+    color?: StringFilter<"Danmaku"> | string
+    fontSize?: IntFilter<"Danmaku"> | number
+    createdAt?: DateTimeFilter<"Danmaku"> | Date | string
+    post?: XOR<PostRelationFilter, PostWhereInput>
+    user?: XOR<UserNullableRelationFilter, UserWhereInput> | null
+  }
+
+  export type DanmakuOrderByWithRelationInput = {
+    id?: SortOrder
+    postId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    anonId?: SortOrderInput | SortOrder
+    content?: SortOrder
+    timeMs?: SortOrder
+    type?: SortOrder
+    color?: SortOrder
+    fontSize?: SortOrder
+    createdAt?: SortOrder
+    post?: PostOrderByWithRelationInput
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type DanmakuWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: DanmakuWhereInput | DanmakuWhereInput[]
+    OR?: DanmakuWhereInput[]
+    NOT?: DanmakuWhereInput | DanmakuWhereInput[]
+    postId?: StringFilter<"Danmaku"> | string
+    userId?: StringNullableFilter<"Danmaku"> | string | null
+    anonId?: StringNullableFilter<"Danmaku"> | string | null
+    content?: StringFilter<"Danmaku"> | string
+    timeMs?: IntFilter<"Danmaku"> | number
+    type?: EnumDanmakuTypeFilter<"Danmaku"> | $Enums.DanmakuType
+    color?: StringFilter<"Danmaku"> | string
+    fontSize?: IntFilter<"Danmaku"> | number
+    createdAt?: DateTimeFilter<"Danmaku"> | Date | string
+    post?: XOR<PostRelationFilter, PostWhereInput>
+    user?: XOR<UserNullableRelationFilter, UserWhereInput> | null
+  }, "id">
+
+  export type DanmakuOrderByWithAggregationInput = {
+    id?: SortOrder
+    postId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    anonId?: SortOrderInput | SortOrder
+    content?: SortOrder
+    timeMs?: SortOrder
+    type?: SortOrder
+    color?: SortOrder
+    fontSize?: SortOrder
+    createdAt?: SortOrder
+    _count?: DanmakuCountOrderByAggregateInput
+    _avg?: DanmakuAvgOrderByAggregateInput
+    _max?: DanmakuMaxOrderByAggregateInput
+    _min?: DanmakuMinOrderByAggregateInput
+    _sum?: DanmakuSumOrderByAggregateInput
+  }
+
+  export type DanmakuScalarWhereWithAggregatesInput = {
+    AND?: DanmakuScalarWhereWithAggregatesInput | DanmakuScalarWhereWithAggregatesInput[]
+    OR?: DanmakuScalarWhereWithAggregatesInput[]
+    NOT?: DanmakuScalarWhereWithAggregatesInput | DanmakuScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Danmaku"> | string
+    postId?: StringWithAggregatesFilter<"Danmaku"> | string
+    userId?: StringNullableWithAggregatesFilter<"Danmaku"> | string | null
+    anonId?: StringNullableWithAggregatesFilter<"Danmaku"> | string | null
+    content?: StringWithAggregatesFilter<"Danmaku"> | string
+    timeMs?: IntWithAggregatesFilter<"Danmaku"> | number
+    type?: EnumDanmakuTypeWithAggregatesFilter<"Danmaku"> | $Enums.DanmakuType
+    color?: StringWithAggregatesFilter<"Danmaku"> | string
+    fontSize?: IntWithAggregatesFilter<"Danmaku"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"Danmaku"> | Date | string
   }
 
   export type VideoAssetWhereInput = {
@@ -18356,6 +19667,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -18389,6 +19701,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -18422,6 +19735,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -18455,6 +19769,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -18532,6 +19847,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -18554,6 +19870,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -18574,6 +19891,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -18596,6 +19914,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -18641,6 +19960,95 @@ export namespace Prisma {
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuCreateInput = {
+    id?: string
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+    post: PostCreateNestedOneWithoutDanmakusInput
+    user?: UserCreateNestedOneWithoutDanmakusInput
+  }
+
+  export type DanmakuUncheckedCreateInput = {
+    id?: string
+    postId: string
+    userId?: string | null
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+  }
+
+  export type DanmakuUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneRequiredWithoutDanmakusNestedInput
+    user?: UserUpdateOneWithoutDanmakusNestedInput
+  }
+
+  export type DanmakuUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuCreateManyInput = {
+    id?: string
+    postId: string
+    userId?: string | null
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+  }
+
+  export type DanmakuUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type VideoAssetCreateInput = {
@@ -19686,6 +21094,12 @@ export namespace Prisma {
     none?: FollowWhereInput
   }
 
+  export type DanmakuListRelationFilter = {
+    every?: DanmakuWhereInput
+    some?: DanmakuWhereInput
+    none?: DanmakuWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -19728,6 +21142,10 @@ export namespace Prisma {
   }
 
   export type FollowOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DanmakuOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -19992,6 +21410,82 @@ export namespace Prisma {
     _max?: NestedEnumPostTypeFilter<$PrismaModel>
   }
 
+  export type EnumDanmakuTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.DanmakuType | EnumDanmakuTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.DanmakuType[]
+    notIn?: $Enums.DanmakuType[]
+    not?: NestedEnumDanmakuTypeFilter<$PrismaModel> | $Enums.DanmakuType
+  }
+
+  export type PostRelationFilter = {
+    is?: PostWhereInput
+    isNot?: PostWhereInput
+  }
+
+  export type UserNullableRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
+  }
+
+  export type DanmakuCountOrderByAggregateInput = {
+    id?: SortOrder
+    postId?: SortOrder
+    userId?: SortOrder
+    anonId?: SortOrder
+    content?: SortOrder
+    timeMs?: SortOrder
+    type?: SortOrder
+    color?: SortOrder
+    fontSize?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DanmakuAvgOrderByAggregateInput = {
+    timeMs?: SortOrder
+    fontSize?: SortOrder
+  }
+
+  export type DanmakuMaxOrderByAggregateInput = {
+    id?: SortOrder
+    postId?: SortOrder
+    userId?: SortOrder
+    anonId?: SortOrder
+    content?: SortOrder
+    timeMs?: SortOrder
+    type?: SortOrder
+    color?: SortOrder
+    fontSize?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DanmakuMinOrderByAggregateInput = {
+    id?: SortOrder
+    postId?: SortOrder
+    userId?: SortOrder
+    anonId?: SortOrder
+    content?: SortOrder
+    timeMs?: SortOrder
+    type?: SortOrder
+    color?: SortOrder
+    fontSize?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DanmakuSumOrderByAggregateInput = {
+    timeMs?: SortOrder
+    fontSize?: SortOrder
+  }
+
+  export type EnumDanmakuTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DanmakuType | EnumDanmakuTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.DanmakuType[]
+    notIn?: $Enums.DanmakuType[]
+    not?: NestedEnumDanmakuTypeWithAggregatesFilter<$PrismaModel> | $Enums.DanmakuType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDanmakuTypeFilter<$PrismaModel>
+    _max?: NestedEnumDanmakuTypeFilter<$PrismaModel>
+  }
+
   export type BigIntFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
     in?: bigint[] | number[]
@@ -20186,11 +21680,6 @@ export namespace Prisma {
     _max?: NestedEnumVideoStatusFilter<$PrismaModel>
   }
 
-  export type UserNullableRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
-  }
-
   export type UserListRelationFilter = {
     every?: UserWhereInput
     some?: UserWhereInput
@@ -20229,11 +21718,6 @@ export namespace Prisma {
     creatorId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type PostRelationFilter = {
-    is?: PostWhereInput
-    isNot?: PostWhereInput
   }
 
   export type PostImageCountOrderByAggregateInput = {
@@ -20735,6 +22219,13 @@ export namespace Prisma {
     connect?: FollowWhereUniqueInput | FollowWhereUniqueInput[]
   }
 
+  export type DanmakuCreateNestedManyWithoutUserInput = {
+    create?: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput> | DanmakuCreateWithoutUserInput[] | DanmakuUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutUserInput | DanmakuCreateOrConnectWithoutUserInput[]
+    createMany?: DanmakuCreateManyUserInputEnvelope
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+  }
+
   export type PostUncheckedCreateNestedManyWithoutAuthorInput = {
     create?: XOR<PostCreateWithoutAuthorInput, PostUncheckedCreateWithoutAuthorInput> | PostCreateWithoutAuthorInput[] | PostUncheckedCreateWithoutAuthorInput[]
     connectOrCreate?: PostCreateOrConnectWithoutAuthorInput | PostCreateOrConnectWithoutAuthorInput[]
@@ -20823,6 +22314,13 @@ export namespace Prisma {
     connectOrCreate?: FollowCreateOrConnectWithoutFollowerInput | FollowCreateOrConnectWithoutFollowerInput[]
     createMany?: FollowCreateManyFollowerInputEnvelope
     connect?: FollowWhereUniqueInput | FollowWhereUniqueInput[]
+  }
+
+  export type DanmakuUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput> | DanmakuCreateWithoutUserInput[] | DanmakuUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutUserInput | DanmakuCreateOrConnectWithoutUserInput[]
+    createMany?: DanmakuCreateManyUserInputEnvelope
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -21034,6 +22532,20 @@ export namespace Prisma {
     deleteMany?: FollowScalarWhereInput | FollowScalarWhereInput[]
   }
 
+  export type DanmakuUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput> | DanmakuCreateWithoutUserInput[] | DanmakuUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutUserInput | DanmakuCreateOrConnectWithoutUserInput[]
+    upsert?: DanmakuUpsertWithWhereUniqueWithoutUserInput | DanmakuUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DanmakuCreateManyUserInputEnvelope
+    set?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    disconnect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    delete?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    update?: DanmakuUpdateWithWhereUniqueWithoutUserInput | DanmakuUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DanmakuUpdateManyWithWhereWithoutUserInput | DanmakuUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
+  }
+
   export type PostUncheckedUpdateManyWithoutAuthorNestedInput = {
     create?: XOR<PostCreateWithoutAuthorInput, PostUncheckedCreateWithoutAuthorInput> | PostCreateWithoutAuthorInput[] | PostUncheckedCreateWithoutAuthorInput[]
     connectOrCreate?: PostCreateOrConnectWithoutAuthorInput | PostCreateOrConnectWithoutAuthorInput[]
@@ -21215,6 +22727,20 @@ export namespace Prisma {
     deleteMany?: FollowScalarWhereInput | FollowScalarWhereInput[]
   }
 
+  export type DanmakuUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput> | DanmakuCreateWithoutUserInput[] | DanmakuUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutUserInput | DanmakuCreateOrConnectWithoutUserInput[]
+    upsert?: DanmakuUpsertWithWhereUniqueWithoutUserInput | DanmakuUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DanmakuCreateManyUserInputEnvelope
+    set?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    disconnect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    delete?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    update?: DanmakuUpdateWithWhereUniqueWithoutUserInput | DanmakuUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DanmakuUpdateManyWithWhereWithoutUserInput | DanmakuUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
+  }
+
   export type UserCreateNestedOneWithoutPostsInput = {
     create?: XOR<UserCreateWithoutPostsInput, UserUncheckedCreateWithoutPostsInput>
     connectOrCreate?: UserCreateOrConnectWithoutPostsInput
@@ -21246,6 +22772,13 @@ export namespace Prisma {
     connectOrCreate?: PostLikeCreateOrConnectWithoutPostInput | PostLikeCreateOrConnectWithoutPostInput[]
     createMany?: PostLikeCreateManyPostInputEnvelope
     connect?: PostLikeWhereUniqueInput | PostLikeWhereUniqueInput[]
+  }
+
+  export type DanmakuCreateNestedManyWithoutPostInput = {
+    create?: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput> | DanmakuCreateWithoutPostInput[] | DanmakuUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutPostInput | DanmakuCreateOrConnectWithoutPostInput[]
+    createMany?: DanmakuCreateManyPostInputEnvelope
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
   }
 
   export type PostImageCreateNestedManyWithoutPostInput = {
@@ -21294,6 +22827,13 @@ export namespace Prisma {
     connectOrCreate?: PostLikeCreateOrConnectWithoutPostInput | PostLikeCreateOrConnectWithoutPostInput[]
     createMany?: PostLikeCreateManyPostInputEnvelope
     connect?: PostLikeWhereUniqueInput | PostLikeWhereUniqueInput[]
+  }
+
+  export type DanmakuUncheckedCreateNestedManyWithoutPostInput = {
+    create?: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput> | DanmakuCreateWithoutPostInput[] | DanmakuUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutPostInput | DanmakuCreateOrConnectWithoutPostInput[]
+    createMany?: DanmakuCreateManyPostInputEnvelope
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
   }
 
   export type PostImageUncheckedCreateNestedManyWithoutPostInput = {
@@ -21379,6 +22919,20 @@ export namespace Prisma {
     update?: PostLikeUpdateWithWhereUniqueWithoutPostInput | PostLikeUpdateWithWhereUniqueWithoutPostInput[]
     updateMany?: PostLikeUpdateManyWithWhereWithoutPostInput | PostLikeUpdateManyWithWhereWithoutPostInput[]
     deleteMany?: PostLikeScalarWhereInput | PostLikeScalarWhereInput[]
+  }
+
+  export type DanmakuUpdateManyWithoutPostNestedInput = {
+    create?: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput> | DanmakuCreateWithoutPostInput[] | DanmakuUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutPostInput | DanmakuCreateOrConnectWithoutPostInput[]
+    upsert?: DanmakuUpsertWithWhereUniqueWithoutPostInput | DanmakuUpsertWithWhereUniqueWithoutPostInput[]
+    createMany?: DanmakuCreateManyPostInputEnvelope
+    set?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    disconnect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    delete?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    update?: DanmakuUpdateWithWhereUniqueWithoutPostInput | DanmakuUpdateWithWhereUniqueWithoutPostInput[]
+    updateMany?: DanmakuUpdateManyWithWhereWithoutPostInput | DanmakuUpdateManyWithWhereWithoutPostInput[]
+    deleteMany?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
   }
 
   export type PostImageUpdateManyWithoutPostNestedInput = {
@@ -21475,6 +23029,20 @@ export namespace Prisma {
     deleteMany?: PostLikeScalarWhereInput | PostLikeScalarWhereInput[]
   }
 
+  export type DanmakuUncheckedUpdateManyWithoutPostNestedInput = {
+    create?: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput> | DanmakuCreateWithoutPostInput[] | DanmakuUncheckedCreateWithoutPostInput[]
+    connectOrCreate?: DanmakuCreateOrConnectWithoutPostInput | DanmakuCreateOrConnectWithoutPostInput[]
+    upsert?: DanmakuUpsertWithWhereUniqueWithoutPostInput | DanmakuUpsertWithWhereUniqueWithoutPostInput[]
+    createMany?: DanmakuCreateManyPostInputEnvelope
+    set?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    disconnect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    delete?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    connect?: DanmakuWhereUniqueInput | DanmakuWhereUniqueInput[]
+    update?: DanmakuUpdateWithWhereUniqueWithoutPostInput | DanmakuUpdateWithWhereUniqueWithoutPostInput[]
+    updateMany?: DanmakuUpdateManyWithWhereWithoutPostInput | DanmakuUpdateManyWithWhereWithoutPostInput[]
+    deleteMany?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
+  }
+
   export type PostImageUncheckedUpdateManyWithoutPostNestedInput = {
     create?: XOR<PostImageCreateWithoutPostInput, PostImageUncheckedCreateWithoutPostInput> | PostImageCreateWithoutPostInput[] | PostImageUncheckedCreateWithoutPostInput[]
     connectOrCreate?: PostImageCreateOrConnectWithoutPostInput | PostImageCreateOrConnectWithoutPostInput[]
@@ -21515,6 +23083,40 @@ export namespace Prisma {
     update?: NotificationUpdateWithWhereUniqueWithoutPostInput | NotificationUpdateWithWhereUniqueWithoutPostInput[]
     updateMany?: NotificationUpdateManyWithWhereWithoutPostInput | NotificationUpdateManyWithWhereWithoutPostInput[]
     deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type PostCreateNestedOneWithoutDanmakusInput = {
+    create?: XOR<PostCreateWithoutDanmakusInput, PostUncheckedCreateWithoutDanmakusInput>
+    connectOrCreate?: PostCreateOrConnectWithoutDanmakusInput
+    connect?: PostWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutDanmakusInput = {
+    create?: XOR<UserCreateWithoutDanmakusInput, UserUncheckedCreateWithoutDanmakusInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDanmakusInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumDanmakuTypeFieldUpdateOperationsInput = {
+    set?: $Enums.DanmakuType
+  }
+
+  export type PostUpdateOneRequiredWithoutDanmakusNestedInput = {
+    create?: XOR<PostCreateWithoutDanmakusInput, PostUncheckedCreateWithoutDanmakusInput>
+    connectOrCreate?: PostCreateOrConnectWithoutDanmakusInput
+    upsert?: PostUpsertWithoutDanmakusInput
+    connect?: PostWhereUniqueInput
+    update?: XOR<XOR<PostUpdateToOneWithWhereWithoutDanmakusInput, PostUpdateWithoutDanmakusInput>, PostUncheckedUpdateWithoutDanmakusInput>
+  }
+
+  export type UserUpdateOneWithoutDanmakusNestedInput = {
+    create?: XOR<UserCreateWithoutDanmakusInput, UserUncheckedCreateWithoutDanmakusInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDanmakusInput
+    upsert?: UserUpsertWithoutDanmakusInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDanmakusInput, UserUpdateWithoutDanmakusInput>, UserUncheckedUpdateWithoutDanmakusInput>
   }
 
   export type UserCreateNestedOneWithoutVideoAssetsInput = {
@@ -22328,6 +23930,23 @@ export namespace Prisma {
     _max?: NestedEnumPostTypeFilter<$PrismaModel>
   }
 
+  export type NestedEnumDanmakuTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.DanmakuType | EnumDanmakuTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.DanmakuType[]
+    notIn?: $Enums.DanmakuType[]
+    not?: NestedEnumDanmakuTypeFilter<$PrismaModel> | $Enums.DanmakuType
+  }
+
+  export type NestedEnumDanmakuTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DanmakuType | EnumDanmakuTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.DanmakuType[]
+    notIn?: $Enums.DanmakuType[]
+    not?: NestedEnumDanmakuTypeWithAggregatesFilter<$PrismaModel> | $Enums.DanmakuType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDanmakuTypeFilter<$PrismaModel>
+    _max?: NestedEnumDanmakuTypeFilter<$PrismaModel>
+  }
+
   export type NestedBigIntFilter<$PrismaModel = never> = {
     equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
     in?: bigint[] | number[]
@@ -22480,6 +24099,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -22501,6 +24121,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -22877,6 +24498,40 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DanmakuCreateWithoutUserInput = {
+    id?: string
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+    post: PostCreateNestedOneWithoutDanmakusInput
+  }
+
+  export type DanmakuUncheckedCreateWithoutUserInput = {
+    id?: string
+    postId: string
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+  }
+
+  export type DanmakuCreateOrConnectWithoutUserInput = {
+    where: DanmakuWhereUniqueInput
+    create: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput>
+  }
+
+  export type DanmakuCreateManyUserInputEnvelope = {
+    data: DanmakuCreateManyUserInput | DanmakuCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type PostUpsertWithWhereUniqueWithoutAuthorInput = {
     where: PostWhereUniqueInput
     update: XOR<PostUpdateWithoutAuthorInput, PostUncheckedUpdateWithoutAuthorInput>
@@ -23227,6 +24882,38 @@ export namespace Prisma {
     data: XOR<FollowUpdateManyMutationInput, FollowUncheckedUpdateManyWithoutFollowerInput>
   }
 
+  export type DanmakuUpsertWithWhereUniqueWithoutUserInput = {
+    where: DanmakuWhereUniqueInput
+    update: XOR<DanmakuUpdateWithoutUserInput, DanmakuUncheckedUpdateWithoutUserInput>
+    create: XOR<DanmakuCreateWithoutUserInput, DanmakuUncheckedCreateWithoutUserInput>
+  }
+
+  export type DanmakuUpdateWithWhereUniqueWithoutUserInput = {
+    where: DanmakuWhereUniqueInput
+    data: XOR<DanmakuUpdateWithoutUserInput, DanmakuUncheckedUpdateWithoutUserInput>
+  }
+
+  export type DanmakuUpdateManyWithWhereWithoutUserInput = {
+    where: DanmakuScalarWhereInput
+    data: XOR<DanmakuUpdateManyMutationInput, DanmakuUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type DanmakuScalarWhereInput = {
+    AND?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
+    OR?: DanmakuScalarWhereInput[]
+    NOT?: DanmakuScalarWhereInput | DanmakuScalarWhereInput[]
+    id?: StringFilter<"Danmaku"> | string
+    postId?: StringFilter<"Danmaku"> | string
+    userId?: StringNullableFilter<"Danmaku"> | string | null
+    anonId?: StringNullableFilter<"Danmaku"> | string | null
+    content?: StringFilter<"Danmaku"> | string
+    timeMs?: IntFilter<"Danmaku"> | number
+    type?: EnumDanmakuTypeFilter<"Danmaku"> | $Enums.DanmakuType
+    color?: StringFilter<"Danmaku"> | string
+    fontSize?: IntFilter<"Danmaku"> | number
+    createdAt?: DateTimeFilter<"Danmaku"> | Date | string
+  }
+
   export type UserCreateWithoutPostsInput = {
     id?: string
     email: string
@@ -23257,6 +24944,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPostsInput = {
@@ -23289,6 +24977,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPostsInput = {
@@ -23424,6 +25113,40 @@ export namespace Prisma {
 
   export type PostLikeCreateManyPostInputEnvelope = {
     data: PostLikeCreateManyPostInput | PostLikeCreateManyPostInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DanmakuCreateWithoutPostInput = {
+    id?: string
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+    user?: UserCreateNestedOneWithoutDanmakusInput
+  }
+
+  export type DanmakuUncheckedCreateWithoutPostInput = {
+    id?: string
+    userId?: string | null
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+  }
+
+  export type DanmakuCreateOrConnectWithoutPostInput = {
+    where: DanmakuWhereUniqueInput
+    create: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput>
+  }
+
+  export type DanmakuCreateManyPostInputEnvelope = {
+    data: DanmakuCreateManyPostInput | DanmakuCreateManyPostInput[]
     skipDuplicates?: boolean
   }
 
@@ -23579,6 +25302,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPostsInput = {
@@ -23611,6 +25335,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type VideoAssetUpsertWithoutPostInput = {
@@ -23722,6 +25447,22 @@ export namespace Prisma {
     data: XOR<PostLikeUpdateManyMutationInput, PostLikeUncheckedUpdateManyWithoutPostInput>
   }
 
+  export type DanmakuUpsertWithWhereUniqueWithoutPostInput = {
+    where: DanmakuWhereUniqueInput
+    update: XOR<DanmakuUpdateWithoutPostInput, DanmakuUncheckedUpdateWithoutPostInput>
+    create: XOR<DanmakuCreateWithoutPostInput, DanmakuUncheckedCreateWithoutPostInput>
+  }
+
+  export type DanmakuUpdateWithWhereUniqueWithoutPostInput = {
+    where: DanmakuWhereUniqueInput
+    data: XOR<DanmakuUpdateWithoutPostInput, DanmakuUncheckedUpdateWithoutPostInput>
+  }
+
+  export type DanmakuUpdateManyWithWhereWithoutPostInput = {
+    where: DanmakuScalarWhereInput
+    data: XOR<DanmakuUpdateManyMutationInput, DanmakuUncheckedUpdateManyWithoutPostInput>
+  }
+
   export type PostImageUpsertWithWhereUniqueWithoutPostInput = {
     where: PostImageWhereUniqueInput
     update: XOR<PostImageUpdateWithoutPostInput, PostImageUncheckedUpdateWithoutPostInput>
@@ -23827,6 +25568,254 @@ export namespace Prisma {
     followers?: UserUncheckedUpdateManyWithoutTopicsNestedInput
   }
 
+  export type PostCreateWithoutDanmakusInput = {
+    id?: string
+    title?: string | null
+    content: string
+    postType?: $Enums.PostType
+    viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    author: UserCreateNestedOneWithoutPostsInput
+    video?: VideoAssetCreateNestedOneWithoutPostInput
+    comments?: CommentCreateNestedManyWithoutPostInput
+    reposts?: RepostCreateNestedManyWithoutPostInput
+    likes?: PostLikeCreateNestedManyWithoutPostInput
+    images?: PostImageCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentCreateNestedManyWithoutPostInput
+    notifications?: NotificationCreateNestedManyWithoutPostInput
+    topic?: TopicCreateNestedOneWithoutPostsInput
+  }
+
+  export type PostUncheckedCreateWithoutDanmakusInput = {
+    id?: string
+    title?: string | null
+    content: string
+    postType?: $Enums.PostType
+    videoId?: string | null
+    authorId: string
+    topicId?: string | null
+    viewCount?: number
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    comments?: CommentUncheckedCreateNestedManyWithoutPostInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
+    likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    images?: PostImageUncheckedCreateNestedManyWithoutPostInput
+    attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
+  }
+
+  export type PostCreateOrConnectWithoutDanmakusInput = {
+    where: PostWhereUniqueInput
+    create: XOR<PostCreateWithoutDanmakusInput, PostUncheckedCreateWithoutDanmakusInput>
+  }
+
+  export type UserCreateWithoutDanmakusInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetCreateNestedManyWithoutOwnerInput
+    createdTopics?: TopicCreateNestedManyWithoutCreatorInput
+    topics?: TopicCreateNestedManyWithoutFollowersInput
+    comments?: CommentCreateNestedManyWithoutAuthorInput
+    reposts?: RepostCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
+    following?: FollowCreateNestedManyWithoutFollowingInput
+    followers?: FollowCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserUncheckedCreateWithoutDanmakusInput = {
+    id?: string
+    email: string
+    password: string
+    name?: string | null
+    role?: string
+    banned?: boolean
+    avatar?: string | null
+    bio?: string | null
+    postViewMode?: string
+    coverImage?: string | null
+    showUserData?: boolean
+    experience?: number
+    lastLoginRewardAt?: Date | string | null
+    dailyLikeRewardCount?: number
+    lastLikeRewardAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    posts?: PostUncheckedCreateNestedManyWithoutAuthorInput
+    videoAssets?: VideoAssetUncheckedCreateNestedManyWithoutOwnerInput
+    createdTopics?: TopicUncheckedCreateNestedManyWithoutCreatorInput
+    topics?: TopicUncheckedCreateNestedManyWithoutFollowersInput
+    comments?: CommentUncheckedCreateNestedManyWithoutAuthorInput
+    reposts?: RepostUncheckedCreateNestedManyWithoutUserInput
+    postLikes?: PostLikeUncheckedCreateNestedManyWithoutUserInput
+    commentLikes?: CommentLikeUncheckedCreateNestedManyWithoutUserInput
+    sentNotifications?: NotificationUncheckedCreateNestedManyWithoutSenderInput
+    receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
+    pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
+    following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
+    followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+  }
+
+  export type UserCreateOrConnectWithoutDanmakusInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutDanmakusInput, UserUncheckedCreateWithoutDanmakusInput>
+  }
+
+  export type PostUpsertWithoutDanmakusInput = {
+    update: XOR<PostUpdateWithoutDanmakusInput, PostUncheckedUpdateWithoutDanmakusInput>
+    create: XOR<PostCreateWithoutDanmakusInput, PostUncheckedCreateWithoutDanmakusInput>
+    where?: PostWhereInput
+  }
+
+  export type PostUpdateToOneWithWhereWithoutDanmakusInput = {
+    where?: PostWhereInput
+    data: XOR<PostUpdateWithoutDanmakusInput, PostUncheckedUpdateWithoutDanmakusInput>
+  }
+
+  export type PostUpdateWithoutDanmakusInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    author?: UserUpdateOneRequiredWithoutPostsNestedInput
+    video?: VideoAssetUpdateOneWithoutPostNestedInput
+    comments?: CommentUpdateManyWithoutPostNestedInput
+    reposts?: RepostUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUpdateManyWithoutPostNestedInput
+    images?: PostImageUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUpdateManyWithoutPostNestedInput
+    topic?: TopicUpdateOneWithoutPostsNestedInput
+  }
+
+  export type PostUncheckedUpdateWithoutDanmakusInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    videoId?: NullableStringFieldUpdateOperationsInput | string | null
+    authorId?: StringFieldUpdateOperationsInput | string
+    topicId?: NullableStringFieldUpdateOperationsInput | string | null
+    viewCount?: IntFieldUpdateOperationsInput | number
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
+    likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
+    attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
+  }
+
+  export type UserUpsertWithoutDanmakusInput = {
+    update: XOR<UserUpdateWithoutDanmakusInput, UserUncheckedUpdateWithoutDanmakusInput>
+    create: XOR<UserCreateWithoutDanmakusInput, UserUncheckedCreateWithoutDanmakusInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutDanmakusInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutDanmakusInput, UserUncheckedUpdateWithoutDanmakusInput>
+  }
+
+  export type UserUpdateWithoutDanmakusInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUpdateManyWithoutOwnerNestedInput
+    createdTopics?: TopicUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
+    following?: FollowUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUpdateManyWithoutFollowerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutDanmakusInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: StringFieldUpdateOperationsInput | string
+    banned?: BoolFieldUpdateOperationsInput | boolean
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    postViewMode?: StringFieldUpdateOperationsInput | string
+    coverImage?: NullableStringFieldUpdateOperationsInput | string | null
+    showUserData?: BoolFieldUpdateOperationsInput | boolean
+    experience?: IntFieldUpdateOperationsInput | number
+    lastLoginRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    dailyLikeRewardCount?: IntFieldUpdateOperationsInput | number
+    lastLikeRewardAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    posts?: PostUncheckedUpdateManyWithoutAuthorNestedInput
+    videoAssets?: VideoAssetUncheckedUpdateManyWithoutOwnerNestedInput
+    createdTopics?: TopicUncheckedUpdateManyWithoutCreatorNestedInput
+    topics?: TopicUncheckedUpdateManyWithoutFollowersNestedInput
+    comments?: CommentUncheckedUpdateManyWithoutAuthorNestedInput
+    reposts?: RepostUncheckedUpdateManyWithoutUserNestedInput
+    postLikes?: PostLikeUncheckedUpdateManyWithoutUserNestedInput
+    commentLikes?: CommentLikeUncheckedUpdateManyWithoutUserNestedInput
+    sentNotifications?: NotificationUncheckedUpdateManyWithoutSenderNestedInput
+    receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
+    pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
+    following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
+    followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+  }
+
   export type UserCreateWithoutVideoAssetsInput = {
     id?: string
     email: string
@@ -23857,6 +25846,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutVideoAssetsInput = {
@@ -23889,6 +25879,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutVideoAssetsInput = {
@@ -23910,6 +25901,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -23931,6 +25923,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -23982,6 +25975,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutVideoAssetsInput = {
@@ -24014,6 +26008,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PostUpsertWithoutVideoInput = {
@@ -24041,6 +26036,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -24062,6 +26058,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -24082,6 +26079,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -24102,6 +26100,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -24147,6 +26146,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCreatedTopicsInput = {
@@ -24179,6 +26179,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCreatedTopicsInput = {
@@ -24216,6 +26217,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTopicsInput = {
@@ -24248,6 +26250,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTopicsInput = {
@@ -24312,6 +26315,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedTopicsInput = {
@@ -24344,6 +26348,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithWhereUniqueWithoutTopicsInput = {
@@ -24400,6 +26405,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
@@ -24421,6 +26427,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
@@ -24456,6 +26463,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
@@ -24477,6 +26485,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
@@ -24496,6 +26505,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
@@ -24517,6 +26527,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
   }
@@ -24552,6 +26563,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
@@ -24573,6 +26585,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
   }
@@ -24591,6 +26604,7 @@ export namespace Prisma {
     video?: VideoAssetCreateNestedOneWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -24612,6 +26626,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -24652,6 +26667,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCommentsInput = {
@@ -24684,6 +26700,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCommentsInput = {
@@ -24801,6 +26818,7 @@ export namespace Prisma {
     video?: VideoAssetUpdateOneWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -24822,6 +26840,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -24868,6 +26887,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCommentsInput = {
@@ -24900,6 +26920,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type CommentUpsertWithoutRepliesInput = {
@@ -24983,6 +27004,7 @@ export namespace Prisma {
     video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -25004,6 +27026,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -25044,6 +27067,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPostLikesInput = {
@@ -25076,6 +27100,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPostLikesInput = {
@@ -25108,6 +27133,7 @@ export namespace Prisma {
     video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -25129,6 +27155,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -25175,6 +27202,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPostLikesInput = {
@@ -25207,6 +27235,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutSentNotificationsInput = {
@@ -25239,6 +27268,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSentNotificationsInput = {
@@ -25271,6 +27301,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSentNotificationsInput = {
@@ -25308,6 +27339,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutReceivedNotificationsInput = {
@@ -25340,6 +27372,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutReceivedNotificationsInput = {
@@ -25362,6 +27395,7 @@ export namespace Prisma {
     comments?: CommentCreateNestedManyWithoutPostInput
     reposts?: RepostCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     topic?: TopicCreateNestedOneWithoutPostsInput
@@ -25383,6 +27417,7 @@ export namespace Prisma {
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     reposts?: RepostUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
   }
@@ -25471,6 +27506,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSentNotificationsInput = {
@@ -25503,6 +27539,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutReceivedNotificationsInput = {
@@ -25546,6 +27583,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReceivedNotificationsInput = {
@@ -25578,6 +27616,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PostUpsertWithoutNotificationsInput = {
@@ -25606,6 +27645,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     topic?: TopicUpdateOneWithoutPostsNestedInput
@@ -25627,6 +27667,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
   }
@@ -25695,6 +27736,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPushDevicesInput = {
@@ -25727,6 +27769,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPushDevicesInput = {
@@ -25813,6 +27856,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPushDevicesInput = {
@@ -25845,6 +27889,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PushLogUpsertWithWhereUniqueWithoutDeviceInput = {
@@ -26050,6 +28095,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutCommentLikesInput = {
@@ -26082,6 +28128,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutCommentLikesInput = {
@@ -26165,6 +28212,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCommentLikesInput = {
@@ -26197,6 +28245,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PostCreateWithoutRepostsInput = {
@@ -26213,6 +28262,7 @@ export namespace Prisma {
     video?: VideoAssetCreateNestedOneWithoutPostInput
     comments?: CommentCreateNestedManyWithoutPostInput
     likes?: PostLikeCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuCreateNestedManyWithoutPostInput
     images?: PostImageCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentCreateNestedManyWithoutPostInput
     notifications?: NotificationCreateNestedManyWithoutPostInput
@@ -26234,6 +28284,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     comments?: CommentUncheckedCreateNestedManyWithoutPostInput
     likes?: PostLikeUncheckedCreateNestedManyWithoutPostInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutPostInput
     images?: PostImageUncheckedCreateNestedManyWithoutPostInput
     attachments?: PostAttachmentUncheckedCreateNestedManyWithoutPostInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutPostInput
@@ -26274,6 +28325,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRepostsInput = {
@@ -26306,6 +28358,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRepostsInput = {
@@ -26338,6 +28391,7 @@ export namespace Prisma {
     video?: VideoAssetUpdateOneWithoutPostNestedInput
     comments?: CommentUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -26359,6 +28413,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -26405,6 +28460,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRepostsInput = {
@@ -26437,6 +28493,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutFollowersInput = {
@@ -26469,6 +28526,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     following?: FollowCreateNestedManyWithoutFollowingInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutFollowersInput = {
@@ -26501,6 +28559,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     following?: FollowUncheckedCreateNestedManyWithoutFollowingInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutFollowersInput = {
@@ -26538,6 +28597,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationCreateNestedManyWithoutReceiverInput
     pushDevices?: PushDeviceCreateNestedManyWithoutUserInput
     followers?: FollowCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutFollowingInput = {
@@ -26570,6 +28630,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedCreateNestedManyWithoutReceiverInput
     pushDevices?: PushDeviceUncheckedCreateNestedManyWithoutUserInput
     followers?: FollowUncheckedCreateNestedManyWithoutFollowerInput
+    danmakus?: DanmakuUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutFollowingInput = {
@@ -26618,6 +28679,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFollowersInput = {
@@ -26650,6 +28712,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutFollowingInput = {
@@ -26693,6 +28756,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUpdateManyWithoutReceiverNestedInput
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFollowingInput = {
@@ -26725,6 +28789,7 @@ export namespace Prisma {
     receivedNotifications?: NotificationUncheckedUpdateManyWithoutReceiverNestedInput
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type PostCreateManyAuthorInput = {
@@ -26845,6 +28910,18 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type DanmakuCreateManyUserInput = {
+    id?: string
+    postId: string
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
+    createdAt?: Date | string
+  }
+
   export type PostUpdateWithoutAuthorInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26859,6 +28936,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -26880,6 +28958,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -27259,6 +29338,42 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type DanmakuUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneRequiredWithoutDanmakusNestedInput
+  }
+
+  export type DanmakuUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type CommentCreateManyPostInput = {
     id?: string
     content: string
@@ -27277,6 +29392,18 @@ export namespace Prisma {
   export type PostLikeCreateManyPostInput = {
     id?: string
     userId: string
+    createdAt?: Date | string
+  }
+
+  export type DanmakuCreateManyPostInput = {
+    id?: string
+    userId?: string | null
+    anonId?: string | null
+    content: string
+    timeMs: number
+    type?: $Enums.DanmakuType
+    color?: string
+    fontSize?: number
     createdAt?: Date | string
   }
 
@@ -27370,6 +29497,42 @@ export namespace Prisma {
   export type PostLikeUncheckedUpdateManyWithoutPostInput = {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneWithoutDanmakusNestedInput
+  }
+
+  export type DanmakuUncheckedUpdateWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DanmakuUncheckedUpdateManyWithoutPostInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+    anonId?: NullableStringFieldUpdateOperationsInput | string | null
+    content?: StringFieldUpdateOperationsInput | string
+    timeMs?: IntFieldUpdateOperationsInput | number
+    type?: EnumDanmakuTypeFieldUpdateOperationsInput | $Enums.DanmakuType
+    color?: StringFieldUpdateOperationsInput | string
+    fontSize?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -27482,6 +29645,7 @@ export namespace Prisma {
     comments?: CommentUpdateManyWithoutPostNestedInput
     reposts?: RepostUpdateManyWithoutPostNestedInput
     likes?: PostLikeUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUpdateManyWithoutPostNestedInput
     images?: PostImageUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUpdateManyWithoutPostNestedInput
     notifications?: NotificationUpdateManyWithoutPostNestedInput
@@ -27502,6 +29666,7 @@ export namespace Prisma {
     comments?: CommentUncheckedUpdateManyWithoutPostNestedInput
     reposts?: RepostUncheckedUpdateManyWithoutPostNestedInput
     likes?: PostLikeUncheckedUpdateManyWithoutPostNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutPostNestedInput
     images?: PostImageUncheckedUpdateManyWithoutPostNestedInput
     attachments?: PostAttachmentUncheckedUpdateManyWithoutPostNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutPostNestedInput
@@ -27551,6 +29716,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUpdateManyWithoutUserNestedInput
     following?: FollowUpdateManyWithoutFollowingNestedInput
     followers?: FollowUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTopicsInput = {
@@ -27583,6 +29749,7 @@ export namespace Prisma {
     pushDevices?: PushDeviceUncheckedUpdateManyWithoutUserNestedInput
     following?: FollowUncheckedUpdateManyWithoutFollowingNestedInput
     followers?: FollowUncheckedUpdateManyWithoutFollowerNestedInput
+    danmakus?: DanmakuUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateManyWithoutTopicsInput = {
@@ -27822,6 +29989,10 @@ export namespace Prisma {
      * @deprecated Use PostDefaultArgs instead
      */
     export type PostArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = PostDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use DanmakuDefaultArgs instead
+     */
+    export type DanmakuArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DanmakuDefaultArgs<ExtArgs>
     /**
      * @deprecated Use VideoAssetDefaultArgs instead
      */

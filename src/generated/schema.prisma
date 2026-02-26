@@ -43,6 +43,7 @@ model User {
   pushDevices           PushDevice[]
   following    Follow[]     @relation("UserFollowing")
   followers    Follow[]     @relation("UserFollowers")
+  danmakus     Danmaku[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -62,6 +63,10 @@ enum VideoStatus {
   DELETED
 }
 
+enum DanmakuType {
+  SCROLL
+}
+
 model Post {
   id          String           @id @default(cuid())
   title       String?
@@ -74,6 +79,7 @@ model Post {
   comments    Comment[]
   reposts     Repost[]
   likes       PostLike[]
+  danmakus    Danmaku[]
   images      PostImage[]
   attachments PostAttachment[]
   notifications Notification[]
@@ -89,6 +95,26 @@ model Post {
   @@index([createdAt])
   @@index([topicId])
   @@index([pinned, pinnedAt])
+}
+
+model Danmaku {
+  id        String      @id @default(cuid())
+  postId    String
+  post      Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonId    String?
+  content   String      @db.VarChar(200)
+  timeMs    Int
+  type      DanmakuType @default(SCROLL)
+  color     String      @default("#FFFFFF")
+  fontSize  Int         @default(24)
+  createdAt DateTime    @default(now())
+
+  @@index([postId, timeMs])
+  @@index([postId, createdAt])
+  @@index([userId, createdAt])
+  @@index([anonId, createdAt])
 }
 
 model VideoAsset {

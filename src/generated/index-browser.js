@@ -142,6 +142,19 @@ exports.Prisma.PostScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.DanmakuScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  userId: 'userId',
+  anonId: 'anonId',
+  content: 'content',
+  timeMs: 'timeMs',
+  type: 'type',
+  color: 'color',
+  fontSize: 'fontSize',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.VideoAssetScalarFieldEnum = {
   id: 'id',
   ownerId: 'ownerId',
@@ -286,6 +299,10 @@ exports.PostType = exports.$Enums.PostType = {
   VIDEO: 'VIDEO'
 };
 
+exports.DanmakuType = exports.$Enums.DanmakuType = {
+  SCROLL: 'SCROLL'
+};
+
 exports.VideoStatus = exports.$Enums.VideoStatus = {
   INIT: 'INIT',
   UPLOADING: 'UPLOADING',
@@ -322,6 +339,7 @@ exports.PushLogStatus = exports.$Enums.PushLogStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Post: 'Post',
+  Danmaku: 'Danmaku',
   VideoAsset: 'VideoAsset',
   Topic: 'Topic',
   PostImage: 'PostImage',

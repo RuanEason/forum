@@ -143,6 +143,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
           <div className="mt-4">
             {canPlayVideo ? (
               <VideoPlayer
+                postId={post.id}
                 src={playbackSrc}
                 poster={post.video?.coverUrl}
                 title={post.title}
