@@ -57,6 +57,7 @@ const MOBILE_INLINE_FONT_SCALE_MIN = 0.62;
 const MOBILE_INLINE_FONT_SCALE_MAX = 0.78;
 const MOBILE_INLINE_MIN_FONT_SIZE = 12;
 const MOBILE_INLINE_MAX_FONT_SIZE = 24;
+const DANMAKU_PREFS_STORAGE_KEY = "video-danmaku-prefs:v1";
 
 const densityMultiplierMap: Record<DensityOption, number> = {
   LOW: 0.6,
@@ -70,6 +71,74 @@ const areaRatioMap: Record<AreaOption, number> = {
   TWO_THIRDS: 2 / 3,
   FULL: 1,
 };
+
+type DanmakuPreferenceStore = {
+  enabled?: boolean;
+  density?: DensityOption;
+  area?: AreaOption;
+  color?: string;
+};
+
+function isDensityOption(value: unknown): value is DensityOption {
+  return value === "LOW" || value === "MEDIUM" || value === "HIGH";
+}
+
+function isAreaOption(value: unknown): value is AreaOption {
+  return value === "ONE_THIRD" || value === "ONE_HALF" || value === "TWO_THIRDS" || value === "FULL";
+}
+
+function normalizeDanmakuColor(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toUpperCase();
+  if (!/^#[0-9A-F]{6}$/.test(normalized)) return null;
+  return normalized;
+}
+
+function readDanmakuPreferenceStore(): DanmakuPreferenceStore {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const raw = window.localStorage.getItem(DANMAKU_PREFS_STORAGE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw) as {
+      enabled?: unknown;
+      density?: unknown;
+      area?: unknown;
+      color?: unknown;
+    };
+
+    const next: DanmakuPreferenceStore = {};
+    if (typeof parsed.enabled === "boolean") {
+      next.enabled = parsed.enabled;
+    }
+    if (isDensityOption(parsed.density)) {
+      next.density = parsed.density;
+    }
+    if (isAreaOption(parsed.area)) {
+      next.area = parsed.area;
+    }
+
+    const normalizedColor = normalizeDanmakuColor(parsed.color);
+    if (normalizedColor) {
+      next.color = normalizedColor;
+    }
+
+    return next;
+  } catch {
+    return {};
+  }
+}
+
+function writeDanmakuPreferenceStore(store: DanmakuPreferenceStore): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(DANMAKU_PREFS_STORAGE_KEY, JSON.stringify(store));
+  } catch {
+    // Ignore storage write failures.
+  }
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -149,6 +218,7 @@ export default function VideoDanmaku({
   const settingsRef = useRef<HTMLDivElement>(null);
   const emittedIdsRef = useRef<Set<string>>(new Set());
   const lastNowMsRef = useRef(0);
+  const hasLoadedPreferencesRef = useRef(false);
 
   useEffect(() => {
     currentTimeMsRef.current = Math.max(0, Math.round(currentTime * 1000));
@@ -162,9 +232,54 @@ export default function VideoDanmaku({
   }, [postId]);
 
   useEffect(() => {
-    if (isLoggedIn) return;
-    setColor(DEFAULT_DANMAKU_COLOR);
+    const prefs = readDanmakuPreferenceStore();
+    if (typeof prefs.enabled === "boolean") {
+      setEnabled(prefs.enabled);
+    }
+    if (isDensityOption(prefs.density)) {
+      setDensity(prefs.density);
+    }
+    if (isAreaOption(prefs.area)) {
+      setArea(prefs.area);
+    }
+    if (isLoggedIn && prefs.color) {
+      setColor(prefs.color);
+    }
+
+    hasLoadedPreferencesRef.current = true;
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setColor(DEFAULT_DANMAKU_COLOR);
+      return;
+    }
+
+    const storedColor = readDanmakuPreferenceStore().color;
+    if (storedColor) {
+      setColor(storedColor);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!hasLoadedPreferencesRef.current) return;
+
+    const current = readDanmakuPreferenceStore();
+    const next: DanmakuPreferenceStore = {
+      ...current,
+      enabled,
+      density,
+      area,
+    };
+
+    if (isLoggedIn) {
+      next.color = normalizeDanmakuColor(color) || DEFAULT_DANMAKU_COLOR;
+    } else if (!next.color) {
+      next.color = DEFAULT_DANMAKU_COLOR;
+    }
+
+    writeDanmakuPreferenceStore(next);
+  }, [area, color, density, enabled, isLoggedIn]);
 
   useEffect(() => {
     const element = containerRef.current;

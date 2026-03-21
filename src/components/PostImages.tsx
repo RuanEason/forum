@@ -83,8 +83,18 @@ export default function PostImages({ images, isDetail = false }: PostImagesProps
   };
 
   const getImageAspectClass = (count: number) => {
-    if (count === 1) return "aspect-auto max-h-[500px]";
+    if (count === 1) {
+      // Keep list thumbnails compact; detail page can stay larger.
+      return isDetail ? "h-80 sm:h-96 md:h-[500px]" : "h-48 sm:h-56 md:h-64";
+    }
     return "aspect-square";
+  };
+
+  const getSingleImageWidthClass = () => {
+    if (isDetail) {
+      return "w-full max-w-3xl mx-auto";
+    }
+    return "w-full max-w-[260px] sm:max-w-[320px] justify-self-start";
   };
 
   const lightbox = currentImageUrl && mounted ? createPortal(
@@ -208,17 +218,22 @@ export default function PostImages({ images, isDetail = false }: PostImagesProps
         {displayImages.map((url, index) => (
           <div
             key={index}
-            className={`relative overflow-hidden rounded-lg cursor-pointer ${getImageAspectClass(
+            className={`relative overflow-hidden cursor-pointer ${
+              displayImages.length === 1 ? "rounded-2xl" : "rounded-lg"
+            } ${getImageAspectClass(
               displayImages.length
-            )}`}
-            style={displayImages.length === 1 ? { height: '500px' } : {}}
+            )} ${displayImages.length === 1 ? getSingleImageWidthClass() : ""}`}
             onClick={() => setSelectedIndex(index)}
           >
             <Image
               src={url}
               alt={`图片 ${index + 1}`}
               fill
-              className="object-cover hover:opacity-90 transition-opacity"
+              className={
+                displayImages.length === 1
+                  ? "object-cover rounded-2xl hover:opacity-95 transition-opacity"
+                  : "object-cover hover:opacity-90 transition-opacity"
+              }
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
             {!isDetail && index === 8 && remainingCount > 0 && (

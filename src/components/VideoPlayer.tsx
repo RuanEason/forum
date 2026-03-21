@@ -43,6 +43,11 @@ const QUALITY_SWITCH_TIMEOUT_MS = 3500;
 const AUTO_QUALITY_SAFETY_FACTOR = 0.8;
 const DOUBLE_TAP_THRESHOLD_MS = 260;
 const VOLUME_STEP = 0.05;
+const VIDEO_PROGRESS_STORAGE_KEY = "video-player-progress:v1";
+const VIDEO_PREFS_STORAGE_KEY = "video-player-prefs:v1";
+const RESUME_SAVE_INTERVAL_MS = 5_000;
+const RESUME_END_GUARD_SEC = 8;
+const MAX_STORED_PROGRESS_ITEMS = 120;
 const FALLBACK_BITRATE_BY_QUALITY_LINE: Record<number, number> = {
   360: 900_000,
   480: 1_500_000,
@@ -50,6 +55,111 @@ const FALLBACK_BITRATE_BY_QUALITY_LINE: Record<number, number> = {
   1080: 6_000_000,
   2160: 20_000_000,
 };
+
+type VideoProgressEntry = {
+  timeSec: number;
+  updatedAt: number;
+};
+
+type VideoProgressStore = Record<string, VideoProgressEntry>;
+
+type VideoPreferenceStore = {
+  volume?: number;
+  muted?: boolean;
+  qualityByPost?: Record<string, string>;
+};
+
+function readLocalStorageValue<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalStorageValue(key: string, value: unknown): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage write errors (private mode / quota).
+  }
+}
+
+function clampUnitValue(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(1, Math.max(0, value));
+}
+
+function readVideoProgressStore(): VideoProgressStore {
+  const raw = readLocalStorageValue<unknown>(VIDEO_PROGRESS_STORAGE_KEY);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+  const parsed = raw as Record<string, unknown>;
+  const store: VideoProgressStore = {};
+
+  for (const [id, entry] of Object.entries(parsed)) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+    const value = entry as { timeSec?: unknown; updatedAt?: unknown };
+    if (typeof value.timeSec !== "number" || !Number.isFinite(value.timeSec) || value.timeSec < 0) continue;
+    const updatedAt = typeof value.updatedAt === "number" && Number.isFinite(value.updatedAt)
+      ? value.updatedAt
+      : 0;
+    store[id] = {
+      timeSec: value.timeSec,
+      updatedAt,
+    };
+  }
+
+  return store;
+}
+
+function writeVideoProgressStore(store: VideoProgressStore): void {
+  const limitedEntries = Object.entries(store)
+    .sort((a, b) => (b[1]?.updatedAt ?? 0) - (a[1]?.updatedAt ?? 0))
+    .slice(0, MAX_STORED_PROGRESS_ITEMS);
+
+  writeLocalStorageValue(VIDEO_PROGRESS_STORAGE_KEY, Object.fromEntries(limitedEntries));
+}
+
+function readVideoPreferenceStore(): VideoPreferenceStore {
+  const raw = readLocalStorageValue<unknown>(VIDEO_PREFS_STORAGE_KEY);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+  const parsed = raw as {
+    volume?: unknown;
+    muted?: unknown;
+    qualityByPost?: unknown;
+  };
+
+  const next: VideoPreferenceStore = {};
+  if (typeof parsed.volume === "number" && Number.isFinite(parsed.volume)) {
+    next.volume = clampUnitValue(parsed.volume);
+  }
+  if (typeof parsed.muted === "boolean") {
+    next.muted = parsed.muted;
+  }
+  if (parsed.qualityByPost && typeof parsed.qualityByPost === "object" && !Array.isArray(parsed.qualityByPost)) {
+    const qualityByPost: Record<string, string> = {};
+    for (const [id, value] of Object.entries(parsed.qualityByPost as Record<string, unknown>)) {
+      if (typeof value === "string" && value.trim()) {
+        qualityByPost[id] = value;
+      }
+    }
+    if (Object.keys(qualityByPost).length > 0) {
+      next.qualityByPost = qualityByPost;
+    }
+  }
+
+  return next;
+}
+
+function writeVideoPreferenceStore(store: VideoPreferenceStore): void {
+  writeLocalStorageValue(VIDEO_PREFS_STORAGE_KEY, store);
+}
 
 function normalizeQualityLine(line?: number): number | undefined {
   if (!line || !Number.isFinite(line) || line <= 0) return undefined;
@@ -310,6 +420,11 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
   const qualityNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const qualitySwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const qualitySwitchCleanupRef = useRef<(() => void) | null>(null);
+  const preferredQualityIdRef = useRef(DEFAULT_QUALITY_OPTION.id);
+  const resumeTimeSecRef = useRef<number | null>(null);
+  const lastProgressSaveAtRef = useRef(0);
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
 
   const boostingRef = useRef(false);
   const previousPlaybackRateRef = useRef(1);
@@ -335,6 +450,61 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     () => qualityOptions.find((option) => option.id === selectedQualityId)?.label ?? DEFAULT_QUALITY_OPTION.label,
     [qualityOptions, selectedQualityId],
   );
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+  const persistAudioPreferences = useCallback((nextVolume: number, nextMuted: boolean) => {
+    const current = readVideoPreferenceStore();
+    writeVideoPreferenceStore({
+      ...current,
+      volume: clampUnitValue(nextVolume),
+      muted: nextMuted,
+    });
+  }, []);
+
+  const persistQualityPreference = useCallback((qualityId: string) => {
+    const current = readVideoPreferenceStore();
+    writeVideoPreferenceStore({
+      ...current,
+      qualityByPost: {
+        ...(current.qualityByPost ?? {}),
+        [postId]: qualityId,
+      },
+    });
+  }, [postId]);
+
+  const clearSavedPlaybackProgress = useCallback(() => {
+    const current = readVideoProgressStore();
+    if (!current[postId]) return;
+    delete current[postId];
+    writeVideoProgressStore(current);
+  }, [postId]);
+
+  const persistPlaybackProgress = useCallback((force = false) => {
+    const played = currentTimeRef.current;
+    const total = durationRef.current;
+    if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(played) || played < 0) return;
+
+    if (played >= Math.max(0, total - RESUME_END_GUARD_SEC)) {
+      clearSavedPlaybackProgress();
+      return;
+    }
+
+    if (!force && played < 1) return;
+
+    const current = readVideoProgressStore();
+    current[postId] = {
+      timeSec: Math.round(Math.max(0, played) * 10) / 10,
+      updatedAt: Date.now(),
+    };
+    writeVideoProgressStore(current);
+  }, [clearSavedPlaybackProgress, postId]);
 
   const clearRightKeyTimer = useCallback(() => {
     if (!rightKeyTimerRef.current) return;
@@ -510,19 +680,22 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
 
     video.muted = !video.muted;
     setIsMuted(video.muted);
+    persistAudioPreferences(video.volume, video.muted);
     revealControlsTemporarily();
-  }, [revealControlsTemporarily]);
+  }, [persistAudioPreferences, revealControlsTemporarily]);
 
   const handleVolumeChange = useCallback((nextVolume: number) => {
     const video = videoRef.current;
     if (!video) return;
 
-    video.volume = nextVolume;
-    video.muted = nextVolume === 0;
-    setVolume(nextVolume);
+    const normalizedVolume = clampUnitValue(nextVolume);
+    video.volume = normalizedVolume;
+    video.muted = normalizedVolume === 0;
+    setVolume(normalizedVolume);
     setIsMuted(video.muted);
+    persistAudioPreferences(normalizedVolume, video.muted);
     revealControlsTemporarily();
-  }, [revealControlsTemporarily]);
+  }, [persistAudioPreferences, revealControlsTemporarily]);
 
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
@@ -626,6 +799,8 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
       }
 
       setSelectedQualityId(option.id);
+      preferredQualityIdRef.current = option.id;
+      persistQualityPreference(option.id);
       setQualityMenuOpen(false);
       revealControlsTemporarily();
       return;
@@ -655,11 +830,14 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     );
 
     setSelectedQualityId(option.id);
+    preferredQualityIdRef.current = option.id;
+    persistQualityPreference(option.id);
     setQualityMenuOpen(false);
     revealControlsTemporarily();
   }, [
     clearQualitySwitchCleanup,
     clearQualitySwitchTimeout,
+    persistQualityPreference,
     revealControlsTemporarily,
     showQualityNotice,
     src,
@@ -675,18 +853,49 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
       if (options.length === 0) return;
 
       setQualityOptions([DEFAULT_QUALITY_OPTION, ...options]);
+
+      const preferredQualityId = preferredQualityIdRef.current;
+      if (preferredQualityId === DEFAULT_QUALITY_OPTION.id) return;
+
+      const preferredOption = options.find((option) => option.id === preferredQualityId);
+      if (!preferredOption?.url) {
+        preferredQualityIdRef.current = DEFAULT_QUALITY_OPTION.id;
+        setSelectedQualityId(DEFAULT_QUALITY_OPTION.id);
+        persistQualityPreference(DEFAULT_QUALITY_OPTION.id);
+        return;
+      }
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      video.src = preferredOption.url;
+      video.load();
+      setSelectedQualityId(preferredOption.id);
     } catch {
       // Ignore parsing failures; playback can still continue with default source.
     }
-  }, []);
+  }, [persistQualityPreference]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    const persistedPrefs = readVideoPreferenceStore();
+    const persistedVolume = clampUnitValue(
+      typeof persistedPrefs.volume === "number" ? persistedPrefs.volume : 1,
+    );
+    const persistedMuted = typeof persistedPrefs.muted === "boolean" ? persistedPrefs.muted : false;
+    const persistedQualityId = typeof persistedPrefs.qualityByPost?.[postId] === "string"
+      ? persistedPrefs.qualityByPost?.[postId]
+      : DEFAULT_QUALITY_OPTION.id;
+    const persistedProgress = readVideoProgressStore()[postId];
+
     shouldAutoplayRef.current = true;
     timelineOffsetRef.current = 0;
+    preferredQualityIdRef.current = persistedQualityId;
+    resumeTimeSecRef.current = persistedProgress?.timeSec ?? null;
+    lastProgressSaveAtRef.current = 0;
     clearControlsHideTimer();
     clearQualityNoticeTimer();
     clearQualitySwitchTimeout();
@@ -696,11 +905,15 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     setCurrentTime(0);
     setDuration(0);
     setBufferedTime(0);
+    setVolume(persistedVolume);
+    setIsMuted(persistedMuted);
     setQualityOptions([DEFAULT_QUALITY_OPTION]);
-    setSelectedQualityId(DEFAULT_QUALITY_OPTION.id);
+    setSelectedQualityId(persistedQualityId);
     setQualityMenuOpen(false);
     setControlsVisible(true);
     setQualityNotice(null);
+    video.volume = persistedVolume;
+    video.muted = persistedMuted;
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -749,7 +962,24 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
           setQualityOptions([DEFAULT_QUALITY_OPTION, ...dedupedOptions]);
         }
 
-        if (hls.levels.length > 0) {
+        const preferredQualityId = preferredQualityIdRef.current;
+        const preferredOption = dedupedOptions.find((option) => option.id === preferredQualityId);
+        const hasPreferredLevel = typeof preferredOption?.levelIndex === "number";
+
+        if (hasPreferredLevel) {
+          const targetLevel = preferredOption.levelIndex as number;
+          hls.currentLevel = targetLevel;
+          hls.nextLevel = targetLevel;
+          hls.loadLevel = targetLevel;
+          hls.startLevel = targetLevel;
+          setSelectedQualityId(preferredOption.id);
+        } else if (preferredQualityId !== DEFAULT_QUALITY_OPTION.id) {
+          preferredQualityIdRef.current = DEFAULT_QUALITY_OPTION.id;
+          setSelectedQualityId(DEFAULT_QUALITY_OPTION.id);
+          persistQualityPreference(DEFAULT_QUALITY_OPTION.id);
+        }
+
+        if (hls.levels.length > 0 && !hasPreferredLevel) {
           const estimatedBandwidth = downlinkEstimate ?? hls.abrEwmaDefaultEstimate ?? HIGH_DEFAULT_ABR_ESTIMATE;
           const preferredStartLevel = pickAutoLevelByBandwidth(hls.levels, estimatedBandwidth);
           if (preferredStartLevel >= 0) {
@@ -798,6 +1028,7 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     }
 
     return () => {
+      persistPlaybackProgress(true);
       clearQualitySwitchCleanup();
       clearQualitySwitchTimeout();
       clearQualityNoticeTimer();
@@ -813,6 +1044,9 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     clearQualitySwitchCleanup,
     clearQualitySwitchTimeout,
     loadNativeQualityOptions,
+    persistPlaybackProgress,
+    persistQualityPreference,
+    postId,
     src,
   ]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -821,8 +1055,25 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     if (!video) return;
 
     const handleLoadedMetadata = () => {
-      const initialTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+      let initialTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
       timelineOffsetRef.current = initialTime > 0 && initialTime <= MAX_INITIAL_OFFSET_SEC ? initialTime : 0;
+
+      const resumeTimeSec = resumeTimeSecRef.current;
+      if (
+        resumeTimeSec !== null
+        && Number.isFinite(video.duration)
+        && video.duration > 0
+      ) {
+        const resumeActual = timelineOffsetRef.current + Math.max(0, resumeTimeSec);
+        const resumeMax = Math.max(timelineOffsetRef.current, video.duration - RESUME_END_GUARD_SEC);
+        const clampedResume = Math.min(Math.max(resumeActual, timelineOffsetRef.current), resumeMax);
+
+        if (clampedResume > timelineOffsetRef.current && clampedResume < video.duration) {
+          video.currentTime = clampedResume;
+          initialTime = clampedResume;
+        }
+      }
+      resumeTimeSecRef.current = null;
 
       setDuration(normalizeDisplayedDuration(video.duration));
       setCurrentTime(normalizeDisplayedTime(initialTime));
@@ -842,8 +1093,14 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
       }
     };
     const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => setIsPlaying(false);
+    const handlePause = () => {
+      setIsPlaying(false);
+      persistPlaybackProgress(true);
+    };
+    const handleEnded = () => {
+      setIsPlaying(false);
+      clearSavedPlaybackProgress();
+    };
     const handleCanPlay = () => {
       setIsReady(true);
       attemptAutoplay();
@@ -885,7 +1142,13 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
       video.removeEventListener("volumechange", handleVolume);
       video.removeEventListener("error", handleError);
     };
-  }, [attemptAutoplay, normalizeDisplayedDuration, normalizeDisplayedTime]);
+  }, [
+    attemptAutoplay,
+    clearSavedPlaybackProgress,
+    normalizeDisplayedDuration,
+    normalizeDisplayedTime,
+    persistPlaybackProgress,
+  ]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -898,6 +1161,26 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
+  useEffect(() => {
+    const now = Date.now();
+    if (now - lastProgressSaveAtRef.current < RESUME_SAVE_INTERVAL_MS) return;
+    lastProgressSaveAtRef.current = now;
+    persistPlaybackProgress(false);
+  }, [currentTime, persistPlaybackProgress]);
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      persistPlaybackProgress(true);
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handlePageHide);
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handlePageHide);
+    };
+  }, [persistPlaybackProgress]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1014,6 +1297,7 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
 
   useEffect(() => {
     return () => {
+      persistPlaybackProgress(true);
       clearControlsHideTimer();
       clearQualityNoticeTimer();
       clearQualitySwitchCleanup();
@@ -1029,6 +1313,7 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
     clearQualitySwitchTimeout,
     clearRightKeyTimer,
     clearTouchBoostTimer,
+    persistPlaybackProgress,
     stopBoost,
   ]);
 
