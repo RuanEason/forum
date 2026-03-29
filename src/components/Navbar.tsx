@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, Bell, Settings } from "lucide-react";
+import { PageTopProgressBar } from "@/components/PageLoadProgressProvider";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -133,7 +134,7 @@ export default function Navbar() {
   // const isAuthPage = pathname?.startsWith("/auth/");
 
   return (
-    <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
+    <header className="relative bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 relative">
           {/* Logo - hidden when search is open on mobile */}
@@ -292,6 +293,7 @@ export default function Navbar() {
           </nav>
         </div>
       </div>
+      <PageTopProgressBar />
     </header>
   );
 }

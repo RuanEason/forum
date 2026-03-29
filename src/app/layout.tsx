@@ -4,6 +4,7 @@ import { Providers } from "../components/providers";
 import ProfileCompletionCheck from "@/components/ProfileCompletionCheck";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { PageLoadProgressProvider } from "@/components/PageLoadProgressProvider";
 import { defaultMetadata } from "@/lib/seo";
 import "./globals.css";
 
@@ -30,14 +31,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>
-          <div className="flex flex-col min-h-screen">
-            <ProfileCompletionCheck />
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <PageLoadProgressProvider>
+            <div className="flex flex-col min-h-screen">
+              <ProfileCompletionCheck />
+              <Navbar />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </PageLoadProgressProvider>
         </Providers>
       </body>
     </html>
