@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 type EndTask = () => void;
 
@@ -134,18 +134,16 @@ function shouldTrackFetch(input: RequestInfo | URL, init?: RequestInit): boolean
   return true;
 }
 
-function isSameRoute(url: URL): boolean {
+function isSamePath(url: URL): boolean {
   return (
     url.origin === window.location.origin
     && url.pathname === window.location.pathname
-    && url.search === window.location.search
   );
 }
 
 export function PageLoadProgressProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const routeKey = `${pathname}?${searchParams?.toString() ?? ""}`;
+  const routeKey = pathname ?? "";
 
   const [pendingCount, setPendingCount] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -298,7 +296,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
 
       try {
         const nextUrl = new URL(String(rawUrl), window.location.href);
-        if (isSameRoute(nextUrl)) {
+        if (isSamePath(nextUrl)) {
           return;
         }
         scheduleNavigationTaskStart();
@@ -334,7 +332,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
 
       try {
         const url = new URL(href, window.location.href);
-        if (url.origin !== window.location.origin || isSameRoute(url)) {
+        if (url.origin !== window.location.origin || isSamePath(url)) {
           return;
         }
         scheduleNavigationTaskStart();
@@ -357,7 +355,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     };
 
     const handlePopState = () => {
-      const nextRouteKey = `${window.location.pathname}?${window.location.search.slice(1)}`;
+      const nextRouteKey = window.location.pathname;
       if (nextRouteKey === routeKey) {
         return;
       }
