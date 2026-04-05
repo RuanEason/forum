@@ -61,6 +61,11 @@ const MOBILE_INLINE_MIN_FONT_SIZE = 12;
 const MOBILE_INLINE_MAX_FONT_SIZE = 24;
 const LANE_MIN_GAP_INLINE_PX = 10;
 const LANE_MIN_GAP_FULLSCREEN_PX = 18;
+const LANE_LOCK_BASE_INLINE_MS = 130;
+const LANE_LOCK_BASE_FULLSCREEN_MS = 180;
+const LANE_LOCK_MIN_MS = 100;
+const LANE_LOCK_MAX_MS = 1_000;
+const LANE_FORCE_EMIT_AFTER_MS = 1_300;
 const DANMAKU_PREFS_STORAGE_KEY = "video-danmaku-prefs:v1";
 
 const densityMultiplierMap: Record<DensityOption, number> = {
@@ -240,6 +245,7 @@ export default function VideoDanmaku({
   const settingsRef = useRef<HTMLDivElement>(null);
   const emittedIdsRef = useRef<Set<string>>(new Set());
   const emittedSignatureTimeRef = useRef<Map<string, number>>(new Map());
+  const laneLockedUntilRef = useRef<number[]>([]);
   const lastNowMsRef = useRef(0);
   const hasLoadedPreferencesRef = useRef(false);
   const lastLayoutKeyRef = useRef("");
@@ -253,6 +259,7 @@ export default function VideoDanmaku({
     setActiveDanmakus([]);
     emittedIdsRef.current.clear();
     emittedSignatureTimeRef.current.clear();
+    laneLockedUntilRef.current = [];
     lastNowMsRef.current = 0;
   }, [postId]);
 
@@ -416,7 +423,13 @@ export default function VideoDanmaku({
     Math.round(compactFontScale * 1000),
   ].join("|");
 
-  const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number, laneHint?: number): ActiveDanmaku => {
+  useEffect(() => {
+    const current = laneLockedUntilRef.current;
+    if (current.length === laneCount) return;
+    laneLockedUntilRef.current = Array.from({ length: laneCount }, (_, index) => current[index] ?? 0);
+  }, [laneCount]);
+
+  const resolveDanmakuMetrics = useCallback((item: DanmakuItem) => {
     const baseFontSize = clamp(item.fontSize || DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE);
     const fontSize = isCompactInlinePlayer
       ? clamp(
@@ -425,35 +438,52 @@ export default function VideoDanmaku({
         MOBILE_INLINE_MAX_FONT_SIZE,
       )
       : baseFontSize;
+    const approxWidthPx = Math.max(120, item.content.length * fontSize * 0.7 + 40);
+    const travelDistancePx = containerSize.width + approxWidthPx + 24;
+    const speedPxPerMs = travelDistancePx / DANMAKU_DURATION_MS;
+    const contentKey = normalizeDanmakuContent(item.content);
+    return {
+      fontSize,
+      approxWidthPx,
+      travelDistancePx,
+      speedPxPerMs,
+      contentKey,
+    };
+  }, [compactFontScale, containerSize.width, isCompactInlinePlayer]);
+
+  const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number, laneHint?: number): ActiveDanmaku => {
+    const metrics = resolveDanmakuMetrics(item);
     const fallbackLaneIndex = hashToPositiveInt(item.id) % laneCount;
     const laneIndex = Number.isInteger(laneHint)
       ? clamp(Number(laneHint), 0, Math.max(0, laneCount - 1))
       : fallbackLaneIndex;
     const top = laneIndex * laneHeight + 4;
-    const approxWidthPx = Math.max(120, item.content.length * fontSize * 0.7 + 40);
-    const travelDistancePx = containerSize.width + approxWidthPx + 24;
-    const speedPxPerMs = travelDistancePx / DANMAKU_DURATION_MS;
-    const contentKey = normalizeDanmakuContent(item.content);
 
     return {
       ...item,
       top,
       laneIndex,
-      approxWidthPx,
-      speedPxPerMs,
-      contentKey,
-      fontSizePx: fontSize,
-      travelDistancePx,
+      approxWidthPx: metrics.approxWidthPx,
+      speedPxPerMs: metrics.speedPxPerMs,
+      contentKey: metrics.contentKey,
+      fontSizePx: metrics.fontSize,
+      travelDistancePx: metrics.travelDistancePx,
       elapsedMs: clamp(Math.round(elapsedMs), 0, DANMAKU_DURATION_MS),
       colorValue: item.color || DEFAULT_DANMAKU_COLOR,
     };
-  }, [compactFontScale, containerSize.width, isCompactInlinePlayer, laneCount, laneHeight]);
+  }, [laneCount, laneHeight, resolveDanmakuMetrics]);
 
-  const getLaneGapPx = useCallback((activeList: ActiveDanmaku[], laneIndex: number, currentMs: number): number => {
+  const getLaneGapInfo = useCallback((activeList: ActiveDanmaku[], laneIndex: number, currentMs: number) => {
     const laneItems = activeList.filter((item) => item.laneIndex === laneIndex);
-    if (laneItems.length === 0) return Number.POSITIVE_INFINITY;
+    if (laneItems.length === 0) {
+      return {
+        gapPx: Number.POSITIVE_INFINITY,
+        rightMostItem: null as ActiveDanmaku | null,
+      };
+    }
 
     let rightMost = Number.NEGATIVE_INFINITY;
+    let rightMostItem: ActiveDanmaku | null = null;
     for (const item of laneItems) {
       const elapsedMs = clamp(currentMs - item.timeMs, 0, DANMAKU_DURATION_MS);
       const progress = elapsedMs / DANMAKU_DURATION_MS;
@@ -461,33 +491,100 @@ export default function VideoDanmaku({
       const rightEdge = left + item.approxWidthPx;
       if (rightEdge > rightMost) {
         rightMost = rightEdge;
+        rightMostItem = item;
       }
     }
 
-    if (!Number.isFinite(rightMost)) return Number.POSITIVE_INFINITY;
-    return containerSize.width - rightMost;
+    if (!Number.isFinite(rightMost)) {
+      return {
+        gapPx: Number.POSITIVE_INFINITY,
+        rightMostItem: null as ActiveDanmaku | null,
+      };
+    }
+
+    return {
+      gapPx: containerSize.width - rightMost,
+      rightMostItem,
+    };
   }, [containerSize.width]);
 
-  const pickLaneIndex = useCallback((activeList: ActiveDanmaku[], currentMs: number): number => {
+  const pickLaneIndex = useCallback((
+    activeList: ActiveDanmaku[],
+    item: DanmakuItem,
+    currentMs: number,
+    options?: { respectLock?: boolean; allowUnsafeFallback?: boolean },
+  ): number | null => {
+    const respectLock = options?.respectLock ?? true;
+    const allowUnsafeFallback = options?.allowUnsafeFallback ?? false;
     if (laneCount <= 1) return 0;
 
     let bestLane = 0;
-    let bestGap = Number.NEGATIVE_INFINITY;
+    let bestSlack = Number.NEGATIVE_INFINITY;
+    const nextMetrics = resolveDanmakuMetrics(item);
+    let hasUnlockedLane = false;
+    let soonestLockedLane = -1;
+    let soonestLockedUntil = Number.POSITIVE_INFINITY;
 
-    // Top-first strategy: if upper lanes are available, prefer them over middle lanes.
+    // Top-first strategy: use the first lane that has enough gap and won't be caught by a faster new danmaku.
     for (let laneIndex = 0; laneIndex < laneCount; laneIndex += 1) {
-      const gapPx = getLaneGapPx(activeList, laneIndex, currentMs);
-      if (gapPx >= laneMinGapPx) {
+      const lockedUntil = laneLockedUntilRef.current[laneIndex] ?? 0;
+      if (respectLock && lockedUntil > currentMs) {
+        if (lockedUntil < soonestLockedUntil || (lockedUntil === soonestLockedUntil && laneIndex < soonestLockedLane)) {
+          soonestLockedUntil = lockedUntil;
+          soonestLockedLane = laneIndex;
+        }
+        continue;
+      }
+      hasUnlockedLane = true;
+
+      const { gapPx, rightMostItem } = getLaneGapInfo(activeList, laneIndex, currentMs);
+
+      let requiredGapPx = laneMinGapPx;
+      if (rightMostItem && nextMetrics.speedPxPerMs > rightMostItem.speedPxPerMs) {
+        const elapsedLeadMs = clamp(currentMs - rightMostItem.timeMs, 0, DANMAKU_DURATION_MS);
+        const remainingLeadMs = Math.max(0, DANMAKU_DURATION_MS - elapsedLeadMs);
+        requiredGapPx += (nextMetrics.speedPxPerMs - rightMostItem.speedPxPerMs) * remainingLeadMs;
+      }
+
+      const slackPx = gapPx - requiredGapPx;
+      if (slackPx >= 0) {
         return laneIndex;
       }
-      if (gapPx > bestGap || (gapPx === bestGap && laneIndex < bestLane)) {
-        bestGap = gapPx;
+
+      if (slackPx > bestSlack || (slackPx === bestSlack && laneIndex < bestLane)) {
+        bestSlack = slackPx;
         bestLane = laneIndex;
       }
     }
 
-    return bestLane;
-  }, [getLaneGapPx, laneCount, laneMinGapPx]);
+    if (allowUnsafeFallback && hasUnlockedLane) {
+      return bestLane;
+    }
+
+    // Do not force overlap too early; let item wait for next tick when lanes are busy.
+    if (currentMs - item.timeMs >= LANE_FORCE_EMIT_AFTER_MS) {
+      if (hasUnlockedLane) return bestLane;
+      if (soonestLockedLane >= 0) return soonestLockedLane;
+    }
+
+    return null;
+  }, [getLaneGapInfo, laneCount, laneMinGapPx, resolveDanmakuMetrics]);
+
+  const lockLaneAfterEmit = useCallback((laneIndex: number, active: ActiveDanmaku, currentMs: number) => {
+    if (laneIndex < 0 || laneIndex >= laneCount) return;
+
+    const baseLockMs = isFullscreen ? LANE_LOCK_BASE_FULLSCREEN_MS : LANE_LOCK_BASE_INLINE_MS;
+    const dynamicGapPx = laneMinGapPx + Math.min(220, active.approxWidthPx * 0.45);
+    const dynamicLockMs = dynamicGapPx / Math.max(0.01, active.speedPxPerMs);
+    const lockMs = clamp(
+      Math.round(Math.max(baseLockMs, dynamicLockMs)),
+      LANE_LOCK_MIN_MS,
+      LANE_LOCK_MAX_MS,
+    );
+
+    const previousLockedUntil = laneLockedUntilRef.current[laneIndex] ?? 0;
+    laneLockedUntilRef.current[laneIndex] = Math.max(previousLockedUntil, currentMs + lockMs);
+  }, [isFullscreen, laneCount, laneMinGapPx]);
 
   const isNearDuplicateActive = useCallback(
     (activeList: ActiveDanmaku[], item: DanmakuItem): boolean => {
@@ -527,6 +624,7 @@ export default function VideoDanmaku({
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
       emittedIdsRef.current.clear();
       emittedSignatureTimeRef.current.clear();
+      laneLockedUntilRef.current = Array.from({ length: laneCount }, () => 0);
       setActiveDanmakus([]);
       lastNowMsRef.current = nowMs;
       return;
@@ -539,6 +637,7 @@ export default function VideoDanmaku({
     if (isSeeking) {
       emittedIdsRef.current.clear();
       emittedSignatureTimeRef.current.clear();
+      laneLockedUntilRef.current = Array.from({ length: laneCount }, () => 0);
       const candidates = items
         .filter((item) => nowMs >= item.timeMs && nowMs <= item.timeMs + DANMAKU_DURATION_MS)
         .sort((a, b) => a.timeMs - b.timeMs)
@@ -546,12 +645,25 @@ export default function VideoDanmaku({
       const synced: ActiveDanmaku[] = [];
 
       for (const item of candidates) {
-        emittedIdsRef.current.add(item.id);
-        if (shouldSuppressBySignature(item)) continue;
-        if (isNearDuplicateActive(synced, item)) continue;
+        if (shouldSuppressBySignature(item)) {
+          emittedIdsRef.current.add(item.id);
+          continue;
+        }
+        if (isNearDuplicateActive(synced, item)) {
+          emittedIdsRef.current.add(item.id);
+          continue;
+        }
 
-        const laneIndex = pickLaneIndex(synced, nowMs);
-        synced.push(createActiveDanmaku(item, nowMs - item.timeMs, laneIndex));
+        const laneIndex = pickLaneIndex(synced, item, nowMs, {
+          respectLock: false,
+          allowUnsafeFallback: true,
+        });
+        if (laneIndex === null) continue;
+
+        const active = createActiveDanmaku(item, nowMs - item.timeMs, laneIndex);
+        synced.push(active);
+        emittedIdsRef.current.add(item.id);
+        lockLaneAfterEmit(laneIndex, active, nowMs);
       }
 
       setActiveDanmakus(synced.slice(-maxVisible));
@@ -578,12 +690,22 @@ export default function VideoDanmaku({
       const next = [...keep];
 
       for (const item of dueItems) {
-        emittedIdsRef.current.add(item.id);
-        if (shouldSuppressBySignature(item)) continue;
-        if (isNearDuplicateActive(next, item)) continue;
+        if (shouldSuppressBySignature(item)) {
+          emittedIdsRef.current.add(item.id);
+          continue;
+        }
+        if (isNearDuplicateActive(next, item)) {
+          emittedIdsRef.current.add(item.id);
+          continue;
+        }
 
-        const laneIndex = pickLaneIndex(next, nowMs);
-        next.push(createActiveDanmaku(item, nowMs - item.timeMs, laneIndex));
+        const laneIndex = pickLaneIndex(next, item, nowMs);
+        if (laneIndex === null) continue;
+
+        const active = createActiveDanmaku(item, nowMs - item.timeMs, laneIndex);
+        next.push(active);
+        emittedIdsRef.current.add(item.id);
+        lockLaneAfterEmit(laneIndex, active, nowMs);
       }
 
       next.sort((a, b) => a.timeMs - b.timeMs);
@@ -605,7 +727,9 @@ export default function VideoDanmaku({
     pickLaneIndex,
     pruneSignatureHistory,
     shouldSuppressBySignature,
+    lockLaneAfterEmit,
     containerSize.width,
+    laneCount,
   ]);
 
   const visibleDanmakus = useMemo(() => {
