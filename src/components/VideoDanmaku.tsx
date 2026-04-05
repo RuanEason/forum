@@ -45,6 +45,8 @@ const PREFETCH_AHEAD_MS = 90_000;
 const LOOKBACK_MS = 30_000;
 const SEEK_SYNC_THRESHOLD_MS = 1_200;
 const SPAWN_AHEAD_MS = 220;
+const DUPLICATE_SIGNATURE_BUCKET_MS = 900;
+const DUPLICATE_TIME_WINDOW_MS = 1_400;
 const DEFAULT_DANMAKU_COLOR = "#FFFFFF";
 const DEFAULT_FONT_SIZE = 24;
 const MIN_FONT_SIZE = 16;
@@ -57,6 +59,8 @@ const MOBILE_INLINE_FONT_SCALE_MIN = 0.62;
 const MOBILE_INLINE_FONT_SCALE_MAX = 0.78;
 const MOBILE_INLINE_MIN_FONT_SIZE = 12;
 const MOBILE_INLINE_MAX_FONT_SIZE = 24;
+const LANE_MIN_GAP_INLINE_PX = 10;
+const LANE_MIN_GAP_FULLSCREEN_PX = 18;
 const DANMAKU_PREFS_STORAGE_KEY = "video-danmaku-prefs:v1";
 
 const densityMultiplierMap: Record<DensityOption, number> = {
@@ -153,6 +157,20 @@ function hashToPositiveInt(value: string): number {
   return Math.abs(hash);
 }
 
+function normalizeDanmakuContent(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[，。！？、：；]/g, "")
+    .toLowerCase();
+}
+
+function buildDanmakuSignature(content: string, timeMs: number): string {
+  const contentKey = normalizeDanmakuContent(content);
+  const timeBucket = Math.round(timeMs / DUPLICATE_SIGNATURE_BUCKET_MS);
+  return `${contentKey}:${timeBucket}`;
+}
+
 function mergeDanmakus(base: DanmakuItem[], incoming: DanmakuItem[]): DanmakuItem[] {
   const map = new Map<string, DanmakuItem>();
 
@@ -177,6 +195,10 @@ function mergeDanmakus(base: DanmakuItem[], incoming: DanmakuItem[]): DanmakuIte
 
 type ActiveDanmaku = DanmakuItem & {
   top: number;
+  laneIndex: number;
+  approxWidthPx: number;
+  speedPxPerMs: number;
+  contentKey: string;
   fontSizePx: number;
   travelDistancePx: number;
   elapsedMs: number;
@@ -217,6 +239,7 @@ export default function VideoDanmaku({
   const pollLockedRef = useRef(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const emittedIdsRef = useRef<Set<string>>(new Set());
+  const emittedSignatureTimeRef = useRef<Map<string, number>>(new Map());
   const lastNowMsRef = useRef(0);
   const hasLoadedPreferencesRef = useRef(false);
   const lastLayoutKeyRef = useRef("");
@@ -229,6 +252,7 @@ export default function VideoDanmaku({
     setItems([]);
     setActiveDanmakus([]);
     emittedIdsRef.current.clear();
+    emittedSignatureTimeRef.current.clear();
     lastNowMsRef.current = 0;
   }, [postId]);
 
@@ -381,7 +405,8 @@ export default function VideoDanmaku({
   const laneHeight = isCompactInlinePlayer ? MOBILE_INLINE_LANE_HEIGHT : DEFAULT_LANE_HEIGHT;
   const laneCount = Math.max(1, Math.floor(layerHeight / laneHeight));
   const densityMultiplier = densityMultiplierMap[density];
-  const maxVisible = Math.max(6, Math.floor(laneCount * 2 * densityMultiplier));
+  const maxVisible = Math.max(10, Math.floor(laneCount * 2.8 * densityMultiplier));
+  const laneMinGapPx = isFullscreen ? LANE_MIN_GAP_FULLSCREEN_PX : LANE_MIN_GAP_INLINE_PX;
   const layoutKey = [
     containerSize.width,
     containerSize.height,
@@ -391,7 +416,7 @@ export default function VideoDanmaku({
     Math.round(compactFontScale * 1000),
   ].join("|");
 
-  const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number): ActiveDanmaku => {
+  const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number, laneHint?: number): ActiveDanmaku => {
     const baseFontSize = clamp(item.fontSize || DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE);
     const fontSize = isCompactInlinePlayer
       ? clamp(
@@ -400,14 +425,23 @@ export default function VideoDanmaku({
         MOBILE_INLINE_MAX_FONT_SIZE,
       )
       : baseFontSize;
-    const laneIndex = hashToPositiveInt(item.id) % laneCount;
+    const fallbackLaneIndex = hashToPositiveInt(item.id) % laneCount;
+    const laneIndex = Number.isInteger(laneHint)
+      ? clamp(Number(laneHint), 0, Math.max(0, laneCount - 1))
+      : fallbackLaneIndex;
     const top = laneIndex * laneHeight + 4;
-    const approxWidth = Math.max(120, item.content.length * fontSize * 0.7 + 40);
-    const travelDistancePx = containerSize.width + approxWidth + 24;
+    const approxWidthPx = Math.max(120, item.content.length * fontSize * 0.7 + 40);
+    const travelDistancePx = containerSize.width + approxWidthPx + 24;
+    const speedPxPerMs = travelDistancePx / DANMAKU_DURATION_MS;
+    const contentKey = normalizeDanmakuContent(item.content);
 
     return {
       ...item,
       top,
+      laneIndex,
+      approxWidthPx,
+      speedPxPerMs,
+      contentKey,
       fontSizePx: fontSize,
       travelDistancePx,
       elapsedMs: clamp(Math.round(elapsedMs), 0, DANMAKU_DURATION_MS),
@@ -415,12 +449,84 @@ export default function VideoDanmaku({
     };
   }, [compactFontScale, containerSize.width, isCompactInlinePlayer, laneCount, laneHeight]);
 
+  const getLaneGapPx = useCallback((activeList: ActiveDanmaku[], laneIndex: number, currentMs: number): number => {
+    const laneItems = activeList.filter((item) => item.laneIndex === laneIndex);
+    if (laneItems.length === 0) return Number.POSITIVE_INFINITY;
+
+    let rightMost = Number.NEGATIVE_INFINITY;
+    for (const item of laneItems) {
+      const elapsedMs = clamp(currentMs - item.timeMs, 0, DANMAKU_DURATION_MS);
+      const progress = elapsedMs / DANMAKU_DURATION_MS;
+      const left = containerSize.width - progress * item.travelDistancePx;
+      const rightEdge = left + item.approxWidthPx;
+      if (rightEdge > rightMost) {
+        rightMost = rightEdge;
+      }
+    }
+
+    if (!Number.isFinite(rightMost)) return Number.POSITIVE_INFINITY;
+    return containerSize.width - rightMost;
+  }, [containerSize.width]);
+
+  const pickLaneIndex = useCallback((activeList: ActiveDanmaku[], currentMs: number): number => {
+    if (laneCount <= 1) return 0;
+
+    let bestLane = 0;
+    let bestGap = Number.NEGATIVE_INFINITY;
+
+    // Top-first strategy: if upper lanes are available, prefer them over middle lanes.
+    for (let laneIndex = 0; laneIndex < laneCount; laneIndex += 1) {
+      const gapPx = getLaneGapPx(activeList, laneIndex, currentMs);
+      if (gapPx >= laneMinGapPx) {
+        return laneIndex;
+      }
+      if (gapPx > bestGap || (gapPx === bestGap && laneIndex < bestLane)) {
+        bestGap = gapPx;
+        bestLane = laneIndex;
+      }
+    }
+
+    return bestLane;
+  }, [getLaneGapPx, laneCount, laneMinGapPx]);
+
+  const isNearDuplicateActive = useCallback(
+    (activeList: ActiveDanmaku[], item: DanmakuItem): boolean => {
+      const contentKey = normalizeDanmakuContent(item.content);
+      if (!contentKey) return false;
+      return activeList.some((active) => {
+        if (active.contentKey !== contentKey) return false;
+        return Math.abs(active.timeMs - item.timeMs) <= DUPLICATE_TIME_WINDOW_MS;
+      });
+    },
+    [],
+  );
+
+  const shouldSuppressBySignature = useCallback((item: DanmakuItem): boolean => {
+    const signature = buildDanmakuSignature(item.content, item.timeMs);
+    const previousTimeMs = emittedSignatureTimeRef.current.get(signature);
+    if (typeof previousTimeMs === "number" && Math.abs(previousTimeMs - item.timeMs) <= DUPLICATE_TIME_WINDOW_MS) {
+      return true;
+    }
+    emittedSignatureTimeRef.current.set(signature, item.timeMs);
+    return false;
+  }, []);
+
+  const pruneSignatureHistory = useCallback((currentMs: number) => {
+    const minAliveMs = currentMs - LOOKBACK_MS - DANMAKU_DURATION_MS;
+    for (const [signature, timeMs] of emittedSignatureTimeRef.current.entries()) {
+      if (timeMs < minAliveMs) {
+        emittedSignatureTimeRef.current.delete(signature);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const layoutChanged = lastLayoutKeyRef.current !== layoutKey;
     lastLayoutKeyRef.current = layoutKey;
 
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
       emittedIdsRef.current.clear();
+      emittedSignatureTimeRef.current.clear();
       setActiveDanmakus([]);
       lastNowMsRef.current = nowMs;
       return;
@@ -432,16 +538,23 @@ export default function VideoDanmaku({
 
     if (isSeeking) {
       emittedIdsRef.current.clear();
-      const synced = items
+      emittedSignatureTimeRef.current.clear();
+      const candidates = items
         .filter((item) => nowMs >= item.timeMs && nowMs <= item.timeMs + DANMAKU_DURATION_MS)
         .sort((a, b) => a.timeMs - b.timeMs)
-        .slice(-maxVisible)
-        .map((item) => {
-          emittedIdsRef.current.add(item.id);
-          return createActiveDanmaku(item, nowMs - item.timeMs);
-        });
+        .slice(-maxVisible * 2);
+      const synced: ActiveDanmaku[] = [];
 
-      setActiveDanmakus(synced);
+      for (const item of candidates) {
+        emittedIdsRef.current.add(item.id);
+        if (shouldSuppressBySignature(item)) continue;
+        if (isNearDuplicateActive(synced, item)) continue;
+
+        const laneIndex = pickLaneIndex(synced, nowMs);
+        synced.push(createActiveDanmaku(item, nowMs - item.timeMs, laneIndex));
+      }
+
+      setActiveDanmakus(synced.slice(-maxVisible));
       lastNowMsRef.current = nowMs;
       return;
     }
@@ -460,13 +573,17 @@ export default function VideoDanmaku({
         .filter((item) => nowMs <= item.timeMs + DANMAKU_DURATION_MS)
         .map((item) => {
           if (!layoutChanged) return item;
-          return createActiveDanmaku(item, nowMs - item.timeMs);
+          return createActiveDanmaku(item, nowMs - item.timeMs, item.laneIndex);
         });
       const next = [...keep];
 
       for (const item of dueItems) {
         emittedIdsRef.current.add(item.id);
-        next.push(createActiveDanmaku(item, nowMs - item.timeMs));
+        if (shouldSuppressBySignature(item)) continue;
+        if (isNearDuplicateActive(next, item)) continue;
+
+        const laneIndex = pickLaneIndex(next, nowMs);
+        next.push(createActiveDanmaku(item, nowMs - item.timeMs, laneIndex));
       }
 
       next.sort((a, b) => a.timeMs - b.timeMs);
@@ -474,8 +591,22 @@ export default function VideoDanmaku({
       return next.slice(-maxVisible);
     });
 
+    pruneSignatureHistory(nowMs);
     lastNowMsRef.current = nowMs;
-  }, [createActiveDanmaku, enabled, items, layerHeight, layoutKey, maxVisible, nowMs, containerSize.width]);
+  }, [
+    createActiveDanmaku,
+    enabled,
+    isNearDuplicateActive,
+    items,
+    layerHeight,
+    layoutKey,
+    maxVisible,
+    nowMs,
+    pickLaneIndex,
+    pruneSignatureHistory,
+    shouldSuppressBySignature,
+    containerSize.width,
+  ]);
 
   const visibleDanmakus = useMemo(() => {
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
