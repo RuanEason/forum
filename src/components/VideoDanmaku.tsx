@@ -219,6 +219,7 @@ export default function VideoDanmaku({
   const emittedIdsRef = useRef<Set<string>>(new Set());
   const lastNowMsRef = useRef(0);
   const hasLoadedPreferencesRef = useRef(false);
+  const lastLayoutKeyRef = useRef("");
 
   useEffect(() => {
     currentTimeMsRef.current = Math.max(0, Math.round(currentTime * 1000));
@@ -381,6 +382,14 @@ export default function VideoDanmaku({
   const laneCount = Math.max(1, Math.floor(layerHeight / laneHeight));
   const densityMultiplier = densityMultiplierMap[density];
   const maxVisible = Math.max(6, Math.floor(laneCount * 2 * densityMultiplier));
+  const layoutKey = [
+    containerSize.width,
+    containerSize.height,
+    laneCount,
+    laneHeight,
+    isCompactInlinePlayer ? 1 : 0,
+    Math.round(compactFontScale * 1000),
+  ].join("|");
 
   const createActiveDanmaku = useCallback((item: DanmakuItem, elapsedMs: number): ActiveDanmaku => {
     const baseFontSize = clamp(item.fontSize || DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE);
@@ -407,6 +416,9 @@ export default function VideoDanmaku({
   }, [compactFontScale, containerSize.width, isCompactInlinePlayer, laneCount, laneHeight]);
 
   useEffect(() => {
+    const layoutChanged = lastLayoutKeyRef.current !== layoutKey;
+    lastLayoutKeyRef.current = layoutKey;
+
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
       emittedIdsRef.current.clear();
       setActiveDanmakus([]);
@@ -444,7 +456,12 @@ export default function VideoDanmaku({
       .sort((a, b) => a.timeMs - b.timeMs);
 
     setActiveDanmakus((previous) => {
-      const keep = previous.filter((item) => nowMs <= item.timeMs + DANMAKU_DURATION_MS);
+      const keep = previous
+        .filter((item) => nowMs <= item.timeMs + DANMAKU_DURATION_MS)
+        .map((item) => {
+          if (!layoutChanged) return item;
+          return createActiveDanmaku(item, nowMs - item.timeMs);
+        });
       const next = [...keep];
 
       for (const item of dueItems) {
@@ -458,7 +475,7 @@ export default function VideoDanmaku({
     });
 
     lastNowMsRef.current = nowMs;
-  }, [createActiveDanmaku, enabled, items, layerHeight, maxVisible, nowMs, containerSize.width]);
+  }, [createActiveDanmaku, enabled, items, layerHeight, layoutKey, maxVisible, nowMs, containerSize.width]);
 
   const visibleDanmakus = useMemo(() => {
     if (!enabled || containerSize.width <= 0 || layerHeight <= 0) {
@@ -663,7 +680,7 @@ export default function VideoDanmaku({
                 event.preventDefault();
                 void sendDanmaku();
               }}
-              placeholder="发个友善的弹幕吧我(～﹃～)~zZ"
+              placeholder="发个友善的弹幕吧(～﹃～)~zZ"
               className={inputClass}
             />
 
