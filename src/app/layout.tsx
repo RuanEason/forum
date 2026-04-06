@@ -4,6 +4,7 @@ import { Providers } from "../components/providers";
 import ProfileCompletionCheck from "@/components/ProfileCompletionCheck";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Ad from "@/components/Ad";
 import { PageLoadProgressProvider } from "@/components/PageLoadProgressProvider";
 import { defaultMetadata } from "@/lib/seo";
 import "./globals.css";
@@ -35,6 +36,7 @@ export default function RootLayout({
             <div className="flex flex-col min-h-screen">
               <ProfileCompletionCheck />
               <Navbar />
+              <Ad />
               <main className="flex-grow">
                 {children}
               </main>
