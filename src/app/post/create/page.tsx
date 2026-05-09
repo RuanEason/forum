@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 type PostMode = "TEXT" | "VIDEO";
+type PostVisibility = "PUBLIC" | "UNLISTED";
 type VideoWorkflowStatus = "IDLE" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
 
 type UploadedAttachment = {
@@ -135,6 +136,7 @@ export default function CreatePostPage() {
   const videoCosRef = useRef<unknown>(null);
   const videoTaskIdRef = useRef<string | null>(null);
   const [postMode, setPostMode] = useState<PostMode>("TEXT");
+  const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedAttachments, setSelectedAttachments] = useState<UploadedAttachment[]>([]);
@@ -800,6 +802,7 @@ export default function CreatePostPage() {
           authorId: (session as { user?: { id?: string } } | null)?.user?.id,
           images: selectedImages,
           attachments: selectedAttachments,
+          visibility,
           topicId: selectedTopicId,
         }),
       });
@@ -853,6 +856,7 @@ export default function CreatePostPage() {
         },
         body: JSON.stringify({
           postType: "VIDEO",
+          visibility,
           videoAssetId,
           videoCoverUrl: videoCoverUrl?.trim() ? videoCoverUrl.trim() : undefined,
           title: videoTitle.trim() ? videoTitle.trim() : null,
@@ -1130,6 +1134,36 @@ export default function CreatePostPage() {
                 <span>内容: {content.length} / 10000</span>
                 {enableTitle && <span>标题: {title.length} / 200</span>}
               </div>
+
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <p className="text-sm font-medium text-gray-700">可见性</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("PUBLIC")}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                      visibility === "PUBLIC"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">公开</p>
+                    <p className="text-xs text-gray-500 mt-0.5">会出现在首页和搜索结果中</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("UNLISTED")}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                      visibility === "UNLISTED"
+                        ? "border-amber-500 bg-amber-50 text-amber-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">仅链接可见（半私密）</p>
+                    <p className="text-xs text-gray-500 mt-0.5">不在首页和搜索展示，仅可通过链接访问</p>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1362,6 +1396,36 @@ export default function CreatePostPage() {
                   selectedTopicId={videoTopicId}
                   onSelect={setVideoTopicId}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">可见性</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("PUBLIC")}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                      visibility === "PUBLIC"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">公开</p>
+                    <p className="text-xs text-gray-500 mt-0.5">会出现在首页和搜索结果中</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibility("UNLISTED")}
+                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                      visibility === "UNLISTED"
+                        ? "border-amber-500 bg-amber-50 text-amber-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">仅链接可见（半私密）</p>
+                    <p className="text-xs text-gray-500 mt-0.5">不在首页和搜索展示，仅可通过链接访问</p>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3">

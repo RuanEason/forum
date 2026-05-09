@@ -53,6 +53,11 @@ enum PostType {
   VIDEO
 }
 
+enum PostVisibility {
+  PUBLIC
+  UNLISTED
+}
+
 enum VideoStatus {
   INIT
   UPLOADING
@@ -72,6 +77,7 @@ model Post {
   title       String?
   content     String           @db.Text
   postType    PostType         @default(TEXT)
+  visibility  PostVisibility   @default(PUBLIC)
   videoId     String?          @unique
   authorId    String
   author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -93,6 +99,7 @@ model Post {
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([visibility])
   @@index([topicId])
   @@index([pinned, pinnedAt])
 }
@@ -195,6 +202,9 @@ model Comment {
   parentId  String?       // for replies
   parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[]     @relation("CommentReplies")
+  replyToId String?
+  replyTo   Comment?      @relation("CommentReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replyTargets Comment[]  @relation("CommentReplyTo")
   likes     CommentLike[]
   pinned    Boolean       @default(false)
   pinnedAt  DateTime?
@@ -203,6 +213,7 @@ model Comment {
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
+  @@index([replyToId])
   @@index([pinned, pinnedAt])
 }
 

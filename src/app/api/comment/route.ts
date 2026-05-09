@@ -5,6 +5,13 @@ import { authOptions } from "@/lib/auth";
 import { rewardActionExperience } from "@/lib/experience";
 import { enqueueNotificationPush } from "@/lib/push";
 
+type SessionShape = {
+  user?: {
+    id?: string;
+    role?: string;
+  };
+} | null;
+
 /**
  * 创建评论或回复
  * 支持创建新评论或对现有评论进行回复
@@ -37,13 +44,23 @@ import { enqueueNotificationPush } from "@/lib/push";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = (await getServerSession(authOptions)) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content, postId, parentId }: { content: string, postId: string, parentId?: string | null } = await request.json();
+    const {
+      content,
+      postId,
+      parentId,
+      replyToId,
+    }: {
+      content: string;
+      postId: string;
+      parentId?: string | null;
+      replyToId?: string | null;
+    } = await request.json();
 
     if (!content || !postId) {
       return NextResponse.json({ error: "Content and postId are required" }, { status: 400 });
@@ -51,27 +68,42 @@ export async function POST(request: NextRequest) {
 
     const authorId = session.user.id;
 
-    const data: {
-      content: string;
-      postId: string;
-      authorId: string;
-      parentId?: string | null;
-    } = {
-      content,
-      postId,
-      authorId,
-    };
+    let normalizedParentId: string | null = null;
+    let normalizedReplyToId: string | null = null;
+    let replyReceiverId: string | null = null;
 
-    if (parentId !== undefined && parentId !== null) {
-      // 这是一个回复
-      data.parentId = parentId;
-    } else {
-      // 这是一个顶层评论
-      data.parentId = null;
+    const normalizedInputParentId = typeof parentId === "string" ? parentId.trim() : "";
+    const normalizedInputReplyToId = typeof replyToId === "string" ? replyToId.trim() : "";
+    const replyTargetId = normalizedInputReplyToId || normalizedInputParentId;
+
+    if (replyTargetId) {
+      const targetComment = await prisma.comment.findUnique({
+        where: { id: replyTargetId },
+        select: { id: true, postId: true, parentId: true, authorId: true },
+      });
+
+      if (!targetComment || targetComment.postId !== postId) {
+        return NextResponse.json({ error: "Reply target not found" }, { status: 404 });
+      }
+
+      // Keep only two levels in structure:
+      // - top-level comment (parentId = null)
+      // - replies under top-level comment
+      // When replying to a reply, parentId points to the top-level root,
+      // and replyToId points to the specific reply/user being replied to.
+      normalizedParentId = targetComment.parentId ?? targetComment.id;
+      normalizedReplyToId = targetComment.id;
+      replyReceiverId = targetComment.authorId;
     }
 
     const comment = await prisma.comment.create({
-      data,
+      data: {
+        content,
+        postId,
+        authorId,
+        parentId: normalizedParentId,
+        replyToId: normalizedReplyToId,
+      },
       include: {
         author: {
           select: {
@@ -80,8 +112,27 @@ export async function POST(request: NextRequest) {
             avatar: true,
           },
         },
-        likes: true,
-        replies: true,
+        likes: {
+          select: {
+            userId: true,
+          },
+        },
+        replies: {
+          select: {
+            id: true,
+          },
+        },
+        replyTo: {
+          select: {
+            id: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       }
     });
 
@@ -95,18 +146,13 @@ export async function POST(request: NextRequest) {
     // 1. If reply to comment (parentId exists), notify comment author
     // 2. If reply to post (top-level), notify post author
 
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-        select: { authorId: true }
-      });
-      
-      if (parentComment && parentComment.authorId !== authorId) {
+    if (normalizedParentId) {
+      if (replyReceiverId && replyReceiverId !== authorId) {
         const notification = await prisma.notification.create({
           data: {
             type: "REPLY_COMMENT",
             senderId: authorId,
-            receiverId: parentComment.authorId,
+            receiverId: replyReceiverId,
             postId: postId,
             commentId: comment.id,
           }
@@ -164,7 +210,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = (await getServerSession(authOptions)) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

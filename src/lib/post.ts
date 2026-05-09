@@ -9,17 +9,22 @@ type PostAttachmentInput = {
 
 type CreatePostOptions = {
   postType?: "TEXT" | "VIDEO";
+  visibility?: "PUBLIC" | "UNLISTED";
   videoId?: string | null;
 };
 
 export async function getPosts(topicId?: string) {
   return prisma.post.findMany({
-    where: topicId ? { topicId } : undefined,
+    where: {
+      ...(topicId ? { topicId } : {}),
+      visibility: "PUBLIC",
+    },
     select: {
       id: true,
       title: true,
       content: true,
       postType: true,
+      visibility: true,
       viewCount: true,
       pinned: true,
       pinnedAt: true,
@@ -103,6 +108,7 @@ export async function createPost(
       content,
       authorId,
       postType: options.postType || "TEXT",
+      visibility: options.visibility || "PUBLIC",
       videoId: options.videoId || null,
       images: {
         create: images.map((url) => ({ url })),
@@ -128,6 +134,7 @@ export async function getPostById(id: string) {
       title: true,
       content: true,
       postType: true,
+      visibility: true,
       pinned: true,
       pinnedAt: true,
       createdAt: true,
@@ -191,6 +198,7 @@ export async function getPostById(id: string) {
           pinned: true,
           pinnedAt: true,
           parentId: true,
+          replyToId: true,
           author: {
             select: {
               id: true,
@@ -210,6 +218,7 @@ export async function getPostById(id: string) {
               postId: true,
               createdAt: true,
               parentId: true,
+              replyToId: true,
               author: {
                 select: {
                   id: true,
@@ -220,6 +229,17 @@ export async function getPostById(id: string) {
               likes: {
                 select: {
                   userId: true,
+                },
+              },
+              replyTo: {
+                select: {
+                  id: true,
+                  author: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
                 },
               },
             },

@@ -31,6 +31,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 获取所有帖子的 ID 和更新时间
   const posts = await prisma.post.findMany({
+    where: {
+      visibility: "PUBLIC",
+    },
     select: {
       id: true,
       updatedAt: true,

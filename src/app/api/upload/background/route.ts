@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import { uploadToCOS } from "@/lib/cos";
-import { ffmpegInstance } from "@/lib/ffmpeg";
 import path from "path";
 import fs from "fs/promises";
 import os from "os";
@@ -48,6 +47,9 @@ async function processVideo(file: File, filename: string): Promise<ProcessedUplo
   if (file.size > MAX_VIDEO_SIZE) {
     throw new Error("因服务器资源紧缺，不支持上传高于100MB视频作为背景，请自行压缩后上传");
   }
+
+  // Only initialize FFmpeg for actual video uploads so image uploads are not blocked by FFmpeg startup issues.
+  const { ffmpegInstance } = await import("@/lib/ffmpeg");
 
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'bg-upload-'));
   const inputPath = path.join(tempDir, `input_${filename}${path.extname(file.name)}`);
@@ -109,7 +111,7 @@ async function processVideo(file: File, filename: string): Promise<ProcessedUplo
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

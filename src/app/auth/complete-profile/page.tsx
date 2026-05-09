@@ -112,7 +112,7 @@ function CompleteProfileContent() {
             完善个人信息
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            请填写您的基本信息，让同学们更好地认识您
+            请填写您的基本信息，让我们更好地认识您
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

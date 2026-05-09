@@ -62,6 +62,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   // 构建帖子搜索条件
   const postWhereCondition = {
+    visibility: "PUBLIC" as const,
     OR: [
       {
         title: {

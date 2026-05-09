@@ -29,7 +29,13 @@ async function getUserBasicInfo(id: string) {
 }
 
 // 获取用户完整资料和统计数据（一次性查询优化）
-async function getUserProfileWithStats(id: string) {
+async function getUserProfileWithStats(id: string, includeUnlistedPosts: boolean) {
+  const postVisibilityWhere = includeUnlistedPosts
+    ? undefined
+    : {
+        visibility: "PUBLIC" as const,
+      };
+
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -43,6 +49,7 @@ async function getUserProfileWithStats(id: string) {
       createdAt: true,
       showUserData: true,
       posts: {
+        where: postVisibilityWhere,
         include: {
           author: {
             select: {
@@ -161,9 +168,10 @@ export default async function UserProfile({ params }: UserProfileProps) {
   const { id } = await params;
   const userId = id;
   const session = await getServerSession(authOptions) as any;
+  const isCurrentUser = session?.user?.id === userId;
 
   // 一次性获取用户数据和统计数据
-  const result = await getUserProfileWithStats(userId);
+  const result = await getUserProfileWithStats(userId, isCurrentUser);
 
   if (!result) {
     return (
@@ -174,7 +182,6 @@ export default async function UserProfile({ params }: UserProfileProps) {
   }
 
   const { user, stats } = result;
-  const isCurrentUser = session?.user?.id === user.id;
   const currentUserId = session?.user?.id;
 
   // 检查当前用户是否已关注该用户

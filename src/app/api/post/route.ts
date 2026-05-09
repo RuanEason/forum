@@ -17,6 +17,8 @@ const MAX_IMAGES = 10;
 const MAX_ATTACHMENTS = 5;
 const MAX_URL_LENGTH = 2048;
 const POST_TYPES = ["TEXT", "VIDEO"] as const;
+const POST_VISIBILITIES = ["PUBLIC", "UNLISTED"] as const;
+type PostVisibility = (typeof POST_VISIBILITIES)[number];
 
 type SessionShape = {
   user?: {
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images, attachments, topicId, postType, videoAssetId, videoCoverUrl } = await request.json();
+    const { title, content, images, attachments, topicId, postType, visibility, videoAssetId, videoCoverUrl } = await request.json();
 
     // Validate title (optional)
     if (title !== undefined && title !== null) {
@@ -129,6 +131,19 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    // Validate visibility (optional)
+    if (visibility !== undefined && visibility !== null && typeof visibility !== "string") {
+      return NextResponse.json({ error: "visibility must be a string" }, { status: 400 });
+    }
+    const visibilityCandidate = typeof visibility === "string" ? visibility.toUpperCase() : "PUBLIC";
+    if (!POST_VISIBILITIES.includes(visibilityCandidate as PostVisibility)) {
+      return NextResponse.json(
+        { error: `visibility must be one of ${POST_VISIBILITIES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+    const normalizedVisibility: PostVisibility = visibilityCandidate as PostVisibility;
 
     if (videoAssetId !== undefined && videoAssetId !== null && typeof videoAssetId !== "string") {
       return NextResponse.json({ error: "videoAssetId must be a string" }, { status: 400 });
@@ -259,7 +274,7 @@ export async function POST(request: NextRequest) {
         [],
         topicId || null,
         normalizedAttachments,
-        { postType: "VIDEO", videoId: videoAsset.id },
+        { postType: "VIDEO", visibility: normalizedVisibility, videoId: videoAsset.id },
       );
     } else {
       // TEXT 帖子：正文/图片/附件至少一个
@@ -281,6 +296,7 @@ export async function POST(request: NextRequest) {
         normalizedImages,
         topicId || null,
         normalizedAttachments,
+        { visibility: normalizedVisibility },
       );
     }
 

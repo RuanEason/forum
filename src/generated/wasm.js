@@ -132,6 +132,7 @@ exports.Prisma.PostScalarFieldEnum = {
   title: 'title',
   content: 'content',
   postType: 'postType',
+  visibility: 'visibility',
   videoId: 'videoId',
   authorId: 'authorId',
   topicId: 'topicId',
@@ -214,6 +215,7 @@ exports.Prisma.CommentScalarFieldEnum = {
   postId: 'postId',
   authorId: 'authorId',
   parentId: 'parentId',
+  replyToId: 'replyToId',
   pinned: 'pinned',
   pinnedAt: 'pinnedAt',
   createdAt: 'createdAt'
@@ -297,6 +299,11 @@ exports.Prisma.NullsOrder = {
 exports.PostType = exports.$Enums.PostType = {
   TEXT: 'TEXT',
   VIDEO: 'VIDEO'
+};
+
+exports.PostVisibility = exports.$Enums.PostVisibility = {
+  PUBLIC: 'PUBLIC',
+  UNLISTED: 'UNLISTED'
 };
 
 exports.DanmakuType = exports.$Enums.DanmakuType = {

@@ -20,6 +20,7 @@ const MIME_EXTENSIONS: Record<string, string> = {
 const DEFAULT_STS_DURATION_SECONDS = 1800;
 const DEFAULT_MAX_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
 const DEFAULT_RAW_PREFIX = "videos/raw/";
+const DEFAULT_BACKGROUND_RAW_PREFIX = "backgrounds/";
 
 type VideoConfig = {
   bucket: string;
@@ -175,12 +176,29 @@ export function normalizeObjectKey(input: string): string {
 
 export function createVideoRawObjectKey(userId: string, fileName: string, mimeType: string): string {
   const { rawPrefix } = getVideoConfig();
+  return createRawObjectKeyWithPrefix(rawPrefix, userId, fileName, mimeType);
+}
+
+function getBackgroundRawPrefix(): string {
+  return normalizePrefix(process.env.TENCENT_BACKGROUND_VIDEO_RAW_PREFIX || DEFAULT_BACKGROUND_RAW_PREFIX);
+}
+
+function createRawObjectKeyWithPrefix(
+  prefix: string,
+  userId: string,
+  fileName: string,
+  mimeType: string,
+): string {
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const safeUserId = sanitizeUserId(userId);
   const ext = inferFileExtension(fileName, mimeType);
-  return `${rawPrefix}${safeUserId}/${yyyy}/${mm}/${randomUUID()}${ext}`;
+  return `${prefix}${safeUserId}/${yyyy}/${mm}/${randomUUID()}${ext}`;
+}
+
+export function createBackgroundRawObjectKey(userId: string, fileName: string, mimeType: string): string {
+  return createRawObjectKeyWithPrefix(getBackgroundRawPrefix(), userId, fileName, mimeType);
 }
 
 export function buildVideoCdnUrl(objectKey: string): string {
@@ -188,12 +206,13 @@ export function buildVideoCdnUrl(objectKey: string): string {
   return `${cdnBaseUrl}/${normalizeObjectKey(objectKey)}`;
 }
 
-export async function issueVideoTemporaryCredential(params: {
+async function issueTemporaryCredentialForPrefix(params: {
   userId: string;
+  prefix: string;
 }): Promise<TemporaryCredential> {
   const config = getVideoConfig();
   const appId = extractAppIdFromBucket(config.bucket);
-  const userPrefix = `${config.rawPrefix}${sanitizeUserId(params.userId)}/`;
+  const userPrefix = `${params.prefix}${sanitizeUserId(params.userId)}/`;
 
   const policy = {
     version: "2.0",
@@ -244,6 +263,25 @@ export async function issueVideoTemporaryCredential(params: {
   });
 }
 
+export async function issueVideoTemporaryCredential(params: {
+  userId: string;
+}): Promise<TemporaryCredential> {
+  const { rawPrefix } = getVideoConfig();
+  return issueTemporaryCredentialForPrefix({
+    userId: params.userId,
+    prefix: rawPrefix,
+  });
+}
+
+export async function issueBackgroundTemporaryCredential(params: {
+  userId: string;
+}): Promise<TemporaryCredential> {
+  return issueTemporaryCredentialForPrefix({
+    userId: params.userId,
+    prefix: getBackgroundRawPrefix(),
+  });
+}
+
 export async function headVideoObject(objectKey: string): Promise<HeadObjectResult> {
   const config = getVideoConfig();
   const normalizedKey = normalizeObjectKey(objectKey);
@@ -286,6 +324,18 @@ export function getVideoPublicConstraints() {
     bucket: config.bucket,
     region: config.region,
     cdnBaseUrl: config.cdnBaseUrl,
+    maxSizeBytes: config.maxSizeBytes,
+    allowedMimeTypes: [...VIDEO_ALLOWED_MIME_TYPES],
+  };
+}
+
+export function getBackgroundVideoPublicConstraints() {
+  const config = getVideoConfig();
+  return {
+    bucket: config.bucket,
+    region: config.region,
+    cdnBaseUrl: config.cdnBaseUrl,
+    rawPrefix: getBackgroundRawPrefix(),
     maxSizeBytes: config.maxSizeBytes,
     allowedMimeTypes: [...VIDEO_ALLOWED_MIME_TYPES],
   };

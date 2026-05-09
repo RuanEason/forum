@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
+import COS from "cos-js-sdk-v5";
 import Avatar from "@/components/Avatar";
 import BackButton from "@/components/BackButton";
 import Button from "@/components/ui/Button";
@@ -11,6 +12,31 @@ import Textarea from "@/components/ui/Textarea";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import Toggle from "@/components/ui/Toggle";
+
+type BackgroundVideoStsResponse = {
+  backgroundVideoAssetId: string;
+  objectKey: string;
+  bucket: string;
+  region: string;
+  credentials: {
+    tmpSecretId: string;
+    tmpSecretKey: string;
+    sessionToken: string;
+    startTime: number;
+    expiredTime: number;
+  };
+};
+
+type BackgroundVideoStatusResponse = {
+  id: string;
+  status: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+  videoUrl?: string | null;
+  errorMessage?: string | null;
+};
+
+type CosUploadProgress = {
+  percent?: number;
+};
 
 export default function SettingsPage() {
   const { data: session, status, update } = useSession();
@@ -31,11 +57,17 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverUploadProgress, setCoverUploadProgress] = useState(0);
+  const [coverUploadStatus, setCoverUploadStatus] = useState("");
+  const [coverVideoAssetId, setCoverVideoAssetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const hasUnsavedChangesRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const coverPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const coverCosRef = useRef<unknown>(null);
+  const coverTaskIdRef = useRef<string | null>(null);
 
   const initialDataRef = useRef({
     name: "",
@@ -46,8 +78,10 @@ export default function SettingsPage() {
     showUserData: true
   });
 
-  const isVideo = coverImage?.includes('backgrounds') && coverImage?.includes('.mp4');
-  const previewUrl = isVideo ? coverImage.replace('.mp4', '_preview.webp') : coverImage;
+  const isVideo = /\.(mp4|mov|avi|webm)(\?.*)?$/i.test(coverImage);
+  const previewUrl = isVideo
+    ? coverImage.replace(/\.(mp4|mov|avi|webm)(\?.*)?$/i, "_preview.webp$2")
+    : coverImage;
 
   const checkHasChanges = () => {
     return (
@@ -66,6 +100,18 @@ export default function SettingsPage() {
     hasUnsavedChangesRef.current = hasChanges;
   };
 
+  const markUnsavedChanges = () => {
+    setHasUnsavedChanges(true);
+    hasUnsavedChangesRef.current = true;
+  };
+
+  const stopCoverVideoPolling = () => {
+    if (coverPollTimerRef.current) {
+      clearInterval(coverPollTimerRef.current);
+      coverPollTimerRef.current = null;
+    }
+  };
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChangesRef.current) {
@@ -77,6 +123,15 @@ export default function SettingsPage() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (coverPollTimerRef.current) {
+        clearInterval(coverPollTimerRef.current);
+        coverPollTimerRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -159,15 +214,14 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChangeLegacy = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
 
-    if (!isImage && !isVideo) {
-      setError("请上传图片或视频文件");
+    if (!isImage) {
+      setError("Please upload an image file");
       return;
     }
 
@@ -198,15 +252,236 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchCoverVideoStatus = async (assetId: string) => {
+    try {
+      const response = await fetch(`/api/background-video/${assetId}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await response.json() as BackgroundVideoStatusResponse & { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to fetch background video status");
+      }
+
+      if (data.status === "READY") {
+        if (!data.videoUrl) {
+          throw new Error("Background video is READY but no output URL was returned");
+        }
+
+        stopCoverVideoPolling();
+        setUploadingCover(false);
+        setCoverVideoAssetId(null);
+        setCoverUploadProgress(100);
+        setCoverUploadStatus("");
+        setCoverImage(data.videoUrl);
+        markUnsavedChanges();
+        setSuccess("Background video processed. Please click Save changes.");
+        return;
+      }
+
+      if (data.status === "FAILED") {
+        stopCoverVideoPolling();
+        setUploadingCover(false);
+        setCoverVideoAssetId(null);
+        setCoverUploadStatus("");
+        setError(data.errorMessage || "Background video processing failed. Please upload again.");
+        return;
+      }
+
+      setCoverUploadStatus("Background video is transcoding...");
+    } catch (statusError) {
+      stopCoverVideoPolling();
+      setUploadingCover(false);
+      setCoverVideoAssetId(null);
+      setCoverUploadStatus("");
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Failed to fetch background video status. Please retry.",
+      );
+    }
+  };
+
+  const startCoverVideoPolling = (assetId: string) => {
+    stopCoverVideoPolling();
+    void fetchCoverVideoStatus(assetId);
+    coverPollTimerRef.current = setInterval(() => {
+      void fetchCoverVideoStatus(assetId);
+    }, 2500);
+  };
+
+  const uploadCoverVideoBySts = async (file: File) => {
+    setError("");
+    setSuccess("");
+    stopCoverVideoPolling();
+
+    setUploadingCover(true);
+    setCoverVideoAssetId(null);
+    setCoverUploadProgress(0);
+    setCoverUploadStatus("Requesting upload credentials...");
+
+    try {
+      const stsResponse = await fetch("/api/background-video/sts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
+        }),
+      });
+
+      const stsData = await stsResponse.json() as Partial<BackgroundVideoStsResponse> & { error?: string };
+      if (!stsResponse.ok) {
+        throw new Error(stsData.error || "Failed to request STS credentials");
+      }
+
+      const backgroundVideoAssetId = stsData.backgroundVideoAssetId;
+      const objectKey = stsData.objectKey;
+      const bucket = stsData.bucket;
+      const region = stsData.region;
+      const credentials = stsData.credentials;
+
+      if (!backgroundVideoAssetId || !objectKey || !bucket || !region || !credentials) {
+        throw new Error("Incomplete STS response for background video upload");
+      }
+
+      setCoverVideoAssetId(backgroundVideoAssetId);
+
+      const cos = new COS({
+        SecretId: credentials.tmpSecretId,
+        SecretKey: credentials.tmpSecretKey,
+        SecurityToken: credentials.sessionToken,
+        StartTime: credentials.startTime,
+        ExpiredTime: credentials.expiredTime,
+      });
+
+      coverCosRef.current = cos;
+      setCoverUploadStatus("Uploading background video...");
+
+      const uploadResult = await new Promise<{ ETag?: string }>((resolve, reject) => {
+        (cos as {
+          sliceUploadFile: (
+            params: {
+              Bucket: string;
+              Region: string;
+              Key: string;
+              Body: File;
+              onTaskReady?: (taskId: string) => void;
+              onProgress?: (progressData: CosUploadProgress) => void;
+            },
+            callback: (error: unknown, data: { ETag?: string }) => void,
+          ) => void;
+        }).sliceUploadFile(
+          {
+            Bucket: bucket,
+            Region: region,
+            Key: objectKey,
+            Body: file,
+            onTaskReady: (taskId: string) => {
+              coverTaskIdRef.current = taskId;
+            },
+            onProgress: (progressData: CosUploadProgress) => {
+              const percent = Math.max(
+                0,
+                Math.min(100, Math.round((progressData.percent ?? 0) * 100)),
+              );
+              setCoverUploadProgress(percent);
+            },
+          },
+          (uploadError: unknown, data: { ETag?: string }) => {
+            if (uploadError) {
+              reject(uploadError);
+              return;
+            }
+            resolve(data || {});
+          },
+        );
+      });
+
+      setCoverUploadProgress(100);
+      setCoverUploadStatus("Upload complete. Submitting transcode task...");
+
+      const commitResponse = await fetch("/api/background-video/commit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          backgroundVideoAssetId,
+          objectKey,
+          etag: uploadResult.ETag ?? null,
+        }),
+      });
+
+      const commitData = await commitResponse.json() as { error?: string };
+      if (!commitResponse.ok) {
+        throw new Error(commitData.error || "Failed to commit background video upload");
+      }
+
+      setCoverUploadStatus("Background video is transcoding...");
+      startCoverVideoPolling(backgroundVideoAssetId);
+    } catch (uploadError) {
+      stopCoverVideoPolling();
+      setUploadingCover(false);
+      setCoverVideoAssetId(null);
+      setCoverUploadProgress(0);
+      setCoverUploadStatus("");
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Background video upload failed. Please retry.",
+      );
+    } finally {
+      coverTaskIdRef.current = null;
+    }
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isVideoFile =
+      file.type.startsWith("video/")
+      || /\.(mp4|mov|avi|webm)$/i.test(file.name);
+
+    if (isVideoFile) {
+      await uploadCoverVideoBySts(file);
+      if (coverInputRef.current) {
+        coverInputRef.current.value = "";
+      }
+      return;
+    }
+
+    await handleCoverChangeLegacy(e);
+    if (coverInputRef.current) {
+      coverInputRef.current.value = "";
+    }
+  };
+
   const handleRemoveCover = () => {
+    stopCoverVideoPolling();
+    setUploadingCover(false);
+    setCoverVideoAssetId(null);
+    setCoverUploadProgress(0);
+    setCoverUploadStatus("");
     setCoverImage("");
-    updateUnsavedChanges();
+    markUnsavedChanges();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (uploadingCover && coverVideoAssetId) {
+      setError("Background video is still processing. Please wait for completion before saving.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -454,8 +729,14 @@ export default function SettingsPage() {
                         </Button>
                       )}
                     </div>
+                    {(uploadingCover || coverVideoAssetId || coverUploadStatus) && (
+                      <p className="text-xs text-gray-500">
+                        {coverUploadStatus || "Processing background upload..."}
+                        {coverUploadProgress > 0 ? ` (${coverUploadProgress}%)` : ""}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500">
-                      支持上传图片（JPEG、PNG、WebP、GIF）或视频（MP4、MOV）。视频会自动转换为 MP4 格式并压缩，最大支持 100MB。建议尺寸 1920x500 像素。
+                      Supports image and video uploads. Videos are uploaded directly to COS under `backgrounds/` and transcoded asynchronously by CI. Save after processing completes.
                     </p>
                   </div>
                 </div>

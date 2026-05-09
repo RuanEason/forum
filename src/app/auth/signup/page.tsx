@@ -1,24 +1,105 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 
+const CODE_LENGTH = 6;
+const DEFAULT_COOLDOWN_SECONDS = 60;
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function parseCooldownSeconds(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_COOLDOWN_SECONDS;
+  }
+  return parsed;
+}
+
 function SignUpContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
 
+  useEffect(() => {
+    if (cooldownSeconds <= 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setCooldownSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [cooldownSeconds]);
+
+  const handleSendCode = async () => {
+    setError("");
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+      setError("请先输入邮箱地址");
+      return;
+    }
+
+    setSendingCode(true);
+
+    try {
+      const response = await fetch("/api/auth/register/send-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "验证码发送失败");
+        return;
+      }
+
+      const nextCooldown = parseCooldownSeconds(data.cooldownSeconds);
+      setCooldownSeconds(nextCooldown);
+    } catch {
+      setError("网络错误，请稍后重试");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail) {
+      setError("请输入邮箱地址");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("密码不匹配");
@@ -30,6 +111,11 @@ function SignUpContent() {
       return;
     }
 
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError("请输入6位验证码");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -38,7 +124,11 @@ function SignUpContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+          code: code.trim(),
+        }),
       });
 
       const data = await response.json();
@@ -62,10 +152,10 @@ function SignUpContent() {
       <Card className="max-w-md w-full space-y-8 p-8">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            注册同学论坛账号
+            注册Slept论坛账号
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            加入我们，分享你的校园生活
+            加入我们，分享你的生活
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -80,6 +170,37 @@ function SignUpContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            <div>
+              <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+                邮箱验证码
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="code"
+                  name="code"
+                  type="text"
+                  required
+                  placeholder="请输入6位验证码"
+                  value={code}
+                  maxLength={CODE_LENGTH}
+                  className="flex-1"
+                  onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, "").slice(0, CODE_LENGTH))}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={sendingCode || cooldownSeconds > 0 || loading}
+                  onClick={handleSendCode}
+                  className="shrink-0 px-4 whitespace-nowrap"
+                >
+                  {sendingCode
+                    ? "发送中..."
+                    : cooldownSeconds > 0
+                      ? `${cooldownSeconds}s`
+                      : "发送验证码"}
+                </Button>
+              </div>
+            </div>
             <Input
               id="password"
               name="password"
@@ -137,7 +258,7 @@ function LoadingFallback() {
       <Card className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
-            注册同学论坛账号
+            注册Slept论坛账号
           </h2>
           <p className="mt-2 text-sm text-gray-600">加载中...</p>
         </div>

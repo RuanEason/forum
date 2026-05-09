@@ -29,6 +29,7 @@ NEXT_PUBLIC_CDN_DOMAIN="https://cdn.example.com"
 TENCENT_SECRET_ID=""
 TENCENT_SECRET_KEY=""
 TENCENT_VIDEO_RAW_PREFIX="videos/raw/"
+TENCENT_BACKGROUND_VIDEO_RAW_PREFIX="backgrounds/"
 TENCENT_STS_DURATION_SECONDS="1800"
 TENCENT_VIDEO_MAX_SIZE_BYTES="2147483648"
 TENCENT_CI_CALLBACK_TOKEN="replace-with-video-callback-token"
@@ -48,3 +49,29 @@ TPNS_API_HOST="api.tpns.tencent.com"
 # Optional Expo/App-side readable TPNS values
 EXPO_PUBLIC_TPNS_ACCESS_ID=""
 EXPO_PUBLIC_TPNS_ACCESS_KEY=""
+
+# ------------------------------------------------------------------
+# Redis (optional)
+# ------------------------------------------------------------------
+REDIS_URL="redis://127.0.0.1:6379"
+
+# ------------------------------------------------------------------
+# Mail / SMTP (用于邮箱验证码)
+# QQ邮箱示例:
+# SMTP_HOST="smtp.qq.com"
+# SMTP_PORT="465"
+# SMTP_SECURE="true"
+# SMTP_USER="your@qq.com"
+# SMTP_PASS="qq-mail-auth-code"
+# MAIL_FROM="Slept论坛 <your@qq.com>"
+# MAIL_BRAND_NAME="SLEPT"
+# MAIL_LOGO_URL="https://your-cdn-domain/logo.png"
+# ------------------------------------------------------------------
+SMTP_HOST="smtp.qq.com"
+SMTP_PORT="465"
+SMTP_SECURE="true"
+SMTP_USER=""
+SMTP_PASS=""
+MAIL_FROM=""
+MAIL_BRAND_NAME="SLEPT"
+MAIL_LOGO_URL=""

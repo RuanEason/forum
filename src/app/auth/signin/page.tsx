@@ -37,7 +37,7 @@ function SignInContent() {
       <Card className="max-w-md w-full space-y-8 p-8">
         <div>
           <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            登录到同学论坛
+            登录到Slept论坛
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             欢迎回来，请登录您的账号
@@ -101,7 +101,7 @@ function LoadingFallback() {
       <Card className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
-            登录到同学论坛
+            登录到Slept论坛
           </h2>
           <p className="mt-2 text-sm text-gray-600">加载中...</p>
         </div>

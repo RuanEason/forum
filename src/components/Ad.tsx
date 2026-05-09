@@ -15,7 +15,7 @@ export default function Ad() {
         <Link
             href="/music"
             aria-label="进入清明音乐活动页"
-            className="block"
+            className="hidden"
         >
             <div
                 className="w-full h-22 bg-cover bg-center cursor-pointer"

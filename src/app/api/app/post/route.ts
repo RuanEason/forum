@@ -21,11 +21,16 @@ export async function GET(request: NextRequest) {
     const topicId = searchParams.get('topicId');
 
     const posts = await prisma.post.findMany({
-      where: topicId ? { topicId } : undefined,
+      where: {
+        ...(topicId ? { topicId } : {}),
+        visibility: "PUBLIC",
+      },
       select: {
         id: true,
         title: true,
         content: true,
+        postType: true,
+        visibility: true,
         viewCount: true,
         pinned: true,
         pinnedAt: true,
@@ -87,6 +92,11 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+          },
+        },
+        video: {
+          select: {
+            coverUrl: true,
           },
         },
       },

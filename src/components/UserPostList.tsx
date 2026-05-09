@@ -12,12 +12,13 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PinButton from "@/components/PinButton";
 import PostImages from "@/components/PostImages";
-import { Eye } from "lucide-react";
+import { Eye, Lock } from "lucide-react";
 
 interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  visibility?: "PUBLIC" | "UNLISTED";
   viewCount?: number;
   pinned?: boolean;
   pinnedAt?: Date | null;
@@ -86,7 +87,7 @@ export default function UserPostList({
       {posts.map((post) => (
         <div
           key={post.id}
-          className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200"
+          className="relative bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200"
         >
           <div className="p-4 sm:p-6">
             <div className="flex items-start">
@@ -101,7 +102,14 @@ export default function UserPostList({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-gray-900 truncate">
-                      {post.author.name || "匿名用户"}
+                      {post.author.name || "匿名用户"}{post.visibility === "UNLISTED" && (
+                        <div
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700"
+                          title="仅链接可见"
+                        >
+                          <Lock className="h-3.5 w-3.5" />
+                        </div>
+                      )}
                     </span>
                     {post.topic && (
                       <Link

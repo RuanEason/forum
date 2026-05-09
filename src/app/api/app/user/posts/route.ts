@@ -34,7 +34,12 @@ export async function GET(request: NextRequest) {
         where: { id: userId },
         select: { id: true, banned: true },
       }),
-      prisma.post.count({ where: { authorId: userId } }),
+      prisma.post.count({
+        where: {
+          authorId: userId,
+          visibility: "PUBLIC",
+        },
+      }),
     ]);
 
     if (!targetUser) {
@@ -50,7 +55,10 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * pageSize;
 
     const posts = await prisma.post.findMany({
-      where: { authorId: userId },
+      where: {
+        authorId: userId,
+        visibility: "PUBLIC",
+      },
       orderBy: [{ pinned: "desc" }, { pinnedAt: "desc" }, { createdAt: "desc" }],
       skip,
       take: pageSize,
@@ -58,6 +66,8 @@ export async function GET(request: NextRequest) {
         id: true,
         title: true,
         content: true,
+        postType: true,
+        visibility: true,
         viewCount: true,
         pinned: true,
         pinnedAt: true,
@@ -98,6 +108,11 @@ export async function GET(request: NextRequest) {
             id: true,
           },
         },
+        video: {
+          select: {
+            coverUrl: true,
+          },
+        },
       },
     });
 
@@ -111,4 +126,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

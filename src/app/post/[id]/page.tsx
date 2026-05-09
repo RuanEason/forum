@@ -16,7 +16,7 @@ import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
-import { Eye } from "lucide-react";
+import { Eye, Lock } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
 import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
@@ -42,6 +42,7 @@ interface PostDetailProps {
   title: string | null;
   content: string;
   postType: "TEXT" | "VIDEO";
+  visibility: "PUBLIC" | "UNLISTED";
   author: AuthorProps;
   createdAt: Date;
   viewCount: number;
@@ -114,6 +115,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    robots: post.visibility === "UNLISTED" ? { index: false, follow: false } : undefined,
     openGraph: {
       title,
       description,
@@ -152,6 +154,7 @@ export default async function PostDetailPage({
   }
 
   const isVideoPost = post.postType === "VIDEO";
+  const isUnlistedPost = post.visibility === "UNLISTED";
   const previewImages = post.images.map((img) => img.url);
   if (isVideoPost && post.video?.coverUrl) {
     previewImages.unshift(post.video.coverUrl);
@@ -266,6 +269,14 @@ export default async function PostDetailPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
+          {isUnlistedPost && (
+            <div className="mb-3 flex justify-end px-4 sm:px-0">
+              <div className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                <Lock className="h-3.5 w-3.5" />
+                <span>仅链接可见</span>
+              </div>
+            </div>
+          )}
           <VideoPostDetail post={post} sessionUser={session?.user} />
         </div>
       </div>
@@ -296,10 +307,12 @@ export default async function PostDetailPage({
                 <div className="sm:hidden mb-4">
                   <BackButton href="/" />
                 </div>
+                <div className="mb-4">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {post.title || ""}
+                  </h1>
+                </div>
                 <div className="flex items-center">
-                  <div className="hidden sm:flex items-center mr-3 shrink-0">
-                    <BackButton href="/" />
-                  </div>
                   <Avatar
                     src={post.author.avatar}
                     name={post.author.name}
@@ -329,13 +342,13 @@ export default async function PostDetailPage({
                       )}
                     </div>
                   </div>
+                  {isUnlistedPost && (
+                    <div className="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-amber-700">
+                      <Lock className="h-3.5 w-3.5" />
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-4 mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {post.title || ""}
-                  </h1>
-                </div>
 
                 <div className="mt-4">
                   <div className="prose prose-sm sm:prose-base max-w-none break-words">

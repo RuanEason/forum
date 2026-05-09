@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -26,12 +27,22 @@ export interface CommentProps {
   author: AuthorProps;
   createdAt: Date;
   parentId: string | null;
+  replyToId?: string | null;
+  replyTo?: {
+    id: string;
+    author: {
+      id: string;
+      name: string | null;
+    };
+  } | null;
   postId: string;
   likes: { userId: string }[];
-  replies: Omit<CommentProps, "replies">[];
+  replies: ReplyComment[];
   pinned?: boolean;
   pinnedAt?: Date | null;
 }
+
+type ReplyComment = Omit<CommentProps, "replies">;
 
 interface PostCommentsProps {
   comments: CommentProps[];
@@ -42,6 +53,7 @@ interface PostCommentsProps {
 export default function PostComments({ comments, postId, postAuthorId }: PostCommentsProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const currentUserId = (session as Session | null)?.user?.id || null;
 
   const refreshComments = () => {
     router.refresh();
@@ -121,7 +133,7 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
               <CommentItem
                 key={comment.id}
                 comment={comment}
-                currentUserId={(session as any)?.user?.id || null}
+                currentUserId={currentUserId}
                 postAuthorId={postAuthorId}
                 onCommentPosted={refreshComments}
                 onDeleteComment={handleDeleteComment}
@@ -138,10 +150,12 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
 interface CommentFormProps {
   postId: string;
   parentId?: string;
+  replyToId?: string;
+  replyToName?: string | null;
   onCommentPosted?: () => void;
 }
 
-function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
+function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted }: CommentFormProps) {
   const { data: session } = useSession();
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
@@ -218,7 +232,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!(session as any)?.user?.id) {
+    if (!(session as Session | null)?.user?.id) {
       setError("请先登录才能发表评论");
       return;
     }
@@ -234,7 +248,7 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content, postId, parentId }),
+        body: JSON.stringify({ content, postId, parentId, replyToId }),
       });
 
       const data = await response.json();
@@ -282,6 +296,11 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
         <h3 className="text-lg font-bold mb-2">
           回复
         </h3>
+      )}
+      {replyToName && (
+        <p className="text-sm text-gray-500 mb-2">
+          对{replyToName}用户的回复：
+        </p>
       )}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div
@@ -346,6 +365,119 @@ function CommentForm({ postId, parentId, onCommentPosted }: CommentFormProps) {
   );
 }
 
+function ReplyItem({
+  reply,
+  mounted,
+  currentUserId,
+  onReply,
+  onDeleteComment,
+  onOpenImagePreview,
+}: {
+  reply: ReplyComment;
+  mounted: boolean;
+  currentUserId: string | null;
+  onReply: (target: { id: string; name: string | null }) => void;
+  onDeleteComment: (id: string) => void;
+  onOpenImagePreview: (url: string, alt?: string) => void;
+}) {
+  const markdownComponents: Components = {
+    img: ({ src, alt }) => {
+      if (typeof src !== "string" || !src) return null;
+
+      return (
+        <button
+          type="button"
+          className="inline-block cursor-zoom-in"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenImagePreview(src, alt);
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt || "评论图片"}
+            className="max-h-72 w-auto rounded-md"
+            loading="lazy"
+          />
+        </button>
+      );
+    },
+  };
+
+  const showReplyToPrefix = Boolean(
+    reply.replyToId &&
+      reply.parentId &&
+      reply.replyToId !== reply.parentId &&
+      reply.replyTo?.author,
+  );
+
+  return (
+    <div id={`comment-${reply.id}`} className="border-t border-gray-100 pt-3">
+      <div className="flex items-center">
+        <Avatar
+          src={reply.author.avatar}
+          name={reply.author.name}
+          size="sm"
+        />
+        <div className="ml-3">
+          <Link
+            href={`/user/${reply.author.id}`}
+            className="text-sm font-medium text-gray-900 hover:underline"
+          >
+            {reply.author.name || "匿名用户"}
+          </Link>
+          <div className="text-xs text-gray-500">
+            {mounted ? format(new Date(reply.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
+        {showReplyToPrefix && (
+          <p className="mb-1 text-xs text-gray-500 not-prose">
+            对{reply.replyTo?.author.name || "匿名用户"}用户的回复：
+          </p>
+        )}
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {reply.content}
+        </ReactMarkdown>
+      </div>
+
+      <div className="flex items-center space-x-4 mt-2">
+        <LikeButton
+          targetType="comment"
+          targetId={reply.id}
+          initialLikesCount={reply.likes.length}
+          initialLikedByUser={
+            currentUserId
+              ? reply.likes.some((like) => like.userId === currentUserId)
+              : false
+          }
+        />
+        <button
+          onClick={() => onReply({ id: reply.id, name: reply.author.name })}
+          className="text-xs text-gray-500 hover:text-blue-500"
+          title="回复"
+        >
+          回复
+        </button>
+        {currentUserId === reply.author.id && (
+          <button
+            onClick={() => onDeleteComment(reply.id)}
+            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+            title="删除评论"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CommentItem({
   comment,
   currentUserId,
@@ -362,15 +494,19 @@ function CommentItem({
   onPinComment: (id: string, pinned: boolean) => void;
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<{
+    id: string;
+    name: string | null;
+  } | null>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewImageAlt, setPreviewImageAlt] = useState("评论图片预览");
+  const [mounted, setMounted] = useState(false);
 
   const displayedReplies = showAllReplies
     ? comment.replies
     : comment.replies?.slice(0, 1);
   const remainingRepliesCount = (comment.replies?.length || 0) - 1;
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -408,7 +544,30 @@ function CommentItem({
     };
   }, [previewImageUrl]);
 
-  // 判断当前用户是否是帖子作者
+  const openReplyForm = (target?: { id: string; name: string | null }) => {
+    setReplyTarget(target || null);
+    setShowReplyForm(true);
+  };
+
+  const toggleRootReplyForm = () => {
+    if (showReplyForm && !replyTarget) {
+      setShowReplyForm(false);
+      return;
+    }
+
+    openReplyForm();
+  };
+
+  const closeReplyForm = () => {
+    setShowReplyForm(false);
+    setReplyTarget(null);
+  };
+
+  const openImagePreview = (url: string, alt?: string) => {
+    setPreviewImageUrl(url);
+    setPreviewImageAlt(alt || "评论图片预览");
+  };
+
   const isPostAuthor = currentUserId === postAuthorId;
 
   const markdownComponents: Components = {
@@ -421,8 +580,7 @@ function CommentItem({
           className="inline-block cursor-zoom-in"
           onClick={(e) => {
             e.stopPropagation();
-            setPreviewImageUrl(src);
-            setPreviewImageAlt(alt || "评论图片预览");
+            openImagePreview(src, alt);
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -469,29 +627,23 @@ function CommentItem({
           </span>
         )}
       </div>
-      {comment.parentId ? (
-        <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {comment.content}
-          </ReactMarkdown>
-        </div>
-      ) : (
-        <div
-          className="mt-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded prose prose-sm max-w-none break-words"
-          onClick={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.closest("img, a, button")) {
-              return;
-            }
-            setShowReplyForm(!showReplyForm);
-          }}
-          title="点击回复"
-        >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {comment.content}
-          </ReactMarkdown>
-        </div>
-      )}
+
+      <div
+        className="mt-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded prose prose-sm max-w-none break-words"
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest("img, a, button")) {
+            return;
+          }
+          toggleRootReplyForm();
+        }}
+        title="点击回复"
+      >
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {comment.content}
+        </ReactMarkdown>
+      </div>
+
       <div className="flex items-center space-x-4 mt-2">
         <LikeButton
           targetType="comment"
@@ -503,19 +655,16 @@ function CommentItem({
               : false
           }
         />
-        {!comment.parentId && (
-          <button
-            onClick={() => setShowReplyForm(!showReplyForm)}
-            className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm group"
-            title={showReplyForm ? "取消回复" : "回复"}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          </button>
-        )}
-        {/* 只有帖子作者可以置顶评论 */}
-        {isPostAuthor && !comment.parentId && (
+        <button
+          onClick={toggleRootReplyForm}
+          className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm group"
+          title={showReplyForm ? "取消回复" : "回复"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+        {isPostAuthor && (
           <button
             onClick={() => onPinComment(comment.id, !comment.pinned)}
             className={`p-1 rounded-full hover:bg-yellow-50 transition-colors ${comment.pinned ? "text-yellow-600" : "text-gray-500 hover:text-yellow-600"}`}
@@ -538,29 +687,33 @@ function CommentItem({
           </button>
         )}
       </div>
+
       {showReplyForm && (
         <div className="ml-8 mt-4">
           <CommentForm
             postId={comment.postId}
             parentId={comment.id}
+            replyToId={replyTarget?.id}
+            replyToName={replyTarget?.name}
             onCommentPosted={() => {
-              setShowReplyForm(false);
+              closeReplyForm();
               onCommentPosted();
             }}
           />
         </div>
       )}
+
       {comment.replies?.length > 0 && (
         <div className="ml-8 mt-4 space-y-3">
           {displayedReplies.map((reply) => (
-            <CommentItem
+            <ReplyItem
               key={reply.id}
-              comment={reply as CommentProps}
+              reply={reply}
+              mounted={mounted}
               currentUserId={currentUserId}
-              postAuthorId={postAuthorId}
-              onCommentPosted={onCommentPosted}
+              onReply={openReplyForm}
               onDeleteComment={onDeleteComment}
-              onPinComment={onPinComment}
+              onOpenImagePreview={openImagePreview}
             />
           ))}
           {!showAllReplies && remainingRepliesCount > 0 ? (
@@ -580,6 +733,7 @@ function CommentItem({
           ) : null}
         </div>
       )}
+
       {mounted && previewImageUrl && createPortal(
         <div
           className="fixed inset-0 z-[2147483647] bg-black/95 flex items-center justify-center p-4"

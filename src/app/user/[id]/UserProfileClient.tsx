@@ -103,8 +103,10 @@ export default function UserProfileClient({
   const hasCover = !!coverUrl;
   // 隐藏用户数据只隐藏统计和等级，关注/粉丝始终显示
   const shouldShowUserStatsAndLevel = isCurrentUser || user.showUserData !== false;
-  const isVideo = coverUrl?.includes('backgrounds') && coverUrl?.includes('.mp4');
-  const previewUrl = isVideo ? coverUrl.replace('.mp4', '_preview.webp') : coverUrl;
+  const isVideo = /\.(mp4|mov|avi|webm)(\?.*)?$/i.test(coverUrl || "");
+  const previewUrl = isVideo
+    ? (coverUrl || "").replace(/\.(mp4|mov|avi|webm)(\?.*)?$/i, "_preview.webp$2")
+    : coverUrl;
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -180,6 +182,7 @@ export default function UserProfileClient({
                   <img
                     src={previewUrl}
                     alt="背景预览"
+                    onError={() => setVideoLoaded(true)}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
                       videoLoaded ? 'opacity-0' : 'opacity-100'
                     }`}

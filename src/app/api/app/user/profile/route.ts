@@ -52,13 +52,26 @@ export async function GET(request: NextRequest) {
       followersCount,
       followingCount,
     ] = await Promise.all([
-      prisma.post.count({ where: { authorId: user.id } }),
+      prisma.post.count({
+        where: {
+          authorId: user.id,
+          visibility: "PUBLIC",
+        },
+      }),
       prisma.post.aggregate({
-        where: { authorId: user.id },
+        where: {
+          authorId: user.id,
+          visibility: "PUBLIC",
+        },
         _sum: { viewCount: true },
       }),
       prisma.postLike.count({
-        where: { post: { authorId: user.id } },
+        where: {
+          post: {
+            authorId: user.id,
+            visibility: "PUBLIC",
+          },
+        },
       }),
       prisma.postLike.count({
         where: { userId: user.id },
@@ -121,4 +134,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

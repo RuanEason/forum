@@ -11,6 +11,7 @@ type CommentBody = {
   content?: unknown;
   postId?: unknown;
   parentId?: unknown;
+  replyToId?: unknown;
   images?: unknown;
 };
 
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
         content: true,
         postId: true,
         parentId: true,
+        replyToId: true,
         pinned: true,
         pinnedAt: true,
         createdAt: true,
@@ -98,6 +100,7 @@ export async function GET(request: NextRequest) {
             content: true,
             postId: true,
             parentId: true,
+            replyToId: true,
             createdAt: true,
             author: {
               select: {
@@ -109,6 +112,17 @@ export async function GET(request: NextRequest) {
             likes: {
               select: {
                 userId: true,
+              },
+            },
+            replyTo: {
+              select: {
+                id: true,
+                author: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -137,6 +151,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as CommentBody;
     const postId = typeof body.postId === "string" ? body.postId.trim() : "";
     const parentId = typeof body.parentId === "string" ? body.parentId.trim() : "";
+    const replyToId = typeof body.replyToId === "string" ? body.replyToId.trim() : "";
     const rawContent = typeof body.content === "string" ? body.content : "";
     const imageUrls = normalizeImageUrls(body.images);
     const content = buildMarkdownContent(rawContent, imageUrls);
@@ -171,25 +186,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    let parentCommentAuthorId: string | null = null;
     let normalizedParentId: string | null = null;
+    let normalizedReplyToId: string | null = null;
+    let replyReceiverId: string | null = null;
 
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
+    const replyTargetId = replyToId || parentId;
+
+    if (replyTargetId) {
+      const targetComment = await prisma.comment.findUnique({
+        where: { id: replyTargetId },
         select: {
           id: true,
           postId: true,
+          parentId: true,
           authorId: true,
         },
       });
 
-      if (!parentComment || parentComment.postId !== postId) {
-        return NextResponse.json({ error: "parent comment not found" }, { status: 404 });
+      if (!targetComment || targetComment.postId !== postId) {
+        return NextResponse.json({ error: "reply target comment not found" }, { status: 404 });
       }
 
-      normalizedParentId = parentComment.id;
-      parentCommentAuthorId = parentComment.authorId;
+      normalizedParentId = targetComment.parentId ?? targetComment.id;
+      normalizedReplyToId = targetComment.id;
+      replyReceiverId = targetComment.authorId;
     }
 
     const comment = await prisma.comment.create({
@@ -197,6 +217,7 @@ export async function POST(request: NextRequest) {
         content,
         postId,
         parentId: normalizedParentId,
+        replyToId: normalizedReplyToId,
         authorId: sessionUser.id,
       },
       include: {
@@ -217,6 +238,17 @@ export async function POST(request: NextRequest) {
             id: true,
           },
         },
+        replyTo: {
+          select: {
+            id: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -226,12 +258,12 @@ export async function POST(request: NextRequest) {
       console.error("Failed to reward comment experience:", error);
     }
 
-    if (normalizedParentId && parentCommentAuthorId && parentCommentAuthorId !== sessionUser.id) {
+    if (normalizedParentId && replyReceiverId && replyReceiverId !== sessionUser.id) {
       const notification = await prisma.notification.create({
         data: {
           type: "REPLY_COMMENT",
           senderId: sessionUser.id,
-          receiverId: parentCommentAuthorId,
+          receiverId: replyReceiverId,
           postId,
           commentId: comment.id,
         },
@@ -316,4 +348,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

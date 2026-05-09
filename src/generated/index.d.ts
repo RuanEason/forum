@@ -101,6 +101,14 @@ export namespace $Enums {
 export type PostType = (typeof PostType)[keyof typeof PostType]
 
 
+export const PostVisibility: {
+  PUBLIC: 'PUBLIC',
+  UNLISTED: 'UNLISTED'
+};
+
+export type PostVisibility = (typeof PostVisibility)[keyof typeof PostVisibility]
+
+
 export const DanmakuType: {
   SCROLL: 'SCROLL'
 };
@@ -157,6 +165,10 @@ export type PushLogStatus = (typeof PushLogStatus)[keyof typeof PushLogStatus]
 export type PostType = $Enums.PostType
 
 export const PostType: typeof $Enums.PostType
+
+export type PostVisibility = $Enums.PostVisibility
+
+export const PostVisibility: typeof $Enums.PostVisibility
 
 export type DanmakuType = $Enums.DanmakuType
 
@@ -2406,11 +2418,13 @@ export namespace Prisma {
 
   export type CommentCountOutputType = {
     replies: number
+    replyTargets: number
     likes: number
   }
 
   export type CommentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     replies?: boolean | CommentCountOutputTypeCountRepliesArgs
+    replyTargets?: boolean | CommentCountOutputTypeCountReplyTargetsArgs
     likes?: boolean | CommentCountOutputTypeCountLikesArgs
   }
 
@@ -2431,6 +2445,14 @@ export namespace Prisma {
    * CommentCountOutputType without action
    */
   export type CommentCountOutputTypeCountRepliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommentWhereInput
+  }
+
+
+  /**
+   * CommentCountOutputType without action
+   */
+  export type CommentCountOutputTypeCountReplyTargetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CommentWhereInput
   }
 
@@ -3990,6 +4012,7 @@ export namespace Prisma {
     title: string | null
     content: string | null
     postType: $Enums.PostType | null
+    visibility: $Enums.PostVisibility | null
     videoId: string | null
     authorId: string | null
     topicId: string | null
@@ -4005,6 +4028,7 @@ export namespace Prisma {
     title: string | null
     content: string | null
     postType: $Enums.PostType | null
+    visibility: $Enums.PostVisibility | null
     videoId: string | null
     authorId: string | null
     topicId: string | null
@@ -4020,6 +4044,7 @@ export namespace Prisma {
     title: number
     content: number
     postType: number
+    visibility: number
     videoId: number
     authorId: number
     topicId: number
@@ -4045,6 +4070,7 @@ export namespace Prisma {
     title?: true
     content?: true
     postType?: true
+    visibility?: true
     videoId?: true
     authorId?: true
     topicId?: true
@@ -4060,6 +4086,7 @@ export namespace Prisma {
     title?: true
     content?: true
     postType?: true
+    visibility?: true
     videoId?: true
     authorId?: true
     topicId?: true
@@ -4075,6 +4102,7 @@ export namespace Prisma {
     title?: true
     content?: true
     postType?: true
+    visibility?: true
     videoId?: true
     authorId?: true
     topicId?: true
@@ -4177,6 +4205,7 @@ export namespace Prisma {
     title: string | null
     content: string
     postType: $Enums.PostType
+    visibility: $Enums.PostVisibility
     videoId: string | null
     authorId: string
     topicId: string | null
@@ -4211,6 +4240,7 @@ export namespace Prisma {
     title?: boolean
     content?: boolean
     postType?: boolean
+    visibility?: boolean
     videoId?: boolean
     authorId?: boolean
     topicId?: boolean
@@ -4237,6 +4267,7 @@ export namespace Prisma {
     title?: boolean
     content?: boolean
     postType?: boolean
+    visibility?: boolean
     videoId?: boolean
     authorId?: boolean
     topicId?: boolean
@@ -4281,6 +4312,7 @@ export namespace Prisma {
       title: string | null
       content: string
       postType: $Enums.PostType
+      visibility: $Enums.PostVisibility
       videoId: string | null
       authorId: string
       topicId: string | null
@@ -4706,6 +4738,7 @@ export namespace Prisma {
     readonly title: FieldRef<"Post", 'String'>
     readonly content: FieldRef<"Post", 'String'>
     readonly postType: FieldRef<"Post", 'PostType'>
+    readonly visibility: FieldRef<"Post", 'PostVisibility'>
     readonly videoId: FieldRef<"Post", 'String'>
     readonly authorId: FieldRef<"Post", 'String'>
     readonly topicId: FieldRef<"Post", 'String'>
@@ -10350,6 +10383,7 @@ export namespace Prisma {
     postId: string | null
     authorId: string | null
     parentId: string | null
+    replyToId: string | null
     pinned: boolean | null
     pinnedAt: Date | null
     createdAt: Date | null
@@ -10361,6 +10395,7 @@ export namespace Prisma {
     postId: string | null
     authorId: string | null
     parentId: string | null
+    replyToId: string | null
     pinned: boolean | null
     pinnedAt: Date | null
     createdAt: Date | null
@@ -10372,6 +10407,7 @@ export namespace Prisma {
     postId: number
     authorId: number
     parentId: number
+    replyToId: number
     pinned: number
     pinnedAt: number
     createdAt: number
@@ -10385,6 +10421,7 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    replyToId?: true
     pinned?: true
     pinnedAt?: true
     createdAt?: true
@@ -10396,6 +10433,7 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    replyToId?: true
     pinned?: true
     pinnedAt?: true
     createdAt?: true
@@ -10407,6 +10445,7 @@ export namespace Prisma {
     postId?: true
     authorId?: true
     parentId?: true
+    replyToId?: true
     pinned?: true
     pinnedAt?: true
     createdAt?: true
@@ -10491,6 +10530,7 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId: string | null
+    replyToId: string | null
     pinned: boolean
     pinnedAt: Date | null
     createdAt: Date
@@ -10519,6 +10559,7 @@ export namespace Prisma {
     postId?: boolean
     authorId?: boolean
     parentId?: boolean
+    replyToId?: boolean
     pinned?: boolean
     pinnedAt?: boolean
     createdAt?: boolean
@@ -10526,6 +10567,8 @@ export namespace Prisma {
     author?: boolean | UserDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
     replies?: boolean | Comment$repliesArgs<ExtArgs>
+    replyTo?: boolean | Comment$replyToArgs<ExtArgs>
+    replyTargets?: boolean | Comment$replyTargetsArgs<ExtArgs>
     likes?: boolean | Comment$likesArgs<ExtArgs>
     _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["comment"]>
@@ -10536,6 +10579,7 @@ export namespace Prisma {
     postId?: boolean
     authorId?: boolean
     parentId?: boolean
+    replyToId?: boolean
     pinned?: boolean
     pinnedAt?: boolean
     createdAt?: boolean
@@ -10546,6 +10590,8 @@ export namespace Prisma {
     author?: boolean | UserDefaultArgs<ExtArgs>
     parent?: boolean | Comment$parentArgs<ExtArgs>
     replies?: boolean | Comment$repliesArgs<ExtArgs>
+    replyTo?: boolean | Comment$replyToArgs<ExtArgs>
+    replyTargets?: boolean | Comment$replyTargetsArgs<ExtArgs>
     likes?: boolean | Comment$likesArgs<ExtArgs>
     _count?: boolean | CommentCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -10558,6 +10604,8 @@ export namespace Prisma {
       author: Prisma.$UserPayload<ExtArgs>
       parent: Prisma.$CommentPayload<ExtArgs> | null
       replies: Prisma.$CommentPayload<ExtArgs>[]
+      replyTo: Prisma.$CommentPayload<ExtArgs> | null
+      replyTargets: Prisma.$CommentPayload<ExtArgs>[]
       likes: Prisma.$CommentLikePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -10566,6 +10614,7 @@ export namespace Prisma {
       postId: string
       authorId: string
       parentId: string | null
+      replyToId: string | null
       pinned: boolean
       pinnedAt: Date | null
       createdAt: Date
@@ -10942,6 +10991,10 @@ export namespace Prisma {
 
     replies<T extends Comment$repliesArgs<ExtArgs> = {}>(args?: Subset<T, Comment$repliesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, 'findMany'> | Null>;
 
+    replyTo<T extends Comment$replyToArgs<ExtArgs> = {}>(args?: Subset<T, Comment$replyToArgs<ExtArgs>>): Prisma__CommentClient<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, 'findUniqueOrThrow'> | null, null, ExtArgs>;
+
+    replyTargets<T extends Comment$replyTargetsArgs<ExtArgs> = {}>(args?: Subset<T, Comment$replyTargetsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, 'findMany'> | Null>;
+
     likes<T extends Comment$likesArgs<ExtArgs> = {}>(args?: Subset<T, Comment$likesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommentLikePayload<ExtArgs>, T, 'findMany'> | Null>;
 
     /**
@@ -10977,6 +11030,7 @@ export namespace Prisma {
     readonly postId: FieldRef<"Comment", 'String'>
     readonly authorId: FieldRef<"Comment", 'String'>
     readonly parentId: FieldRef<"Comment", 'String'>
+    readonly replyToId: FieldRef<"Comment", 'String'>
     readonly pinned: FieldRef<"Comment", 'Boolean'>
     readonly pinnedAt: FieldRef<"Comment", 'DateTime'>
     readonly createdAt: FieldRef<"Comment", 'DateTime'>
@@ -11311,6 +11365,43 @@ export namespace Prisma {
    * Comment.replies
    */
   export type Comment$repliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Comment
+     */
+    select?: CommentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: CommentInclude<ExtArgs> | null
+    where?: CommentWhereInput
+    orderBy?: CommentOrderByWithRelationInput | CommentOrderByWithRelationInput[]
+    cursor?: CommentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CommentScalarFieldEnum | CommentScalarFieldEnum[]
+  }
+
+
+  /**
+   * Comment.replyTo
+   */
+  export type Comment$replyToArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Comment
+     */
+    select?: CommentSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     */
+    include?: CommentInclude<ExtArgs> | null
+    where?: CommentWhereInput
+  }
+
+
+  /**
+   * Comment.replyTargets
+   */
+  export type Comment$replyTargetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the Comment
      */
@@ -18084,6 +18175,7 @@ export namespace Prisma {
     title: 'title',
     content: 'content',
     postType: 'postType',
+    visibility: 'visibility',
     videoId: 'videoId',
     authorId: 'authorId',
     topicId: 'topicId',
@@ -18184,6 +18276,7 @@ export namespace Prisma {
     postId: 'postId',
     authorId: 'authorId',
     parentId: 'parentId',
+    replyToId: 'replyToId',
     pinned: 'pinned',
     pinnedAt: 'pinnedAt',
     createdAt: 'createdAt'
@@ -18332,6 +18425,13 @@ export namespace Prisma {
    * Reference to a field of type 'PostType'
    */
   export type EnumPostTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostType'>
+    
+
+
+  /**
+   * Reference to a field of type 'PostVisibility'
+   */
+  export type EnumPostVisibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PostVisibility'>
     
 
 
@@ -18551,6 +18651,7 @@ export namespace Prisma {
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
     postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
+    visibility?: EnumPostVisibilityFilter<"Post"> | $Enums.PostVisibility
     videoId?: StringNullableFilter<"Post"> | string | null
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
@@ -18576,6 +18677,7 @@ export namespace Prisma {
     title?: SortOrderInput | SortOrder
     content?: SortOrder
     postType?: SortOrder
+    visibility?: SortOrder
     videoId?: SortOrderInput | SortOrder
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
@@ -18605,6 +18707,7 @@ export namespace Prisma {
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
     postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
+    visibility?: EnumPostVisibilityFilter<"Post"> | $Enums.PostVisibility
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
     viewCount?: IntFilter<"Post"> | number
@@ -18629,6 +18732,7 @@ export namespace Prisma {
     title?: SortOrderInput | SortOrder
     content?: SortOrder
     postType?: SortOrder
+    visibility?: SortOrder
     videoId?: SortOrderInput | SortOrder
     authorId?: SortOrder
     topicId?: SortOrderInput | SortOrder
@@ -18652,6 +18756,7 @@ export namespace Prisma {
     title?: StringNullableWithAggregatesFilter<"Post"> | string | null
     content?: StringWithAggregatesFilter<"Post"> | string
     postType?: EnumPostTypeWithAggregatesFilter<"Post"> | $Enums.PostType
+    visibility?: EnumPostVisibilityWithAggregatesFilter<"Post"> | $Enums.PostVisibility
     videoId?: StringNullableWithAggregatesFilter<"Post"> | string | null
     authorId?: StringWithAggregatesFilter<"Post"> | string
     topicId?: StringNullableWithAggregatesFilter<"Post"> | string | null
@@ -19094,6 +19199,7 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    replyToId?: StringNullableFilter<"Comment"> | string | null
     pinned?: BoolFilter<"Comment"> | boolean
     pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
@@ -19101,6 +19207,8 @@ export namespace Prisma {
     author?: XOR<UserRelationFilter, UserWhereInput>
     parent?: XOR<CommentNullableRelationFilter, CommentWhereInput> | null
     replies?: CommentListRelationFilter
+    replyTo?: XOR<CommentNullableRelationFilter, CommentWhereInput> | null
+    replyTargets?: CommentListRelationFilter
     likes?: CommentLikeListRelationFilter
   }
 
@@ -19110,6 +19218,7 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrderInput | SortOrder
+    replyToId?: SortOrderInput | SortOrder
     pinned?: SortOrder
     pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -19117,6 +19226,8 @@ export namespace Prisma {
     author?: UserOrderByWithRelationInput
     parent?: CommentOrderByWithRelationInput
     replies?: CommentOrderByRelationAggregateInput
+    replyTo?: CommentOrderByWithRelationInput
+    replyTargets?: CommentOrderByRelationAggregateInput
     likes?: CommentLikeOrderByRelationAggregateInput
   }
 
@@ -19129,6 +19240,7 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    replyToId?: StringNullableFilter<"Comment"> | string | null
     pinned?: BoolFilter<"Comment"> | boolean
     pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
@@ -19136,6 +19248,8 @@ export namespace Prisma {
     author?: XOR<UserRelationFilter, UserWhereInput>
     parent?: XOR<CommentNullableRelationFilter, CommentWhereInput> | null
     replies?: CommentListRelationFilter
+    replyTo?: XOR<CommentNullableRelationFilter, CommentWhereInput> | null
+    replyTargets?: CommentListRelationFilter
     likes?: CommentLikeListRelationFilter
   }, "id">
 
@@ -19145,6 +19259,7 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrderInput | SortOrder
+    replyToId?: SortOrderInput | SortOrder
     pinned?: SortOrder
     pinnedAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -19162,6 +19277,7 @@ export namespace Prisma {
     postId?: StringWithAggregatesFilter<"Comment"> | string
     authorId?: StringWithAggregatesFilter<"Comment"> | string
     parentId?: StringNullableWithAggregatesFilter<"Comment"> | string | null
+    replyToId?: StringNullableWithAggregatesFilter<"Comment"> | string | null
     pinned?: BoolWithAggregatesFilter<"Comment"> | boolean
     pinnedAt?: DateTimeNullableWithAggregatesFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Comment"> | Date | string
@@ -19837,6 +19953,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -19859,6 +19976,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -19881,6 +19999,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -19903,6 +20022,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19925,6 +20045,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -19940,6 +20061,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -19952,6 +20074,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -20440,6 +20563,8 @@ export namespace Prisma {
     author: UserCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeCreateNestedManyWithoutCommentInput
   }
 
@@ -20449,10 +20574,12 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
 
@@ -20466,6 +20593,8 @@ export namespace Prisma {
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUpdateManyWithoutCommentNestedInput
   }
 
@@ -20475,10 +20604,12 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
 
@@ -20488,6 +20619,7 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
@@ -20507,6 +20639,7 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -21312,6 +21445,13 @@ export namespace Prisma {
     not?: NestedEnumPostTypeFilter<$PrismaModel> | $Enums.PostType
   }
 
+  export type EnumPostVisibilityFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostVisibility | EnumPostVisibilityFieldRefInput<$PrismaModel>
+    in?: $Enums.PostVisibility[]
+    notIn?: $Enums.PostVisibility[]
+    not?: NestedEnumPostVisibilityFilter<$PrismaModel> | $Enums.PostVisibility
+  }
+
   export type UserRelationFilter = {
     is?: UserWhereInput
     isNot?: UserWhereInput
@@ -21352,6 +21492,7 @@ export namespace Prisma {
     title?: SortOrder
     content?: SortOrder
     postType?: SortOrder
+    visibility?: SortOrder
     videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
@@ -21371,6 +21512,7 @@ export namespace Prisma {
     title?: SortOrder
     content?: SortOrder
     postType?: SortOrder
+    visibility?: SortOrder
     videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
@@ -21386,6 +21528,7 @@ export namespace Prisma {
     title?: SortOrder
     content?: SortOrder
     postType?: SortOrder
+    visibility?: SortOrder
     videoId?: SortOrder
     authorId?: SortOrder
     topicId?: SortOrder
@@ -21408,6 +21551,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPostTypeFilter<$PrismaModel>
     _max?: NestedEnumPostTypeFilter<$PrismaModel>
+  }
+
+  export type EnumPostVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostVisibility | EnumPostVisibilityFieldRefInput<$PrismaModel>
+    in?: $Enums.PostVisibility[]
+    notIn?: $Enums.PostVisibility[]
+    not?: NestedEnumPostVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.PostVisibility
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPostVisibilityFilter<$PrismaModel>
+    _max?: NestedEnumPostVisibilityFilter<$PrismaModel>
   }
 
   export type EnumDanmakuTypeFilter<$PrismaModel = never> = {
@@ -21795,6 +21948,7 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    replyToId?: SortOrder
     pinned?: SortOrder
     pinnedAt?: SortOrder
     createdAt?: SortOrder
@@ -21806,6 +21960,7 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    replyToId?: SortOrder
     pinned?: SortOrder
     pinnedAt?: SortOrder
     createdAt?: SortOrder
@@ -21817,6 +21972,7 @@ export namespace Prisma {
     postId?: SortOrder
     authorId?: SortOrder
     parentId?: SortOrder
+    replyToId?: SortOrder
     pinned?: SortOrder
     pinnedAt?: SortOrder
     createdAt?: SortOrder
@@ -22861,6 +23017,10 @@ export namespace Prisma {
     set?: $Enums.PostType
   }
 
+  export type EnumPostVisibilityFieldUpdateOperationsInput = {
+    set?: $Enums.PostVisibility
+  }
+
   export type UserUpdateOneRequiredWithoutPostsNestedInput = {
     create?: XOR<UserCreateWithoutPostsInput, UserUncheckedCreateWithoutPostsInput>
     connectOrCreate?: UserCreateOrConnectWithoutPostsInput
@@ -23342,6 +23502,19 @@ export namespace Prisma {
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
+  export type CommentCreateNestedOneWithoutReplyTargetsInput = {
+    create?: XOR<CommentCreateWithoutReplyTargetsInput, CommentUncheckedCreateWithoutReplyTargetsInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyTargetsInput
+    connect?: CommentWhereUniqueInput
+  }
+
+  export type CommentCreateNestedManyWithoutReplyToInput = {
+    create?: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput> | CommentCreateWithoutReplyToInput[] | CommentUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyToInput | CommentCreateOrConnectWithoutReplyToInput[]
+    createMany?: CommentCreateManyReplyToInputEnvelope
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+  }
+
   export type CommentLikeCreateNestedManyWithoutCommentInput = {
     create?: XOR<CommentLikeCreateWithoutCommentInput, CommentLikeUncheckedCreateWithoutCommentInput> | CommentLikeCreateWithoutCommentInput[] | CommentLikeUncheckedCreateWithoutCommentInput[]
     connectOrCreate?: CommentLikeCreateOrConnectWithoutCommentInput | CommentLikeCreateOrConnectWithoutCommentInput[]
@@ -23353,6 +23526,13 @@ export namespace Prisma {
     create?: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput> | CommentCreateWithoutParentInput[] | CommentUncheckedCreateWithoutParentInput[]
     connectOrCreate?: CommentCreateOrConnectWithoutParentInput | CommentCreateOrConnectWithoutParentInput[]
     createMany?: CommentCreateManyParentInputEnvelope
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+  }
+
+  export type CommentUncheckedCreateNestedManyWithoutReplyToInput = {
+    create?: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput> | CommentCreateWithoutReplyToInput[] | CommentUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyToInput | CommentCreateOrConnectWithoutReplyToInput[]
+    createMany?: CommentCreateManyReplyToInputEnvelope
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
   }
 
@@ -23403,6 +23583,30 @@ export namespace Prisma {
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
+  export type CommentUpdateOneWithoutReplyTargetsNestedInput = {
+    create?: XOR<CommentCreateWithoutReplyTargetsInput, CommentUncheckedCreateWithoutReplyTargetsInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyTargetsInput
+    upsert?: CommentUpsertWithoutReplyTargetsInput
+    disconnect?: CommentWhereInput | boolean
+    delete?: CommentWhereInput | boolean
+    connect?: CommentWhereUniqueInput
+    update?: XOR<XOR<CommentUpdateToOneWithWhereWithoutReplyTargetsInput, CommentUpdateWithoutReplyTargetsInput>, CommentUncheckedUpdateWithoutReplyTargetsInput>
+  }
+
+  export type CommentUpdateManyWithoutReplyToNestedInput = {
+    create?: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput> | CommentCreateWithoutReplyToInput[] | CommentUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyToInput | CommentCreateOrConnectWithoutReplyToInput[]
+    upsert?: CommentUpsertWithWhereUniqueWithoutReplyToInput | CommentUpsertWithWhereUniqueWithoutReplyToInput[]
+    createMany?: CommentCreateManyReplyToInputEnvelope
+    set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    update?: CommentUpdateWithWhereUniqueWithoutReplyToInput | CommentUpdateWithWhereUniqueWithoutReplyToInput[]
+    updateMany?: CommentUpdateManyWithWhereWithoutReplyToInput | CommentUpdateManyWithWhereWithoutReplyToInput[]
+    deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
+  }
+
   export type CommentLikeUpdateManyWithoutCommentNestedInput = {
     create?: XOR<CommentLikeCreateWithoutCommentInput, CommentLikeUncheckedCreateWithoutCommentInput> | CommentLikeCreateWithoutCommentInput[] | CommentLikeUncheckedCreateWithoutCommentInput[]
     connectOrCreate?: CommentLikeCreateOrConnectWithoutCommentInput | CommentLikeCreateOrConnectWithoutCommentInput[]
@@ -23428,6 +23632,20 @@ export namespace Prisma {
     connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
     update?: CommentUpdateWithWhereUniqueWithoutParentInput | CommentUpdateWithWhereUniqueWithoutParentInput[]
     updateMany?: CommentUpdateManyWithWhereWithoutParentInput | CommentUpdateManyWithWhereWithoutParentInput[]
+    deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
+  }
+
+  export type CommentUncheckedUpdateManyWithoutReplyToNestedInput = {
+    create?: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput> | CommentCreateWithoutReplyToInput[] | CommentUncheckedCreateWithoutReplyToInput[]
+    connectOrCreate?: CommentCreateOrConnectWithoutReplyToInput | CommentCreateOrConnectWithoutReplyToInput[]
+    upsert?: CommentUpsertWithWhereUniqueWithoutReplyToInput | CommentUpsertWithWhereUniqueWithoutReplyToInput[]
+    createMany?: CommentCreateManyReplyToInputEnvelope
+    set?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    disconnect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    delete?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    connect?: CommentWhereUniqueInput | CommentWhereUniqueInput[]
+    update?: CommentUpdateWithWhereUniqueWithoutReplyToInput | CommentUpdateWithWhereUniqueWithoutReplyToInput[]
+    updateMany?: CommentUpdateManyWithWhereWithoutReplyToInput | CommentUpdateManyWithWhereWithoutReplyToInput[]
     deleteMany?: CommentScalarWhereInput | CommentScalarWhereInput[]
   }
 
@@ -23920,6 +24138,13 @@ export namespace Prisma {
     not?: NestedEnumPostTypeFilter<$PrismaModel> | $Enums.PostType
   }
 
+  export type NestedEnumPostVisibilityFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostVisibility | EnumPostVisibilityFieldRefInput<$PrismaModel>
+    in?: $Enums.PostVisibility[]
+    notIn?: $Enums.PostVisibility[]
+    not?: NestedEnumPostVisibilityFilter<$PrismaModel> | $Enums.PostVisibility
+  }
+
   export type NestedEnumPostTypeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.PostType | EnumPostTypeFieldRefInput<$PrismaModel>
     in?: $Enums.PostType[]
@@ -23928,6 +24153,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPostTypeFilter<$PrismaModel>
     _max?: NestedEnumPostTypeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumPostVisibilityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.PostVisibility | EnumPostVisibilityFieldRefInput<$PrismaModel>
+    in?: $Enums.PostVisibility[]
+    notIn?: $Enums.PostVisibility[]
+    not?: NestedEnumPostVisibilityWithAggregatesFilter<$PrismaModel> | $Enums.PostVisibility
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumPostVisibilityFilter<$PrismaModel>
+    _max?: NestedEnumPostVisibilityFilter<$PrismaModel>
   }
 
   export type NestedEnumDanmakuTypeFilter<$PrismaModel = never> = {
@@ -24090,6 +24325,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -24111,6 +24347,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     topicId?: string | null
     viewCount?: number
@@ -24265,6 +24502,8 @@ export namespace Prisma {
     post: PostCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeCreateNestedManyWithoutCommentInput
   }
 
@@ -24273,10 +24512,12 @@ export namespace Prisma {
     content: string
     postId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
 
@@ -24556,6 +24797,7 @@ export namespace Prisma {
     title?: StringNullableFilter<"Post"> | string | null
     content?: StringFilter<"Post"> | string
     postType?: EnumPostTypeFilter<"Post"> | $Enums.PostType
+    visibility?: EnumPostVisibilityFilter<"Post"> | $Enums.PostVisibility
     videoId?: StringNullableFilter<"Post"> | string | null
     authorId?: StringFilter<"Post"> | string
     topicId?: StringNullableFilter<"Post"> | string | null
@@ -24680,6 +24922,7 @@ export namespace Prisma {
     postId?: StringFilter<"Comment"> | string
     authorId?: StringFilter<"Comment"> | string
     parentId?: StringNullableFilter<"Comment"> | string | null
+    replyToId?: StringNullableFilter<"Comment"> | string | null
     pinned?: BoolFilter<"Comment"> | boolean
     pinnedAt?: DateTimeNullableFilter<"Comment"> | Date | string | null
     createdAt?: DateTimeFilter<"Comment"> | Date | string
@@ -25049,6 +25292,8 @@ export namespace Prisma {
     author: UserCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeCreateNestedManyWithoutCommentInput
   }
 
@@ -25057,10 +25302,12 @@ export namespace Prisma {
     content: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
 
@@ -25573,6 +25820,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -25594,6 +25842,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -25702,6 +25951,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25723,6 +25973,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -25892,6 +26143,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -25913,6 +26165,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     authorId: string
     topicId?: string | null
     viewCount?: number
@@ -26027,6 +26280,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26048,6 +26302,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -26069,6 +26324,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -26090,6 +26346,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     viewCount?: number
@@ -26395,6 +26652,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -26416,6 +26674,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -26453,6 +26712,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26474,6 +26734,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26495,6 +26756,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -26516,6 +26778,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -26553,6 +26816,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26574,6 +26838,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26595,6 +26860,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -26616,6 +26882,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -26717,6 +26984,8 @@ export namespace Prisma {
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeCreateNestedManyWithoutCommentInput
   }
 
@@ -26726,9 +26995,11 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
 
@@ -26746,6 +27017,8 @@ export namespace Prisma {
     post: PostCreateNestedOneWithoutCommentsInput
     author: UserCreateNestedOneWithoutCommentsInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeCreateNestedManyWithoutCommentInput
   }
 
@@ -26754,10 +27027,12 @@ export namespace Prisma {
     content: string
     postId: string
     authorId: string
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
     likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
   }
 
@@ -26768,6 +27043,77 @@ export namespace Prisma {
 
   export type CommentCreateManyParentInputEnvelope = {
     data: CommentCreateManyParentInput | CommentCreateManyParentInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CommentCreateWithoutReplyTargetsInput = {
+    id?: string
+    content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    post: PostCreateNestedOneWithoutCommentsInput
+    author: UserCreateNestedOneWithoutCommentsInput
+    parent?: CommentCreateNestedOneWithoutRepliesInput
+    replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    likes?: CommentLikeCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutReplyTargetsInput = {
+    id?: string
+    content: string
+    postId: string
+    authorId: string
+    parentId?: string | null
+    replyToId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutReplyTargetsInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutReplyTargetsInput, CommentUncheckedCreateWithoutReplyTargetsInput>
+  }
+
+  export type CommentCreateWithoutReplyToInput = {
+    id?: string
+    content: string
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    post: PostCreateNestedOneWithoutCommentsInput
+    author: UserCreateNestedOneWithoutCommentsInput
+    parent?: CommentCreateNestedOneWithoutRepliesInput
+    replies?: CommentCreateNestedManyWithoutParentInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
+    likes?: CommentLikeCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutReplyToInput = {
+    id?: string
+    content: string
+    postId: string
+    authorId: string
+    parentId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+    replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
+    likes?: CommentLikeUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutReplyToInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput>
+  }
+
+  export type CommentCreateManyReplyToInputEnvelope = {
+    data: CommentCreateManyReplyToInput | CommentCreateManyReplyToInput[]
     skipDuplicates?: boolean
   }
 
@@ -26809,6 +27155,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -26830,6 +27177,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26943,6 +27291,8 @@ export namespace Prisma {
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUpdateManyWithoutCommentNestedInput
   }
 
@@ -26952,9 +27302,11 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
 
@@ -26972,6 +27324,61 @@ export namespace Prisma {
   export type CommentUpdateManyWithWhereWithoutParentInput = {
     where: CommentScalarWhereInput
     data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutParentInput>
+  }
+
+  export type CommentUpsertWithoutReplyTargetsInput = {
+    update: XOR<CommentUpdateWithoutReplyTargetsInput, CommentUncheckedUpdateWithoutReplyTargetsInput>
+    create: XOR<CommentCreateWithoutReplyTargetsInput, CommentUncheckedCreateWithoutReplyTargetsInput>
+    where?: CommentWhereInput
+  }
+
+  export type CommentUpdateToOneWithWhereWithoutReplyTargetsInput = {
+    where?: CommentWhereInput
+    data: XOR<CommentUpdateWithoutReplyTargetsInput, CommentUncheckedUpdateWithoutReplyTargetsInput>
+  }
+
+  export type CommentUpdateWithoutReplyTargetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneRequiredWithoutCommentsNestedInput
+    author?: UserUpdateOneRequiredWithoutCommentsNestedInput
+    parent?: CommentUpdateOneWithoutRepliesNestedInput
+    replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    likes?: CommentLikeUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutReplyTargetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    authorId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUpsertWithWhereUniqueWithoutReplyToInput = {
+    where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutReplyToInput, CommentUncheckedUpdateWithoutReplyToInput>
+    create: XOR<CommentCreateWithoutReplyToInput, CommentUncheckedCreateWithoutReplyToInput>
+  }
+
+  export type CommentUpdateWithWhereUniqueWithoutReplyToInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutReplyToInput, CommentUncheckedUpdateWithoutReplyToInput>
+  }
+
+  export type CommentUpdateManyWithWhereWithoutReplyToInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutReplyToInput>
   }
 
   export type CommentLikeUpsertWithWhereUniqueWithoutCommentInput = {
@@ -26995,6 +27402,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -27016,6 +27424,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -27124,6 +27533,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27145,6 +27555,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -27385,6 +27796,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -27406,6 +27818,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -27635,6 +28048,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27656,6 +28070,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -28046,6 +28461,8 @@ export namespace Prisma {
     author: UserCreateNestedOneWithoutCommentsInput
     parent?: CommentCreateNestedOneWithoutRepliesInput
     replies?: CommentCreateNestedManyWithoutParentInput
+    replyTo?: CommentCreateNestedOneWithoutReplyTargetsInput
+    replyTargets?: CommentCreateNestedManyWithoutReplyToInput
   }
 
   export type CommentUncheckedCreateWithoutLikesInput = {
@@ -28054,10 +28471,12 @@ export namespace Prisma {
     postId: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
     replies?: CommentUncheckedCreateNestedManyWithoutParentInput
+    replyTargets?: CommentUncheckedCreateNestedManyWithoutReplyToInput
   }
 
   export type CommentCreateOrConnectWithoutLikesInput = {
@@ -28157,6 +28576,8 @@ export namespace Prisma {
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
   }
 
   export type CommentUncheckedUpdateWithoutLikesInput = {
@@ -28165,10 +28586,12 @@ export namespace Prisma {
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
   }
 
   export type UserUpsertWithoutCommentLikesInput = {
@@ -28253,6 +28676,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     viewCount?: number
     pinned?: boolean
     pinnedAt?: Date | string | null
@@ -28274,6 +28698,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     topicId?: string | null
@@ -28382,6 +28807,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -28403,6 +28829,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -28797,6 +29224,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     topicId?: string | null
     viewCount?: number
@@ -28844,6 +29272,7 @@ export namespace Prisma {
     content: string
     postId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
@@ -28927,6 +29356,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -28948,6 +29378,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -28969,6 +29400,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     topicId?: NullableStringFieldUpdateOperationsInput | string | null
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -29124,6 +29556,8 @@ export namespace Prisma {
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUpdateManyWithoutCommentNestedInput
   }
 
@@ -29132,10 +29566,12 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
 
@@ -29144,6 +29580,7 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29379,6 +29816,7 @@ export namespace Prisma {
     content: string
     authorId: string
     parentId?: string | null
+    replyToId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
@@ -29442,6 +29880,8 @@ export namespace Prisma {
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     parent?: CommentUpdateOneWithoutRepliesNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUpdateManyWithoutCommentNestedInput
   }
 
@@ -29450,10 +29890,12 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
 
@@ -29462,6 +29904,7 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
     parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29621,6 +30064,7 @@ export namespace Prisma {
     title?: string | null
     content: string
     postType?: $Enums.PostType
+    visibility?: $Enums.PostVisibility
     videoId?: string | null
     authorId: string
     viewCount?: number
@@ -29635,6 +30079,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     viewCount?: IntFieldUpdateOperationsInput | number
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -29656,6 +30101,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -29677,6 +30123,7 @@ export namespace Prisma {
     title?: NullableStringFieldUpdateOperationsInput | string | null
     content?: StringFieldUpdateOperationsInput | string
     postType?: EnumPostTypeFieldUpdateOperationsInput | $Enums.PostType
+    visibility?: EnumPostVisibilityFieldUpdateOperationsInput | $Enums.PostVisibility
     videoId?: NullableStringFieldUpdateOperationsInput | string | null
     authorId?: StringFieldUpdateOperationsInput | string
     viewCount?: IntFieldUpdateOperationsInput | number
@@ -29777,6 +30224,18 @@ export namespace Prisma {
     content: string
     postId: string
     authorId: string
+    replyToId?: string | null
+    pinned?: boolean
+    pinnedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type CommentCreateManyReplyToInput = {
+    id?: string
+    content: string
+    postId: string
+    authorId: string
+    parentId?: string | null
     pinned?: boolean
     pinnedAt?: Date | string | null
     createdAt?: Date | string
@@ -29797,6 +30256,8 @@ export namespace Prisma {
     post?: PostUpdateOneRequiredWithoutCommentsNestedInput
     author?: UserUpdateOneRequiredWithoutCommentsNestedInput
     replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTo?: CommentUpdateOneWithoutReplyTargetsNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUpdateManyWithoutCommentNestedInput
   }
 
@@ -29805,10 +30266,12 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
     likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
   }
 
@@ -29817,6 +30280,46 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     postId?: StringFieldUpdateOperationsInput | string
     authorId?: StringFieldUpdateOperationsInput | string
+    replyToId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentUpdateWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    post?: PostUpdateOneRequiredWithoutCommentsNestedInput
+    author?: UserUpdateOneRequiredWithoutCommentsNestedInput
+    parent?: CommentUpdateOneWithoutRepliesNestedInput
+    replies?: CommentUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUpdateManyWithoutReplyToNestedInput
+    likes?: CommentLikeUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    authorId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
+    pinned?: BoolFieldUpdateOperationsInput | boolean
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    replies?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    replyTargets?: CommentUncheckedUpdateManyWithoutReplyToNestedInput
+    likes?: CommentLikeUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateManyWithoutReplyToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    postId?: StringFieldUpdateOperationsInput | string
+    authorId?: StringFieldUpdateOperationsInput | string
+    parentId?: NullableStringFieldUpdateOperationsInput | string | null
     pinned?: BoolFieldUpdateOperationsInput | boolean
     pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
