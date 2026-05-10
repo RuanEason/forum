@@ -9,11 +9,11 @@ import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
-import { createPortal } from "react-dom";
 import remarkGfm from "remark-gfm";
 import { ImagePlus, SendHorizontal } from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
+import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
 
 interface AuthorProps {
   id: string;
@@ -513,37 +513,6 @@ function CommentItem({
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (previewImageUrl) {
-      document.body.style.overflow = "hidden";
-      document.body.classList.add("image-preview-active");
-    } else {
-      document.body.style.overflow = "";
-      document.body.classList.remove("image-preview-active");
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.classList.remove("image-preview-active");
-    };
-  }, [previewImageUrl]);
-
-  useEffect(() => {
-    if (!previewImageUrl) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setPreviewImageUrl(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [previewImageUrl]);
-
   const openReplyForm = (target?: { id: string; name: string | null }) => {
     setReplyTarget(target || null);
     setShowReplyForm(true);
@@ -734,34 +703,12 @@ function CommentItem({
         </div>
       )}
 
-      {mounted && previewImageUrl && createPortal(
-        <div
-          className="fixed inset-0 z-[2147483647] bg-black/95 flex items-center justify-center p-4"
-          onClick={() => setPreviewImageUrl(null)}
-        >
-          <button
-            type="button"
-            className="absolute top-6 right-6 text-white bg-white/20 hover:bg-white/30 rounded-full p-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPreviewImageUrl(null);
-            }}
-            aria-label="关闭预览"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewImageUrl}
-            alt={previewImageAlt}
-            className="max-h-[90vh] max-w-[95vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>,
-        document.body
+      {previewImageUrl && (
+        <ImagePreviewLightbox
+          images={[{ src: previewImageUrl, alt: previewImageAlt }]}
+          currentIndex={0}
+          onClose={() => setPreviewImageUrl(null)}
+        />
       )}
     </div>
   );

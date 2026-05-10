@@ -13,6 +13,7 @@ import RepostButton from "@/components/RepostButton";
 import PinButton from "@/components/PinButton";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
+import PostMoreMenu from "@/components/PostMoreMenu";
 import PostImages from "@/components/PostImages";
 import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
@@ -20,7 +21,6 @@ import { Eye, Lock } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
 import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
-import ArticleCatalog from "@/components/ArticleCatalog";
 import MobileArticleCatalog from "@/components/MobileArticleCatalog";
 import CatalogSidebar from "@/components/CatalogSidebar";
 import VideoPostDetail from "@/components/VideoPostDetail";
@@ -155,6 +155,19 @@ export default async function PostDetailPage({
 
   const isVideoPost = post.postType === "VIDEO";
   const isUnlistedPost = post.visibility === "UNLISTED";
+  const canEditPost = Boolean(
+    session?.user?.id
+      && (session.user.id === post.author.id || session.user.role === "admin"),
+  );
+  const editablePost = {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    postType: post.postType,
+    visibility: post.visibility,
+    images: post.images,
+    attachments: post.attachments,
+  };
   const previewImages = post.images.map((img) => img.url);
   if (isVideoPost && post.video?.coverUrl) {
     previewImages.unshift(post.video.coverUrl);
@@ -312,41 +325,39 @@ export default async function PostDetailPage({
                     {post.title || ""}
                   </h1>
                 </div>
-                <div className="flex items-center">
-                  <Avatar
-                    src={post.author.avatar}
-                    name={post.author.name}
-                    size="md"
-                  />
-                  <div className="ml-4">
-                    <Link
-                      href={`/user/${post.author.id}`}
-                      className="text-sm font-bold text-gray-900 hover:underline"
-                    >
-                      {post.author.name || "匿名用户"}
-                    </Link>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>
-                        {format(
-                          new Date(post.createdAt),
-                          "yyyy年MM月dd日 HH:mm"
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Avatar
+                      src={post.author.avatar}
+                      name={post.author.name}
+                      size="md"
+                    />
+                    <div className="ml-4">
+                      <Link
+                        href={`/user/${post.author.id}`}
+                        className="text-sm font-bold text-gray-900 hover:underline"
+                      >
+                        {post.author.name || "匿名用户"}
+                      </Link>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>
+                          {format(
+                            new Date(post.createdAt),
+                            "yyyy年MM月dd日 HH:mm"
+                          )}
+                        </span>
+                        {post.topic && (
+                          <Link
+                            href={`/topic/${post.topic.id}`}
+                            className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                          >
+                            #{post.topic.name}
+                          </Link>
                         )}
-                      </span>
-                      {post.topic && (
-                        <Link
-                          href={`/topic/${post.topic.id}`}
-                          className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
-                        >
-                          #{post.topic.name}
-                        </Link>
-                      )}
+                      </div>
                     </div>
                   </div>
-                  {isUnlistedPost && (
-                    <div className="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-amber-700">
-                      <Lock className="h-3.5 w-3.5" />
-                    </div>
-                  )}
+                  <PostMoreMenu post={editablePost} canEdit={canEditPost} />
                 </div>
 
 
@@ -392,7 +403,13 @@ export default async function PostDetailPage({
                         : false
                     }
                   />
-                  <RepostButton postId={post.id} />
+                  <RepostButton
+                    postId={post.id}
+                    title={post.title}
+                    authorName={post.author.name}
+                    content={post.content}
+                    createdAt={post.createdAt}
+                  />
                   {/* 置顶按钮 - 仅管理员可见 */}
                   {session?.user?.role === "admin" && (
                     <PinButton postId={post.id} isPinned={post.pinned || false} />

@@ -27,6 +27,27 @@ type SessionShape = {
   };
 } | null;
 
+type AttachmentPayload = {
+  id?: string | null;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+};
+
+async function deleteCosFileByUrl(fileUrl: string, label: string) {
+  try {
+    const url = new URL(fileUrl);
+    const filename = url.pathname.slice(1);
+    if (!filename) {
+      return;
+    }
+    await deleteFromCOS(filename);
+  } catch (error) {
+    console.error(`Failed to delete ${label} from COS: ${fileUrl}`, error);
+  }
+}
+
 /**
  * 鑾峰彇甯栧瓙鍒楄〃
  * 鏍规嵁 URL 鏌ヨ鍙傛暟涓殑 topicId 绛涢€夊笘瀛?
@@ -345,17 +366,144 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, title, content } = await request.json();
+    const {
+      id,
+      title,
+      content,
+      images,
+      attachments,
+      visibility,
+      topicId,
+    } = await request.json() as {
+      id?: unknown;
+      title?: unknown;
+      content?: unknown;
+      images?: unknown;
+      attachments?: unknown;
+      visibility?: unknown;
+      topicId?: unknown;
+    };
 
-    if (!id || !content) {
+    if (!id || typeof id !== "string") {
+      return NextResponse.json({ error: "Post ID is required" }, { status: 400 });
+    }
+
+    if (title !== undefined && title !== null) {
+      if (typeof title !== "string") {
+        return NextResponse.json({ error: "Title must be a string" }, { status: 400 });
+      }
+      if (title.length > MAX_TITLE_LENGTH) {
+        return NextResponse.json(
+          { error: `Title must be less than ${MAX_TITLE_LENGTH} characters` },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (typeof content !== "string") {
+      return NextResponse.json({ error: "Content must be a string" }, { status: 400 });
+    }
+    if (content.length > MAX_CONTENT_LENGTH) {
       return NextResponse.json(
-        { error: "Post ID and content are required" },
-        { status: 400 }
+        { error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` },
+        { status: 400 },
       );
     }
 
+    if (visibility !== undefined && visibility !== null && typeof visibility !== "string") {
+      return NextResponse.json({ error: "visibility must be a string" }, { status: 400 });
+    }
+    const visibilityCandidate = typeof visibility === "string" ? visibility.toUpperCase() : undefined;
+    if (
+      visibilityCandidate
+      && !POST_VISIBILITIES.includes(visibilityCandidate as PostVisibility)
+    ) {
+      return NextResponse.json(
+        { error: `visibility must be one of ${POST_VISIBILITIES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+    const normalizedVisibility = visibilityCandidate
+      ? visibilityCandidate as PostVisibility
+      : undefined;
+
+    if (topicId !== undefined && topicId !== null && typeof topicId !== "string") {
+      return NextResponse.json({ error: "topicId must be a string" }, { status: 400 });
+    }
+
+    if (images !== undefined && images !== null && !Array.isArray(images)) {
+      return NextResponse.json({ error: "Images must be an array" }, { status: 400 });
+    }
+    const normalizedImages = Array.isArray(images)
+      ? Array.from(new Set(images.map((img) => (typeof img === "string" ? img.trim() : img))))
+      : undefined;
+    if (normalizedImages && normalizedImages.length > MAX_IMAGES) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_IMAGES} images allowed` },
+        { status: 400 },
+      );
+    }
+    if (normalizedImages?.some((img) => typeof img !== "string" || img.length === 0)) {
+      return NextResponse.json({ error: "Each image must be a string URL" }, { status: 400 });
+    }
+
+    if (attachments !== undefined && attachments !== null && !Array.isArray(attachments)) {
+      return NextResponse.json({ error: "Attachments must be an array" }, { status: 400 });
+    }
+    const normalizedAttachments = Array.isArray(attachments)
+      ? attachments.map((att) => {
+          if (typeof att !== "object" || att === null) {
+            return null;
+          }
+
+          const candidate = att as Partial<AttachmentPayload>;
+          return {
+            id: candidate.id ?? null,
+            url: candidate.url,
+            fileName: candidate.fileName,
+            fileSize: candidate.fileSize,
+            mimeType: candidate.mimeType,
+          };
+        })
+      : undefined;
+
+    if (normalizedAttachments && normalizedAttachments.length > MAX_ATTACHMENTS) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_ATTACHMENTS} attachments allowed` },
+        { status: 400 },
+      );
+    }
+    if (normalizedAttachments?.some((att) => att === null)) {
+      return NextResponse.json({ error: "Each attachment must be an object" }, { status: 400 });
+    }
+
+    const attachmentPayloads = normalizedAttachments as AttachmentPayload[] | undefined;
+    if (attachmentPayloads) {
+      for (const att of attachmentPayloads) {
+        if (att.id !== null && att.id !== undefined && typeof att.id !== "string") {
+          return NextResponse.json({ error: "Attachment id must be a string" }, { status: 400 });
+        }
+        if (typeof att.url !== "string") {
+          return NextResponse.json({ error: "Attachment url must be a string" }, { status: 400 });
+        }
+        if (typeof att.fileName !== "string") {
+          return NextResponse.json({ error: "Attachment fileName must be a string" }, { status: 400 });
+        }
+        if (typeof att.fileSize !== "number") {
+          return NextResponse.json({ error: "Attachment fileSize must be a number" }, { status: 400 });
+        }
+        if (typeof att.mimeType !== "string") {
+          return NextResponse.json({ error: "Attachment mimeType must be a string" }, { status: 400 });
+        }
+      }
+    }
+
     const existingPost = await prisma.post.findUnique({
-      where: { id: id },
+      where: { id },
+      include: {
+        attachments: true,
+        images: true,
+      },
     });
 
     if (!existingPost) {
@@ -367,7 +515,60 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updatedPost = await updatePost(id, title, content);
+    const nextImages = normalizedImages as string[] | undefined;
+    const nextAttachments = attachmentPayloads?.map((att) => ({
+      id: att.id || null,
+      url: att.url.trim(),
+      fileName: att.fileName.trim(),
+      fileSize: att.fileSize,
+      mimeType: att.mimeType.trim(),
+    }));
+
+    if (existingPost.postType === "VIDEO" && nextImages && nextImages.length > 0) {
+      return NextResponse.json(
+        { error: "Video posts do not support images" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      existingPost.postType === "TEXT"
+      && content.trim() === ""
+      && (nextImages ?? existingPost.images.map((image) => image.url)).length === 0
+      && (nextAttachments ?? existingPost.attachments).length === 0
+    ) {
+      return NextResponse.json(
+        { error: "Content, images, or attachments are required" },
+        { status: 400 },
+      );
+    }
+
+    const nextImageSet = new Set(nextImages ?? existingPost.images.map((image) => image.url));
+    const nextAttachmentIdSet = new Set(
+      (nextAttachments ?? existingPost.attachments)
+        .map((attachment) => attachment.id)
+        .filter(Boolean),
+    );
+    const removedImageUrls = existingPost.images
+      .filter((image) => !nextImageSet.has(image.url))
+      .map((image) => image.url);
+    const removedAttachmentUrls = existingPost.attachments
+      .filter((attachment) => !nextAttachmentIdSet.has(attachment.id))
+      .map((attachment) => attachment.url);
+
+    const updatedPost = await updatePost(id, {
+      title: typeof title === "string" ? title : null,
+      content,
+      visibility: normalizedVisibility,
+      images: existingPost.postType === "VIDEO" ? [] : nextImages,
+      attachments: nextAttachments,
+      topicId: topicId === undefined ? undefined : topicId || null,
+    });
+
+    await Promise.all([
+      ...removedImageUrls.map((url) => deleteCosFileByUrl(url, "image")),
+      ...removedAttachmentUrls.map((url) => deleteCosFileByUrl(url, "attachment")),
+    ]);
 
     return NextResponse.json({ message: "Post updated successfully", post: updatedPost }, { status: 200 });
   } catch (error) {

@@ -7,10 +7,23 @@ type PostAttachmentInput = {
   mimeType: string;
 };
 
+type UpdatePostAttachmentInput = PostAttachmentInput & {
+  id?: string | null;
+};
+
 type CreatePostOptions = {
   postType?: "TEXT" | "VIDEO";
   visibility?: "PUBLIC" | "UNLISTED";
   videoId?: string | null;
+};
+
+type UpdatePostInput = {
+  title?: string | null;
+  content: string;
+  visibility?: "PUBLIC" | "UNLISTED";
+  images?: string[];
+  attachments?: UpdatePostAttachmentInput[];
+  topicId?: string | null;
 };
 
 export async function getPosts(topicId?: string) {
@@ -261,13 +274,130 @@ export async function getPostById(id: string) {
   });
 }
 
-export async function updatePost(id: string, title: string | undefined | null, content: string) {
-  return prisma.post.update({
+export async function updatePost(id: string, input: UpdatePostInput) {
+  const existingPost = await prisma.post.findUnique({
     where: { id },
-    data: {
-      content,
-      title: title || null,
+    include: {
+      images: true,
+      attachments: true,
     },
+  });
+
+  if (!existingPost) {
+    throw new Error("Post not found");
+  }
+
+  const nextImages = input.images
+    ? Array.from(new Set(input.images.map((url) => url.trim()).filter(Boolean)))
+    : null;
+  const nextAttachments = input.attachments
+    ? input.attachments.map((attachment) => ({
+        ...attachment,
+        id: attachment.id || null,
+        url: attachment.url.trim(),
+        fileName: attachment.fileName.trim(),
+        mimeType: attachment.mimeType.trim(),
+      }))
+    : null;
+
+  return prisma.$transaction(async (tx) => {
+    await tx.post.update({
+      where: { id },
+      data: {
+        content: input.content,
+        title: input.title?.trim() ? input.title.trim() : null,
+        ...(input.visibility ? { visibility: input.visibility } : {}),
+        ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
+      },
+    });
+
+    if (nextImages) {
+      const existingImageUrls = new Set(existingPost.images.map((image) => image.url));
+
+      if (nextImages.length > 0) {
+        await tx.postImage.deleteMany({
+          where: {
+            postId: id,
+            url: {
+              notIn: nextImages,
+            },
+          },
+        });
+      } else {
+        await tx.postImage.deleteMany({
+          where: { postId: id },
+        });
+      }
+
+      for (const url of nextImages) {
+        if (!existingImageUrls.has(url)) {
+          await tx.postImage.create({
+            data: {
+              postId: id,
+              url,
+            },
+          });
+        }
+      }
+    }
+
+    if (nextAttachments) {
+      const existingAttachmentsById = new Map(
+        existingPost.attachments.map((attachment) => [attachment.id, attachment])
+      );
+      const keptAttachmentIds = nextAttachments
+        .map((attachment) => attachment.id)
+        .filter((attachmentId): attachmentId is string =>
+          Boolean(attachmentId && existingAttachmentsById.has(attachmentId))
+        );
+
+      if (keptAttachmentIds.length > 0) {
+        await tx.postAttachment.deleteMany({
+          where: {
+            postId: id,
+            id: {
+              notIn: keptAttachmentIds,
+            },
+          },
+        });
+      } else {
+        await tx.postAttachment.deleteMany({
+          where: { postId: id },
+        });
+      }
+
+      for (const attachment of nextAttachments) {
+        const attachmentData = {
+          url: attachment.url,
+          fileName: attachment.fileName,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+        };
+
+        if (attachment.id && existingAttachmentsById.has(attachment.id)) {
+          await tx.postAttachment.update({
+            where: { id: attachment.id },
+            data: attachmentData,
+          });
+        } else {
+          await tx.postAttachment.create({
+            data: {
+              postId: id,
+              ...attachmentData,
+            },
+          });
+        }
+      }
+    }
+
+    return tx.post.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        attachments: true,
+        topic: true,
+      },
+    });
   });
 }
 

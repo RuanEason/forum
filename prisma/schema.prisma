@@ -36,6 +36,7 @@ model User {
   topics       Topic[]       @relation("TopicFollows")
   comments     Comment[]
   reposts      Repost[]
+  shareEvents  ShareEvent[]
   postLikes    PostLike[]
   commentLikes CommentLike[]
   sentNotifications     Notification[] @relation("NotificationSender")
@@ -84,6 +85,7 @@ model Post {
   video       VideoAsset?      @relation(fields: [videoId], references: [id], onDelete: SetNull)
   comments    Comment[]
   reposts     Repost[]
+  shareEvents ShareEvent[]
   likes       PostLike[]
   danmakus    Danmaku[]
   images      PostImage[]
@@ -332,6 +334,26 @@ model Repost {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+}
+
+model ShareEvent {
+  id          String   @id @default(cuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  channel     String   @db.VarChar(32)
+  shareSource String   @db.VarChar(64)
+  vdSource    String   @db.VarChar(64)
+  shareUrl    String   @db.Text
+  userAgent   String?  @db.Text
+  referer     String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([userId, createdAt])
+  @@index([vdSource, createdAt])
+  @@map("share_events")
 }
 
 model Follow {

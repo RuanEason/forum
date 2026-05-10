@@ -218,7 +218,13 @@ export default function UserPostList({
                       {post.comments.length > 0 ? post.comments.length : "评论"}
                     </span>
                   </Link>
-                  <RepostButton postId={post.id} />
+                  <RepostButton
+                    postId={post.id}
+                    title={post.title}
+                    authorName={post.author.name}
+                    content={post.content}
+                    createdAt={post.createdAt}
+                  />
                   {/* 置顶按钮 - 仅管理员可见 */}
                   {(session?.user as any)?.role === "admin" && (
                     <PinButton postId={post.id} isPinned={post.pinned || false} />

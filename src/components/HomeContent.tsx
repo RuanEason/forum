@@ -336,7 +336,13 @@ export default function HomeContent({
                           </Link>
                           {/* 分享按钮 */}
                           <div className="flex items-center">
-                            <RepostButton postId={post.id} />
+                            <RepostButton
+                              postId={post.id}
+                              title={post.title}
+                              authorName={post.author.name}
+                              content={post.content}
+                              createdAt={post.createdAt}
+                            />
                           </div>
                           {/* 置顶按钮 - 仅管理员可见 */}
                           {(session?.user as any)?.role === "admin" && (

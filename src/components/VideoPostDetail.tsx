@@ -9,6 +9,7 @@ import BackButton from "@/components/BackButton";
 import LikeButton from "@/components/LikeButton";
 import PinButton from "@/components/PinButton";
 import RepostButton from "@/components/RepostButton";
+import PostMoreMenu from "@/components/PostMoreMenu";
 import PostAttachments from "@/components/PostAttachments";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -20,6 +21,8 @@ interface VideoPostDetailProps {
     id: string;
     title: string | null;
     content: string;
+    postType: "TEXT" | "VIDEO";
+    visibility: "PUBLIC" | "UNLISTED";
     createdAt: Date;
     viewCount: number;
     pinned?: boolean;
@@ -91,6 +94,19 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
   const canPlayVideo = Boolean(post.video?.hlsMasterUrl);
   const playbackSrc = post.video?.hlsMasterUrl ? toVideoProxyUrl(post.video.hlsMasterUrl) : "";
   const videoMessage = getVideoStatusMessage(post.video?.status);
+  const canEditPost = Boolean(
+    sessionUser?.id
+      && (sessionUser.id === post.author.id || sessionUser.role === "admin"),
+  );
+  const editablePost = {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    postType: post.postType,
+    visibility: post.visibility,
+    images: [],
+    attachments: post.attachments,
+  };
 
   return (
     <>
@@ -127,11 +143,14 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
               </div>
             </div>
 
-            {post.title && (
-              <h1 className="hidden sm:block max-w-[52%] text-right text-xl font-bold text-gray-900 line-clamp-2">
-                {post.title}
-              </h1>
-            )}
+            <div className="flex min-w-0 shrink-0 items-start gap-2 sm:max-w-[52%]">
+              {post.title && (
+                <h1 className="hidden min-w-0 text-right text-xl font-bold text-gray-900 line-clamp-2 sm:block">
+                  {post.title}
+                </h1>
+              )}
+              <PostMoreMenu post={editablePost} canEdit={canEditPost} />
+            </div>
           </div>
 
           {post.title && (
@@ -182,7 +201,13 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
                   : false
               }
             />
-            <RepostButton postId={post.id} />
+            <RepostButton
+              postId={post.id}
+              title={post.title}
+              authorName={post.author.name}
+              content={post.content}
+              createdAt={post.createdAt}
+            />
             {sessionUser?.role === "admin" && (
               <PinButton postId={post.id} isPinned={post.pinned || false} />
             )}

@@ -449,6 +449,17 @@ body {
   }
 }
 
+@keyframes sharebarSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-in {
   animation-duration: 0.2s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -461,6 +472,10 @@ body {
 
 .zoom-in-95 {
   animation-name: zoomIn95;
+}
+
+.sharebar-sheet {
+  animation: sharebarSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* 彻底解决图片放大遮挡问题 */
