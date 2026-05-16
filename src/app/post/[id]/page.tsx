@@ -17,7 +17,7 @@ import PostMoreMenu from "@/components/PostMoreMenu";
 import PostImages from "@/components/PostImages";
 import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
-import { Eye, Lock } from "lucide-react";
+import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
 import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
@@ -154,7 +154,6 @@ export default async function PostDetailPage({
   }
 
   const isVideoPost = post.postType === "VIDEO";
-  const isUnlistedPost = post.visibility === "UNLISTED";
   const canEditPost = Boolean(
     session?.user?.id
       && (session.user.id === post.author.id || session.user.role === "admin"),
@@ -282,14 +281,6 @@ export default async function PostDetailPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
-          {isUnlistedPost && (
-            <div className="mb-3 flex justify-end px-4 sm:px-0">
-              <div className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                <Lock className="h-3.5 w-3.5" />
-                <span>仅链接可见</span>
-              </div>
-            </div>
-          )}
           <VideoPostDetail post={post} sessionUser={session?.user} />
         </div>
       </div>
@@ -430,3 +421,4 @@ export default async function PostDetailPage({
     </div>
   );
 }
+

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSiteOriginOrThrow } from "@/lib/site-url";
 
 const SHARE_SOURCES = {
   copy: "copy_web",
@@ -80,7 +81,8 @@ export async function POST(request: NextRequest) {
     const userId = session?.user?.id;
     const vdSource = userId ? createUserVdSource(userId) : createAnonymousVdSource(request);
     const shareSource = SHARE_SOURCES[channel];
-    const shareUrl = new URL(`/post/${post.id}`, request.nextUrl.origin);
+    const siteOrigin = getSiteOriginOrThrow({ request });
+    const shareUrl = new URL(`/post/${post.id}`, siteOrigin);
     shareUrl.searchParams.set("share_source", shareSource);
     shareUrl.searchParams.set("vd_source", vdSource);
 
@@ -117,7 +119,7 @@ export async function POST(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,
       sameSite: "lax",
-      secure: request.nextUrl.protocol === "https:",
+      secure: siteOrigin.startsWith("https://"),
     });
 
     return response;

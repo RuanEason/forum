@@ -77,7 +77,7 @@ const LINK_PLATFORMS: SharePlatform[] = [
   {
     channel: "copy",
     label: "复制链接",
-    description: "复制标题和带统计参数的链接",
+    description: "复制标题和链接",
     icon: Copy,
   },
 ];
@@ -179,8 +179,11 @@ function createFallbackSharePayload(
   channel: ShareChannel,
   title: string,
 ): SharePayload {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const url = new URL(`/post/${postId}`, origin || "http://localhost:3000");
+  if (typeof window === "undefined") {
+    throw new Error("Unable to build fallback share link on the server");
+  }
+
+  const url = new URL(`/post/${postId}`, window.location.origin);
   const vdSource = getClientVdSource();
   const shareSource = SHARE_SOURCES[channel];
 
@@ -563,7 +566,7 @@ export default function RepostButton({
               <div>
                 <h2 className="text-base font-semibold text-gray-900">分享帖子</h2>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  链接会自动带上分享来源，方便后续统计。
+                  分享就是快乐！
                 </p>
               </div>
               <button

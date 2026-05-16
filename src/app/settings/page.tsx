@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import COS from "cos-js-sdk-v5";
 import Avatar from "@/components/Avatar";
 import BackButton from "@/components/BackButton";
@@ -12,6 +12,36 @@ import Textarea from "@/components/ui/Textarea";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import Toggle from "@/components/ui/Toggle";
+
+type PostViewMode = "both" | "title" | "content" | "titleAndContent";
+
+type SettingsField =
+  | "name"
+  | "bio"
+  | "avatar"
+  | "coverImage"
+  | "postViewMode"
+  | "showUserData";
+
+type SettingsPatchPayload = {
+  name?: string;
+  bio?: string | null;
+  avatar?: string | null;
+  coverImage?: string | null;
+  postViewMode?: PostViewMode;
+  showUserData?: boolean;
+};
+
+type SettingsApiUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar: string | null;
+  bio: string | null;
+  postViewMode: PostViewMode | null;
+  coverImage: string | null;
+  showUserData: boolean;
+};
 
 type BackgroundVideoStsResponse = {
   backgroundVideoAssetId: string;
@@ -42,68 +72,55 @@ export default function SettingsPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+
   const [name, setName] = useState("");
+  const [savedName, setSavedName] = useState("");
   const [bio, setBio] = useState("");
+  const [savedBio, setSavedBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [coverImage, setCoverImage] = useState("");
-  const [postViewMode, setPostViewMode] = useState(
-    (session?.user as any)?.postViewMode || "both"
-  );
-  const [showUserData, setShowUserData] = useState(
-    (session?.user as any)?.showUserData ?? true
-  );
+  const [postViewMode, setPostViewMode] = useState<PostViewMode>("both");
+  const [showUserData, setShowUserData] = useState(true);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState("");
   const [coverVideoAssetId, setCoverVideoAssetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const hasUnsavedChangesRef = useRef(false);
+  const [savingFields, setSavingFields] = useState<Partial<Record<SettingsField, boolean>>>({});
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const coverPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const coverCosRef = useRef<unknown>(null);
-  const coverTaskIdRef = useRef<string | null>(null);
+  const hasInitializedRef = useRef(false);
+  const hasTextUnsavedChangesRef = useRef(false);
+  const coverImageRef = useRef("");
 
-  const initialDataRef = useRef({
-    name: "",
-    bio: "",
-    avatar: "",
-    coverImage: "",
-    postViewMode: "both",
-    showUserData: true
-  });
+  const isNameDirty = name !== savedName;
+  const isBioDirty = bio !== savedBio;
+  const hasTextUnsavedChanges = isNameDirty || isBioDirty;
 
   const isVideo = /\.(mp4|mov|avi|webm)(\?.*)?$/i.test(coverImage);
   const previewUrl = isVideo
     ? coverImage.replace(/\.(mp4|mov|avi|webm)(\?.*)?$/i, "_preview.webp$2")
     : coverImage;
 
-  const checkHasChanges = () => {
-    return (
-      name !== initialDataRef.current.name ||
-      bio !== initialDataRef.current.bio ||
-      avatar !== initialDataRef.current.avatar ||
-      coverImage !== initialDataRef.current.coverImage ||
-      postViewMode !== initialDataRef.current.postViewMode ||
-      showUserData !== initialDataRef.current.showUserData
-    );
+  useEffect(() => {
+    coverImageRef.current = coverImage;
+  }, [coverImage]);
+
+  useEffect(() => {
+    hasTextUnsavedChangesRef.current = hasTextUnsavedChanges;
+  }, [hasTextUnsavedChanges]);
+
+  const setFieldSaving = (field: SettingsField, saving: boolean) => {
+    setSavingFields((prev) => ({ ...prev, [field]: saving }));
   };
 
-  const updateUnsavedChanges = () => {
-    const hasChanges = checkHasChanges();
-    setHasUnsavedChanges(hasChanges);
-    hasUnsavedChangesRef.current = hasChanges;
-  };
-
-  const markUnsavedChanges = () => {
-    setHasUnsavedChanges(true);
-    hasUnsavedChangesRef.current = true;
-  };
+  const isFieldSaving = (field: SettingsField) => Boolean(savingFields[field]);
 
   const stopCoverVideoPolling = () => {
     if (coverPollTimerRef.current) {
@@ -112,70 +129,151 @@ export default function SettingsPage() {
     }
   };
 
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = "您的更改可能未保存。";
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (coverPollTimerRef.current) {
-        clearInterval(coverPollTimerRef.current);
-        coverPollTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
-    }
-    if (session?.user) {
-      const user = session.user as any;
-      setName(user.name || "");
-      setAvatar(user.avatar || "");
-      setCoverImage(user.coverImage || "");
-      setPostViewMode(user.postViewMode || "both");
-      setShowUserData(user.showUserData ?? true);
-      fetchUserData();
-    }
-  }, [status, router, session, pathname]);
-  useEffect(() => {
-    console.log("组件挂载 - 视图模式:", postViewMode);
-  }, [postViewMode]);
-
   const fetchUserData = async () => {
     try {
-      const response = await fetch("/api/auth/me");
-      if (response.ok) {
-        const data = await response.json();
-        setName(data.name || "");
-        setBio(data.bio || "");
-        setAvatar(data.avatar || "");
-        setCoverImage(data.coverImage || "");
-        setPostViewMode(data.postViewMode || "both");
-        setShowUserData(data.showUserData ?? true);
-        initialDataRef.current = {
-          name: data.name || "",
-          bio: data.bio || "",
-          avatar: data.avatar || "",
-          coverImage: data.coverImage || "",
-          postViewMode: data.postViewMode || "both",
-          showUserData: data.showUserData ?? true
-        };
-        setHasUnsavedChanges(false);
-      }
-    } catch (err) {
-      console.error("Failed to fetch user data", err);
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const nextName = data.name || "";
+      const nextBio = data.bio || "";
+      const nextAvatar = data.avatar || "";
+      const nextCoverImage = data.coverImage || "";
+      const nextPostViewMode = (data.postViewMode || "both") as PostViewMode;
+      const nextShowUserData = data.showUserData ?? true;
+
+      setName(nextName);
+      setSavedName(nextName);
+      setBio(nextBio);
+      setSavedBio(nextBio);
+      setAvatar(nextAvatar);
+      setCoverImage(nextCoverImage);
+      setPostViewMode(nextPostViewMode);
+      setShowUserData(nextShowUserData);
+    } catch (fetchError) {
+      console.error("Failed to fetch user data", fetchError);
     }
+  };
+
+  const patchSettings = async (
+    payload: SettingsPatchPayload,
+    field: SettingsField,
+    successMessage: string,
+  ): Promise<SettingsApiUser | null> => {
+    setError("");
+    setSuccess("");
+    setFieldSaving(field, true);
+
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = (await response.json()) as { error?: string; user?: SettingsApiUser };
+
+      if (!response.ok || !data.user) {
+        setError(data.error || "更新失败，请稍后重试");
+        return null;
+      }
+
+      const user = data.user;
+
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          name: user.name || "",
+          avatar: user.avatar || "",
+          postViewMode: user.postViewMode || "both",
+          coverImage: user.coverImage || "",
+          showUserData: user.showUserData,
+        },
+      });
+
+      setSuccess(successMessage);
+      router.refresh();
+
+      return user;
+    } catch {
+      setError("网络错误，请稍后重试");
+      return null;
+    } finally {
+      setFieldSaving(field, false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!isNameDirty || isFieldSaving("name")) return;
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError("昵称不能为空");
+      return;
+    }
+
+    const user = await patchSettings({ name: trimmedName }, "name", "昵称已更新");
+    if (!user) return;
+
+    const nextName = user.name || trimmedName;
+    setName(nextName);
+    setSavedName(nextName);
+  };
+
+  const handleSaveBio = async () => {
+    if (!isBioDirty || isFieldSaving("bio")) return;
+
+    const normalizedBio = bio.trim();
+    const user = await patchSettings({ bio: normalizedBio || null }, "bio", "个人简介已更新");
+    if (!user) return;
+
+    const nextBio = user.bio || "";
+    setBio(nextBio);
+    setSavedBio(nextBio);
+  };
+
+  const handlePostViewModeChange = async (value: string) => {
+    const nextMode = value as PostViewMode;
+    if (nextMode === postViewMode || isFieldSaving("postViewMode")) return;
+
+    const previousMode = postViewMode;
+    setPostViewMode(nextMode);
+
+    const user = await patchSettings(
+      { postViewMode: nextMode },
+      "postViewMode",
+      "帖子显示模式已更新",
+    );
+
+    if (!user) {
+      setPostViewMode(previousMode);
+      return;
+    }
+
+    setPostViewMode((user.postViewMode || nextMode) as PostViewMode);
+  };
+
+  const handleShowUserDataChange = async (checked: boolean) => {
+    if (isFieldSaving("showUserData")) return;
+
+    const previousValue = showUserData;
+    setShowUserData(checked);
+
+    const user = await patchSettings(
+      { showUserData: checked },
+      "showUserData",
+      checked ? "已开启用户统计展示" : "已关闭用户统计展示",
+    );
+
+    if (!user) {
+      setShowUserData(previousValue);
+      return;
+    }
+
+    setShowUserData(Boolean(user.showUserData));
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,11 +282,13 @@ export default function SettingsPage() {
 
     if (!file.type.startsWith("image/")) {
       setError("请上传图片文件");
+      e.target.value = "";
       return;
     }
 
     setUploading(true);
     setError("");
+    setSuccess("");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -199,34 +299,40 @@ export default function SettingsPage() {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { url?: string; error?: string };
 
-      if (response.ok) {
-        setAvatar(data.url);
-        updateUnsavedChanges();
-      } else {
+      if (!response.ok || !data.url) {
         setError(data.error || "图片上传失败");
+        return;
       }
+
+      const previousAvatar = avatar;
+      setAvatar(data.url);
+
+      const user = await patchSettings({ avatar: data.url }, "avatar", "头像已更新");
+      if (!user) {
+        setAvatar(previousAvatar);
+        return;
+      }
+
+      setAvatar(user.avatar || "");
     } catch {
       setError("网络错误，图片上传失败");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
-  const handleCoverChangeLegacy = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const isImage = file.type.startsWith("image/");
-
-    if (!isImage) {
-      setError("Please upload an image file");
+  const handleCoverChangeLegacy = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("请上传图片文件");
       return;
     }
 
     setUploadingCover(true);
     setError("");
+    setSuccess("");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -237,14 +343,28 @@ export default function SettingsPage() {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { url?: string; error?: string };
 
-      if (response.ok) {
-        setCoverImage(data.url);
-        updateUnsavedChanges();
-      } else {
+      if (!response.ok || !data.url) {
         setError(data.error || "背景图上传失败");
+        return;
       }
+
+      const previousCover = coverImageRef.current;
+      setCoverImage(data.url);
+
+      const user = await patchSettings(
+        { coverImage: data.url },
+        "coverImage",
+        "背景图已自动应用",
+      );
+
+      if (!user) {
+        setCoverImage(previousCover);
+        return;
+      }
+
+      setCoverImage(user.coverImage || "");
     } catch {
       setError("网络错误，背景图上传失败");
     } finally {
@@ -259,14 +379,14 @@ export default function SettingsPage() {
         cache: "no-store",
       });
 
-      const data = await response.json() as BackgroundVideoStatusResponse & { error?: string };
+      const data = (await response.json()) as BackgroundVideoStatusResponse & { error?: string };
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch background video status");
+        throw new Error(data.error || "获取背景视频状态失败");
       }
 
       if (data.status === "READY") {
         if (!data.videoUrl) {
-          throw new Error("Background video is READY but no output URL was returned");
+          throw new Error("背景视频处理完成但未返回输出地址");
         }
 
         stopCoverVideoPolling();
@@ -274,9 +394,22 @@ export default function SettingsPage() {
         setCoverVideoAssetId(null);
         setCoverUploadProgress(100);
         setCoverUploadStatus("");
+
+        const previousCover = coverImageRef.current;
         setCoverImage(data.videoUrl);
-        markUnsavedChanges();
-        setSuccess("Background video processed. Please click Save changes.");
+
+        const user = await patchSettings(
+          { coverImage: data.videoUrl },
+          "coverImage",
+          "背景视频已自动应用",
+        );
+
+        if (!user) {
+          setCoverImage(previousCover);
+          return;
+        }
+
+        setCoverImage(user.coverImage || "");
         return;
       }
 
@@ -285,11 +418,11 @@ export default function SettingsPage() {
         setUploadingCover(false);
         setCoverVideoAssetId(null);
         setCoverUploadStatus("");
-        setError(data.errorMessage || "Background video processing failed. Please upload again.");
+        setError(data.errorMessage || "背景视频处理失败，请重新上传");
         return;
       }
 
-      setCoverUploadStatus("Background video is transcoding...");
+      setCoverUploadStatus("背景视频转码中...");
     } catch (statusError) {
       stopCoverVideoPolling();
       setUploadingCover(false);
@@ -298,7 +431,7 @@ export default function SettingsPage() {
       setError(
         statusError instanceof Error
           ? statusError.message
-          : "Failed to fetch background video status. Please retry.",
+          : "获取背景视频状态失败，请重试",
       );
     }
   };
@@ -319,7 +452,7 @@ export default function SettingsPage() {
     setUploadingCover(true);
     setCoverVideoAssetId(null);
     setCoverUploadProgress(0);
-    setCoverUploadStatus("Requesting upload credentials...");
+    setCoverUploadStatus("正在请求上传凭证...");
 
     try {
       const stsResponse = await fetch("/api/background-video/sts", {
@@ -334,9 +467,11 @@ export default function SettingsPage() {
         }),
       });
 
-      const stsData = await stsResponse.json() as Partial<BackgroundVideoStsResponse> & { error?: string };
+      const stsData = (await stsResponse.json()) as Partial<BackgroundVideoStsResponse> & {
+        error?: string;
+      };
       if (!stsResponse.ok) {
-        throw new Error(stsData.error || "Failed to request STS credentials");
+        throw new Error(stsData.error || "获取背景视频上传凭证失败");
       }
 
       const backgroundVideoAssetId = stsData.backgroundVideoAssetId;
@@ -346,7 +481,7 @@ export default function SettingsPage() {
       const credentials = stsData.credentials;
 
       if (!backgroundVideoAssetId || !objectKey || !bucket || !region || !credentials) {
-        throw new Error("Incomplete STS response for background video upload");
+        throw new Error("背景视频上传凭证返回不完整");
       }
 
       setCoverVideoAssetId(backgroundVideoAssetId);
@@ -359,8 +494,7 @@ export default function SettingsPage() {
         ExpiredTime: credentials.expiredTime,
       });
 
-      coverCosRef.current = cos;
-      setCoverUploadStatus("Uploading background video...");
+      setCoverUploadStatus("背景视频上传中...");
 
       const uploadResult = await new Promise<{ ETag?: string }>((resolve, reject) => {
         (cos as {
@@ -370,7 +504,6 @@ export default function SettingsPage() {
               Region: string;
               Key: string;
               Body: File;
-              onTaskReady?: (taskId: string) => void;
               onProgress?: (progressData: CosUploadProgress) => void;
             },
             callback: (error: unknown, data: { ETag?: string }) => void,
@@ -381,9 +514,6 @@ export default function SettingsPage() {
             Region: region,
             Key: objectKey,
             Body: file,
-            onTaskReady: (taskId: string) => {
-              coverTaskIdRef.current = taskId;
-            },
             onProgress: (progressData: CosUploadProgress) => {
               const percent = Math.max(
                 0,
@@ -403,7 +533,7 @@ export default function SettingsPage() {
       });
 
       setCoverUploadProgress(100);
-      setCoverUploadStatus("Upload complete. Submitting transcode task...");
+      setCoverUploadStatus("上传完成，正在提交转码任务...");
 
       const commitResponse = await fetch("/api/background-video/commit", {
         method: "POST",
@@ -417,12 +547,12 @@ export default function SettingsPage() {
         }),
       });
 
-      const commitData = await commitResponse.json() as { error?: string };
+      const commitData = (await commitResponse.json()) as { error?: string };
       if (!commitResponse.ok) {
-        throw new Error(commitData.error || "Failed to commit background video upload");
+        throw new Error(commitData.error || "背景视频提交转码失败");
       }
 
-      setCoverUploadStatus("Background video is transcoding...");
+      setCoverUploadStatus("背景视频转码中...");
       startCoverVideoPolling(backgroundVideoAssetId);
     } catch (uploadError) {
       stopCoverVideoPolling();
@@ -433,10 +563,8 @@ export default function SettingsPage() {
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Background video upload failed. Please retry.",
+          : "背景视频上传失败，请重试",
       );
-    } finally {
-      coverTaskIdRef.current = null;
     }
   };
 
@@ -444,96 +572,41 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const isVideoFile =
-      file.type.startsWith("video/")
-      || /\.(mp4|mov|avi|webm)$/i.test(file.name);
+    const isVideoFile = file.type.startsWith("video/") || /\.(mp4|mov|avi|webm)$/i.test(file.name);
 
     if (isVideoFile) {
       await uploadCoverVideoBySts(file);
-      if (coverInputRef.current) {
-        coverInputRef.current.value = "";
-      }
+      e.target.value = "";
       return;
     }
 
-    await handleCoverChangeLegacy(e);
-    if (coverInputRef.current) {
-      coverInputRef.current.value = "";
-    }
+    await handleCoverChangeLegacy(file);
+    e.target.value = "";
   };
 
-  const handleRemoveCover = () => {
+  const handleRemoveCover = async () => {
+    if (!coverImage || isFieldSaving("coverImage")) return;
+
     stopCoverVideoPolling();
     setUploadingCover(false);
     setCoverVideoAssetId(null);
     setCoverUploadProgress(0);
     setCoverUploadStatus("");
+
+    const previousCover = coverImage;
     setCoverImage("");
-    markUnsavedChanges();
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (uploadingCover && coverVideoAssetId) {
-      setError("Background video is still processing. Please wait for completion before saving.");
+    const user = await patchSettings({ coverImage: null }, "coverImage", "背景图已移除");
+    if (!user) {
+      setCoverImage(previousCover);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/auth/complete-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, bio, avatar, postViewMode, coverImage, showUserData }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            name: name,
-            avatar: avatar,
-            postViewMode: postViewMode,
-            coverImage: coverImage,
-            showUserData: showUserData,
-          },
-        });
-        setSuccess("个人信息更新更新成功！");
-        initialDataRef.current = {
-          name,
-          bio,
-          avatar,
-          coverImage,
-          postViewMode,
-          showUserData
-        };
-        setHasUnsavedChanges(false);
-        router.refresh();
-      } else {
-        setError(data.error || "更新失败");
-      }
-    } catch {
-      setError("网络错误，请重试");
-    } finally {
-      setLoading(false);
-    }
+    setCoverImage(user.coverImage || "");
   };
 
   const handleDeleteAccount = async () => {
-    if (
-      !confirm(
-        "确定要注销账号吗？此操作不可逆，您的所有帖子、评论和点赞都将被删除。"
-      )
-    ) {
+    if (!confirm("确定要注销账号吗？此操作不可逆，您的所有帖子、评论和点赞都将被删除。")) {
       return;
     }
 
@@ -546,12 +619,10 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        // 强制退出登录并跳转到首页
-        // 使用 window.location.href 确保完全重定向，避免 Next.js 客户端路由可能保留的状态
         await signOut({ redirect: false });
         window.location.href = "/";
       } else {
-        const data = await response.json();
+        const data = (await response.json()) as { error?: string };
         setError(data.error || "注销账号失败");
         setDeleting(false);
       }
@@ -560,6 +631,54 @@ export default function SettingsPage() {
       setDeleting(false);
     }
   };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasTextUnsavedChangesRef.current) return;
+      e.preventDefault();
+      e.returnValue = "昵称或个人简介尚未保存，确定离开吗？";
+      return e.returnValue;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopCoverVideoPolling();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    if (status !== "authenticated" || !session?.user || hasInitializedRef.current) {
+      return;
+    }
+
+    hasInitializedRef.current = true;
+    const user = session.user as {
+      name?: string | null;
+      avatar?: string | null;
+      coverImage?: string | null;
+      postViewMode?: PostViewMode;
+      showUserData?: boolean;
+    };
+
+    const initialName = user.name || "";
+    setName(initialName);
+    setSavedName(initialName);
+    setAvatar(user.avatar || "");
+    setCoverImage(user.coverImage || "");
+    setPostViewMode((user.postViewMode || "both") as PostViewMode);
+    setShowUserData(user.showUserData ?? true);
+
+    void fetchUserData();
+  }, [status, session, router, pathname]);
 
   if (status === "loading") {
     return (
@@ -579,27 +698,27 @@ export default function SettingsPage() {
         <Card>
           <div className="px-4 py-5 sm:p-6">
             <div className="sm:hidden mb-4">
-                <BackButton
-                  href="/"
-                  onBeforeNavigate={() => {
-                    if (hasUnsavedChanges) {
-                      return !confirm("您有未保存的更改，确定要离开吗？");
-                    }
-                    return false;
-                  }}
-                />
-            </div>
-            <div className="relative">
-              <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
               <BackButton
                 href="/"
                 onBeforeNavigate={() => {
-                  if (hasUnsavedChanges) {
-                    return !confirm("您有未保存的更改，确定要离开吗？");
+                  if (hasTextUnsavedChanges) {
+                    return !confirm("昵称或个人简介尚未保存，确定要离开吗？");
                   }
                   return false;
                 }}
               />
+            </div>
+            <div className="relative">
+              <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
+                <BackButton
+                  href="/"
+                  onBeforeNavigate={() => {
+                    if (hasTextUnsavedChanges) {
+                      return !confirm("昵称或个人简介尚未保存，确定要离开吗？");
+                    }
+                    return false;
+                  }}
+                />
               </div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 编辑个人资料
@@ -608,7 +727,8 @@ export default function SettingsPage() {
             <div className="mt-2 max-w-xl text-sm text-gray-500">
               <p>更新您的个人信息和头像。</p>
             </div>
-            <form className="mt-5 space-y-6" onSubmit={handleSubmit}>
+
+            <div className="mt-5 space-y-6">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -625,9 +745,9 @@ export default function SettingsPage() {
                         type="button"
                         variant="secondary"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
+                        disabled={uploading || isFieldSaving("avatar")}
                       >
-                        {uploading ? "上传中..." : "更换头像"}
+                        {uploading || isFieldSaving("avatar") ? "上传中..." : "更换头像"}
                       </Button>
                       <input
                         ref={fileInputRef}
@@ -640,30 +760,64 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <Input
-                  id="name"
-                  name="name"
-                  label="昵称"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    updateUnsavedChanges();
-                  }}
-                />
+                <div className="space-y-2">
+                  <Input
+                    id="name"
+                    name="name"
+                    label="昵称"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                    }}
+                  />
+                  <div
+                    className={`overflow-hidden transition-all duration-200 ${
+                      isNameDirty ? "max-h-16 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveName}
+                        disabled={!isNameDirty || isFieldSaving("name")}
+                      >
+                        {isFieldSaving("name") ? "保存中..." : "保存更改"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  label="个人简介"
-                  rows={3}
-                  value={bio}
-                  onChange={(e) => {
-                    setBio(e.target.value);
-                    updateUnsavedChanges();
-                  }}
-                />
+                <div className="space-y-2">
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    label="个人简介"
+                    rows={3}
+                    value={bio}
+                    onChange={(e) => {
+                      setBio(e.target.value);
+                    }}
+                  />
+                  <div
+                    className={`overflow-hidden transition-all duration-200 ${
+                      isBioDirty ? "max-h-16 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveBio}
+                        disabled={!isBioDirty || isFieldSaving("bio")}
+                      >
+                        {isFieldSaving("bio") ? "保存中..." : "保存更改"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -680,8 +834,7 @@ export default function SettingsPage() {
                               loop
                               muted
                               playsInline
-                              onError={(e) => console.error('Preview video error:', e)}
-                              onLoadStart={() => console.log('Preview video load started')}
+                              onError={(e) => console.error("Preview video error:", e)}
                               className="w-full h-full object-cover"
                             />
                             <img
@@ -708,7 +861,7 @@ export default function SettingsPage() {
                         type="button"
                         variant="secondary"
                         onClick={() => coverInputRef.current?.click()}
-                        disabled={uploadingCover}
+                        disabled={uploadingCover || isFieldSaving("coverImage")}
                       >
                         {uploadingCover ? "处理中..." : "更换背景图"}
                       </Button>
@@ -723,20 +876,21 @@ export default function SettingsPage() {
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={handleRemoveCover}
+                          onClick={() => void handleRemoveCover()}
+                          disabled={uploadingCover || isFieldSaving("coverImage")}
                         >
-                          移除背景图
+                          {isFieldSaving("coverImage") ? "移除中..." : "移除背景图"}
                         </Button>
                       )}
                     </div>
                     {(uploadingCover || coverVideoAssetId || coverUploadStatus) && (
                       <p className="text-xs text-gray-500">
-                        {coverUploadStatus || "Processing background upload..."}
+                        {coverUploadStatus || "背景文件处理中..."}
                         {coverUploadProgress > 0 ? ` (${coverUploadProgress}%)` : ""}
                       </p>
                     )}
                     <p className="text-xs text-gray-500">
-                      Supports image and video uploads. Videos are uploaded directly to COS under `backgrounds/` and transcoded asynchronously by CI. Save after processing completes.
+                      支持图片和视频上传。视频会自动上传并异步转码，转码完成后自动应用，无需手动保存。
                     </p>
                   </div>
                 </div>
@@ -751,9 +905,9 @@ export default function SettingsPage() {
                   <Dropdown
                     value={postViewMode}
                     onChange={(value) => {
-                      setPostViewMode(value);
-                      updateUnsavedChanges();
+                      void handlePostViewModeChange(value);
                     }}
+                    disabled={isFieldSaving("postViewMode")}
                     options={[
                       { value: "both", label: "智能显示标题或正文" },
                       { value: "title", label: "仅显示标题" },
@@ -770,29 +924,17 @@ export default function SettingsPage() {
                   id="showUserData"
                   checked={showUserData}
                   onChange={(checked) => {
-                    setShowUserData(checked);
-                    updateUnsavedChanges();
+                    void handleShowUserDataChange(checked);
                   }}
+                  disabled={isFieldSaving("showUserData")}
                   label="展示用户统计"
                   description="在您的个人资料页面公开显示您的活动数据，包括加入天数、发布帖子数、被浏览量、获得点赞数和送出点赞数。关闭后将仅对您自己可见。"
                 />
               </div>
 
               {error && <div className="text-red-600 text-sm">{error}</div>}
-              {success && (
-                <div className="text-green-600 text-sm">{success}</div>
-              )}
-
-              <div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={loading}
-                >
-                  {loading ? "保存中..." : "保存更改"}
-                </Button>
-              </div>
-            </form>
+              {success && <div className="text-green-600 text-sm">{success}</div>}
+            </div>
           </div>
         </Card>
 
@@ -810,7 +952,7 @@ export default function SettingsPage() {
               <Button
                 type="button"
                 variant="danger"
-                onClick={handleDeleteAccount}
+                onClick={() => void handleDeleteAccount()}
                 disabled={deleting}
               >
                 {deleting ? "注销中..." : "注销账号"}

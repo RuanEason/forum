@@ -24,6 +24,8 @@ interface PageLoadProgressContextValue {
 const DISPLAY_DELAY_MS = 90;
 const HIDE_DELAY_MS = 220;
 const MAX_PROGRESS_WHILE_LOADING = 93;
+const FULLSCREEN_MIN_VISIBLE_MS = 300;
+const INITIAL_LOADING_MIN_VISIBLE_MS = 420;
 const SKIP_HEADER = "x-skip-global-loading";
 const PREFETCH_HEADER_KEYS = [
   "purpose",
@@ -31,6 +33,7 @@ const PREFETCH_HEADER_KEYS = [
   "next-router-prefetch",
   "x-middleware-prefetch",
 ] as const;
+const FULLSCREEN_TASK_LABELS = new Set(["initial-screen", "document", "navigation"]);
 
 const PageLoadProgressContext = createContext<PageLoadProgressContextValue | null>(null);
 
@@ -141,25 +144,44 @@ function isSamePath(url: URL): boolean {
   );
 }
 
+function countFullScreenTasks(tasks: Map<number, string>): number {
+  let count = 0;
+  for (const label of tasks.values()) {
+    if (FULLSCREEN_TASK_LABELS.has(label)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 export function PageLoadProgressProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const routeKey = pathname ?? "";
 
   const [pendingCount, setPendingCount] = useState(0);
+  const [fullscreenPendingCount, setFullscreenPendingCount] = useState(0);
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [fullscreenVisible, setFullscreenVisible] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const taskIdRef = useRef(0);
   const tasksRef = useRef<Map<number, string>>(new Map());
   const showTimerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const trickleTimerRef = useRef<number | null>(null);
+  const fullScreenHideTimerRef = useRef<number | null>(null);
+  const fullScreenShownAtRef = useRef<number>(typeof window !== "undefined" ? window.performance.now() : 0);
+  const initialScreenTaskRef = useRef<EndTask | null>(null);
+  const initialScreenFinishedRef = useRef(false);
   const navigationStartTimerRef = useRef<number | null>(null);
   const navigationTimeoutRef = useRef<number | null>(null);
   const navigationTaskRef = useRef<EndTask | null>(null);
 
   const syncPendingCount = useCallback(() => {
-    setPendingCount(tasksRef.current.size);
+    const tasks = tasksRef.current;
+    setPendingCount(tasks.size);
+    setFullscreenPendingCount(countFullScreenTasks(tasks));
   }, []);
 
   const finishTaskById = useCallback((taskId: number) => {
@@ -196,10 +218,23 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     [startTask]
   );
 
+  const revealFullScreenOverlay = useCallback(() => {
+    if (fullScreenHideTimerRef.current !== null) {
+      window.clearTimeout(fullScreenHideTimerRef.current);
+      fullScreenHideTimerRef.current = null;
+    }
+
+    if (!fullscreenVisible) {
+      fullScreenShownAtRef.current = window.performance.now();
+      setFullscreenVisible(true);
+    }
+  }, [fullscreenVisible]);
+
   const startNavigationTask = useCallback(() => {
     if (navigationTaskRef.current) {
       return;
     }
+    revealFullScreenOverlay();
     navigationTaskRef.current = startTask("navigation");
     if (navigationTimeoutRef.current !== null) {
       window.clearTimeout(navigationTimeoutRef.current);
@@ -213,7 +248,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       }
       navigationTimeoutRef.current = null;
     }, 10000);
-  }, [startTask]);
+  }, [revealFullScreenOverlay, startTask]);
 
   const scheduleNavigationTaskStart = useCallback(() => {
     if (navigationTaskRef.current || navigationStartTimerRef.current !== null) {
@@ -247,6 +282,42 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       });
     });
   }, []);
+
+  useEffect(() => {
+    setIsHydrated(true);
+    initialScreenTaskRef.current = startTask("initial-screen");
+    return () => {
+      if (initialScreenTaskRef.current) {
+        const finishTask = initialScreenTaskRef.current;
+        initialScreenTaskRef.current = null;
+        finishTask();
+      }
+    };
+  }, [startTask]);
+
+  useEffect(() => {
+    if (!isHydrated || initialScreenFinishedRef.current || !initialScreenTaskRef.current) {
+      return;
+    }
+    if (document.readyState !== "complete") {
+      return;
+    }
+
+    const elapsed = window.performance.now() - fullScreenShownAtRef.current;
+    const remain = Math.max(0, INITIAL_LOADING_MIN_VISIBLE_MS - elapsed);
+    const timer = window.setTimeout(() => {
+      if (initialScreenTaskRef.current) {
+        const finishTask = initialScreenTaskRef.current;
+        initialScreenTaskRef.current = null;
+        finishTask();
+      }
+      initialScreenFinishedRef.current = true;
+    }, remain);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [isHydrated, pendingCount]);
 
   useEffect(() => {
     if (document.readyState === "complete") {
@@ -420,6 +491,32 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
   }, [pendingCount, visible]);
 
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
+    if (fullscreenPendingCount > 0) {
+      revealFullScreenOverlay();
+      return;
+    }
+
+    if (!fullscreenVisible) {
+      return;
+    }
+
+    if (fullScreenHideTimerRef.current !== null) {
+      window.clearTimeout(fullScreenHideTimerRef.current);
+    }
+
+    const elapsed = window.performance.now() - fullScreenShownAtRef.current;
+    const waitMs = Math.max(HIDE_DELAY_MS, FULLSCREEN_MIN_VISIBLE_MS - elapsed);
+    fullScreenHideTimerRef.current = window.setTimeout(() => {
+      setFullscreenVisible(false);
+      fullScreenHideTimerRef.current = null;
+    }, Math.max(0, waitMs));
+  }, [fullscreenPendingCount, fullscreenVisible, isHydrated, revealFullScreenOverlay]);
+
+  useEffect(() => {
     if (!visible || pendingCount === 0) {
       if (trickleTimerRef.current !== null) {
         window.clearInterval(trickleTimerRef.current);
@@ -458,11 +555,19 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       if (trickleTimerRef.current !== null) {
         window.clearInterval(trickleTimerRef.current);
       }
+      if (fullScreenHideTimerRef.current !== null) {
+        window.clearTimeout(fullScreenHideTimerRef.current);
+      }
       if (navigationStartTimerRef.current !== null) {
         window.clearTimeout(navigationStartTimerRef.current);
       }
       if (navigationTimeoutRef.current !== null) {
         window.clearTimeout(navigationTimeoutRef.current);
+      }
+      if (initialScreenTaskRef.current) {
+        const finishTask = initialScreenTaskRef.current;
+        initialScreenTaskRef.current = null;
+        finishTask();
       }
       navigationTaskRef.current = null;
     };
@@ -482,6 +587,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
   return (
     <PageLoadProgressContext.Provider value={contextValue}>
       {children}
+      <PageFullscreenLoadingOverlay visible={fullscreenVisible} />
     </PageLoadProgressContext.Provider>
   );
 }
@@ -504,5 +610,80 @@ export function PageTopProgressBar() {
         style={{ width: `${progress}%` }}
       />
     </div>
+  );
+}
+
+function PageFullscreenLoadingOverlay({ visible }: { visible: boolean }) {
+  return (
+    <div
+      aria-hidden={!visible}
+      className={`fixed inset-0 z-[120] flex items-center justify-center bg-white transition-opacity duration-200 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+    >
+      <div className="text-indigo-600">
+        <ThreeDotsLoader />
+      </div>
+    </div>
+  );
+}
+
+function ThreeDotsLoader() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24">
+      <path d="M0 0h24v24H0z" fill="none" />
+      <rect width="7.33" height="7.33" x="1" y="1" fill="currentColor">
+        <animate id="page-loader-dot-1" attributeName="x" begin="0;page-loader-dot-9.end+0.2s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="y" begin="0;page-loader-dot-9.end+0.2s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="width" begin="0;page-loader-dot-9.end+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="0;page-loader-dot-9.end+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="8.33" y="1" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="1" y="8.33" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.1s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="15.66" y="1" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="8.33" y="8.33" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="1" y="15.66" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="1;4;1" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.2s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="15.66" y="8.33" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="8.33" y="15.66" fill="currentColor">
+        <animate attributeName="x" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="8.33;11.33;8.33" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.3s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+      <rect width="7.33" height="7.33" x="15.66" y="15.66" fill="currentColor">
+        <animate id="page-loader-dot-9" attributeName="x" begin="page-loader-dot-1.begin+0.4s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="y" begin="page-loader-dot-1.begin+0.4s" dur="0.6s" values="15.66;18.66;15.66" />
+        <animate attributeName="width" begin="page-loader-dot-1.begin+0.4s" dur="0.6s" values="7.33;1.33;7.33" />
+        <animate attributeName="height" begin="page-loader-dot-1.begin+0.4s" dur="0.6s" values="7.33;1.33;7.33" />
+      </rect>
+    </svg>
   );
 }

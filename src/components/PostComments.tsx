@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ImagePlus, SendHorizontal } from "lucide-react";
+import { ImagePlus, Loader2, SendHorizontal } from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
 import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
@@ -54,14 +54,20 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
   const { data: session } = useSession();
   const router = useRouter();
   const currentUserId = (session as Session | null)?.user?.id || null;
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [pinningCommentId, setPinningCommentId] = useState<string | null>(null);
 
   const refreshComments = () => {
     router.refresh();
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (deletingCommentId || pinningCommentId) {
+      return;
+    }
     if (!confirm("确定要删除这条评论吗？")) return;
 
+    setDeletingCommentId(commentId);
     try {
       const response = await fetch("/api/comment", {
         method: "DELETE",
@@ -79,10 +85,17 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
       }
     } catch {
       alert("网络错误，删除失败");
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
   const handlePinComment = async (commentId: string, pinned: boolean) => {
+    if (deletingCommentId || pinningCommentId) {
+      return;
+    }
+
+    setPinningCommentId(commentId);
     try {
       const response = await fetch("/api/pin/comment", {
         method: "POST",
@@ -100,6 +113,8 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
       }
     } catch {
       alert("网络错误，操作失败");
+    } finally {
+      setPinningCommentId(null);
     }
   };
 
@@ -138,6 +153,8 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
                 onCommentPosted={refreshComments}
                 onDeleteComment={handleDeleteComment}
                 onPinComment={handlePinComment}
+                deletingCommentId={deletingCommentId}
+                pinningCommentId={pinningCommentId}
               />
             ))}
           </div>
@@ -372,6 +389,8 @@ function ReplyItem({
   onReply,
   onDeleteComment,
   onOpenImagePreview,
+  deletingCommentId,
+  pinningCommentId,
 }: {
   reply: ReplyComment;
   mounted: boolean;
@@ -379,6 +398,8 @@ function ReplyItem({
   onReply: (target: { id: string; name: string | null }) => void;
   onDeleteComment: (id: string) => void;
   onOpenImagePreview: (url: string, alt?: string) => void;
+  deletingCommentId: string | null;
+  pinningCommentId: string | null;
 }) {
   const markdownComponents: Components = {
     img: ({ src, alt }) => {
@@ -411,6 +432,8 @@ function ReplyItem({
       reply.replyToId !== reply.parentId &&
       reply.replyTo?.author,
   );
+  const isMutating = Boolean(deletingCommentId || pinningCommentId);
+  const isDeleting = deletingCommentId === reply.id;
 
   return (
     <div id={`comment-${reply.id}`} className="border-t border-gray-100 pt-3">
@@ -464,13 +487,18 @@ function ReplyItem({
         </button>
         {currentUserId === reply.author.id && (
           <button
+            disabled={isMutating}
             onClick={() => onDeleteComment(reply.id)}
-            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+            className="inline-flex items-center justify-center text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="删除评论"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
-            </svg>
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
+              </svg>
+            )}
           </button>
         )}
       </div>
@@ -485,6 +513,8 @@ function CommentItem({
   onCommentPosted,
   onDeleteComment,
   onPinComment,
+  deletingCommentId,
+  pinningCommentId,
 }: {
   comment: CommentProps;
   currentUserId: string | null;
@@ -492,6 +522,8 @@ function CommentItem({
   onCommentPosted: () => void;
   onDeleteComment: (id: string) => void;
   onPinComment: (id: string, pinned: boolean) => void;
+  deletingCommentId: string | null;
+  pinningCommentId: string | null;
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyTarget, setReplyTarget] = useState<{
@@ -538,6 +570,9 @@ function CommentItem({
   };
 
   const isPostAuthor = currentUserId === postAuthorId;
+  const isMutating = Boolean(deletingCommentId || pinningCommentId);
+  const isDeleting = deletingCommentId === comment.id;
+  const isPinning = pinningCommentId === comment.id;
 
   const markdownComponents: Components = {
     img: ({ src, alt }) => {
@@ -635,24 +670,34 @@ function CommentItem({
         </button>
         {isPostAuthor && (
           <button
+            disabled={isMutating}
             onClick={() => onPinComment(comment.id, !comment.pinned)}
-            className={`p-1 rounded-full hover:bg-yellow-50 transition-colors ${comment.pinned ? "text-yellow-600" : "text-gray-500 hover:text-yellow-600"}`}
+            className={`inline-flex items-center justify-center p-1 rounded-full hover:bg-yellow-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${comment.pinned ? "text-yellow-600" : "text-gray-500 hover:text-yellow-600"}`}
             title={comment.pinned ? "取消置顶" : "置顶评论"}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
-            </svg>
+            {isPinning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
+              </svg>
+            )}
           </button>
         )}
         {currentUserId === comment.author.id && (
           <button
+            disabled={isMutating}
             onClick={() => onDeleteComment(comment.id)}
-            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+            className="inline-flex items-center justify-center text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="删除评论"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
-            </svg>
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
+              </svg>
+            )}
           </button>
         )}
       </div>
@@ -683,6 +728,8 @@ function CommentItem({
               onReply={openReplyForm}
               onDeleteComment={onDeleteComment}
               onOpenImagePreview={openImagePreview}
+              deletingCommentId={deletingCommentId}
+              pinningCommentId={pinningCommentId}
             />
           ))}
           {!showAllReplies && remainingRepliesCount > 0 ? (

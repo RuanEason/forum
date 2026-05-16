@@ -206,7 +206,12 @@ export default function Navbar() {
                 : "opacity-100"
             }`}
           >
-            {status === "authenticated" ? (
+            {status === "loading" ? (
+              <div className="flex items-center space-x-3">
+                <div className="h-4 w-12 rounded bg-gray-200 animate-pulse" />
+                <div className="h-9 w-20 rounded-full bg-gray-200 animate-pulse" />
+              </div>
+            ) : status === "authenticated" ? (
               <div className="flex items-center space-x-3 sm:space-x-4">
                 {pathname !== "/" && (
                   <Link

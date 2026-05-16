@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { getSiteOriginOrThrow } from "@/lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = getSiteOriginOrThrow();
 
   return {
     rules: {

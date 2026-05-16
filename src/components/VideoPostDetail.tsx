@@ -5,7 +5,6 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { Eye } from "lucide-react";
 import Avatar from "@/components/Avatar";
-import BackButton from "@/components/BackButton";
 import LikeButton from "@/components/LikeButton";
 import PinButton from "@/components/PinButton";
 import RepostButton from "@/components/RepostButton";
@@ -112,15 +111,8 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
     <>
       <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
         <div className="p-4 sm:p-6">
-          <div className="sm:hidden mb-4">
-            <BackButton href="/" />
-          </div>
-
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center min-w-0">
-              <div className="hidden sm:flex items-center mr-3 shrink-0">
-                <BackButton href="/" />
-              </div>
               <Avatar src={post.author.avatar} name={post.author.name} size="md" />
               <div className="ml-4 min-w-0">
                 <Link
