@@ -197,6 +197,7 @@ export default function TopicSelector({
              <span className="text-lg">选择话题</span>
            </div>
            <button 
+             type="button"
              onClick={() => setIsOpen(false)}
              className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
             >
@@ -219,6 +220,12 @@ export default function TopicSelector({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
               placeholder="搜索话题"
               className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors outline-none"
               autoFocus={isOpen}
