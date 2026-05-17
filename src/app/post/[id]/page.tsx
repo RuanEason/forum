@@ -15,7 +15,6 @@ import PostComments, { CommentProps } from "@/components/PostComments";
 import Avatar from "@/components/Avatar";
 import PostMoreMenu from "@/components/PostMoreMenu";
 import PostImages from "@/components/PostImages";
-import BackButton from "@/components/BackButton";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
@@ -308,9 +307,6 @@ export default async function PostDetailPage({
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
-                <div className="sm:hidden mb-4">
-                  <BackButton href="/" />
-                </div>
                 <div className="mb-4">
                   <h1 className="text-2xl font-bold text-gray-900">
                     {post.title || ""}
