@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -12,6 +11,7 @@ import PostMoreMenu from "@/components/PostMoreMenu";
 import PostAttachments from "@/components/PostAttachments";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
+import { formatDateTime } from "@/lib/datetime";
 
 type VideoStatus = "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
 
@@ -122,7 +122,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
                   {post.author.name || "匿名用户"}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>{format(new Date(post.createdAt), "yyyy-MM-dd HH:mm")}</span>
+                  <span>{formatDateTime(post.createdAt)}</span>
                   {post.topic && (
                     <Link
                       href={`/topic/${post.topic.id}`}

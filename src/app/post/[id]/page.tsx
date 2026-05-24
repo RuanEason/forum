@@ -7,7 +7,6 @@ import remarkGfm from "remark-gfm";
 import { isValidElement, type ReactNode } from "react";
 
 import Link from "next/link";
-import { format } from "date-fns";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PinButton from "@/components/PinButton";
@@ -29,6 +28,7 @@ import {
 } from "@/lib/markdown";
 import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/datetime";
 
 interface AuthorProps {
   id: string;
@@ -327,12 +327,7 @@ export default async function PostDetailPage({
                         {post.author.name || "匿名用户"}
                       </Link>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>
-                          {format(
-                            new Date(post.createdAt),
-                            "yyyy年MM月dd日 HH:mm"
-                          )}
-                        </span>
+                        <span>{formatDateTime(post.createdAt, { style: "cn" })}</span>
                         {post.topic && (
                           <Link
                             href={`/topic/${post.topic.id}`}
