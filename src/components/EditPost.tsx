@@ -49,6 +49,11 @@ const MAX_IMAGES = 9;
 const MAX_ATTACHMENTS = 5;
 const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
+const IMAGE_UPLOAD_TIMEOUT_MS = 3 * 60 * 1000;
+const ATTACHMENT_UPLOAD_TIMEOUT_MS = 15 * 60 * 1000;
+const TRANSFER_PROGRESS_MAX = 95;
+const PROCESSING_PROGRESS_START = 96;
+const PROCESSING_PROGRESS_MAX = 99;
 
 function formatFileSize(size: number) {
   if (!Number.isFinite(size) || size <= 0) {
@@ -141,12 +146,66 @@ export default function EditPost({ post, open, onOpenChange }: EditPostProps) {
       return new Promise<unknown>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
+        const isAttachmentUpload = endpoint.includes("/attachment");
+        xhr.timeout = isAttachmentUpload
+          ? ATTACHMENT_UPLOAD_TIMEOUT_MS
+          : IMAGE_UPLOAD_TIMEOUT_MS;
+
+        let settled = false;
+        let processingProgress = PROCESSING_PROGRESS_START;
+        let processingTimer: ReturnType<typeof setInterval> | null = null;
+
+        const cleanup = () => {
+          if (processingTimer) {
+            clearInterval(processingTimer);
+            processingTimer = null;
+          }
+
+          if (xhrRef.current === xhr) {
+            xhrRef.current = null;
+          }
+        };
+
+        const settle = (callback: () => void) => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          cleanup();
+          callback();
+        };
+
+        const startProcessingPhase = () => {
+          if (processingTimer) {
+            return;
+          }
+
+          onProgress(PROCESSING_PROGRESS_START, "文件已上传，服务器处理中...");
+          processingTimer = setInterval(() => {
+            processingProgress = Math.min(
+              processingProgress + 1,
+              PROCESSING_PROGRESS_MAX,
+            );
+            onProgress(processingProgress, "文件已上传，服务器处理中...");
+          }, 500);
+        };
 
         xhr.upload.addEventListener("progress", (event) => {
           if (!event.lengthComputable || cancelRequestedRef.current) {
             return;
           }
-          onProgress(Math.round((event.loaded / event.total) * 100), "正在上传...");
+
+          const ratio = Math.min(event.loaded / event.total, 1);
+          const transferProgress = Math.min(
+            Math.round(ratio * TRANSFER_PROGRESS_MAX),
+            TRANSFER_PROGRESS_MAX,
+          );
+          onProgress(transferProgress, "正在上传...");
+
+          if (event.loaded >= event.total) {
+            startProcessingPhase();
+          }
         });
 
         xhr.addEventListener("loadstart", () => {
@@ -154,30 +213,39 @@ export default function EditPost({ post, open, onOpenChange }: EditPostProps) {
         });
 
         xhr.addEventListener("load", () => {
-          if (cancelRequestedRef.current) {
-            reject(new Error("Upload cancelled"));
-            return;
-          }
+          settle(() => {
+            if (cancelRequestedRef.current) {
+              reject(new Error("Upload cancelled"));
+              return;
+            }
 
-          let response: { error?: string } | null = null;
-          try {
-            response = JSON.parse(xhr.responseText) as { error?: string };
-          } catch {
-            reject(new Error("服务器响应格式错误"));
-            return;
-          }
+            let response: { error?: string } | null = null;
+            try {
+              response = JSON.parse(xhr.responseText) as { error?: string };
+            } catch {
+              reject(new Error("服务器响应格式错误"));
+              return;
+            }
 
-          if (xhr.status >= 200 && xhr.status < 300) {
-            onProgress(100, "上传完成");
-            resolve(response);
-            return;
-          }
+            if (xhr.status >= 200 && xhr.status < 300) {
+              onProgress(100, "上传完成");
+              resolve(response);
+              return;
+            }
 
-          reject(new Error(response?.error || `Upload failed: ${xhr.status}`));
+            reject(new Error(response?.error || `Upload failed: ${xhr.status}`));
+          });
         });
 
-        xhr.addEventListener("error", () => reject(new Error("网络错误")));
-        xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+        xhr.addEventListener("error", () => {
+          settle(() => reject(new Error("网络错误")));
+        });
+        xhr.addEventListener("abort", () => {
+          settle(() => reject(new Error("Upload cancelled")));
+        });
+        xhr.addEventListener("timeout", () => {
+          settle(() => reject(new Error("上传超时，请重试")));
+        });
 
         xhr.open("POST", endpoint);
         xhr.send(formData);
