@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -15,6 +15,7 @@ import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
@@ -100,14 +101,65 @@ export default function HomeContent({
   embedded?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
+  const { startTask } = usePageLoadProgress();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [mounted, setMounted] = useState(false);
+  const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
+  const navigationTaskTimeoutRef = useRef<number | null>(null);
+  const prefetchedPostIdsRef = useRef<Set<string>>(new Set());
+
+  const finishPendingNavigationTask = useCallback(() => {
+    if (navigationTaskTimeoutRef.current !== null) {
+      window.clearTimeout(navigationTaskTimeoutRef.current);
+      navigationTaskTimeoutRef.current = null;
+    }
+
+    if (pendingNavigationTaskRef.current) {
+      const finishTask = pendingNavigationTaskRef.current;
+      pendingNavigationTaskRef.current = null;
+      finishTask();
+    }
+  }, []);
+
+  const prefetchPostDetail = useCallback(
+    (postId: string) => {
+      if (prefetchedPostIdsRef.current.has(postId)) {
+        return;
+      }
+      prefetchedPostIdsRef.current.add(postId);
+      router.prefetch(`/post/${postId}`);
+    },
+    [router]
+  );
+
+  const navigateToPostDetail = useCallback(
+    (postId: string) => {
+      finishPendingNavigationTask();
+      pendingNavigationTaskRef.current = startTask("navigation");
+      navigationTaskTimeoutRef.current = window.setTimeout(() => {
+        finishPendingNavigationTask();
+      }, 10000);
+      router.push(`/post/${postId}`);
+    },
+    [finishPendingNavigationTask, router, startTask]
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    finishPendingNavigationTask();
+  }, [finishPendingNavigationTask, pathname]);
+
+  useEffect(() => {
+    return () => {
+      finishPendingNavigationTask();
+    };
+  }, [finishPendingNavigationTask]);
 
   const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
   useEffect(() => {
@@ -257,8 +309,10 @@ export default function HomeContent({
                             onClick={(e) => {
                               if ((e.target as HTMLElement).closest("a"))
                                 return;
-                              router.push(`/post/${post.id}`);
+                              navigateToPostDetail(post.id);
                             }}
+                            onMouseEnter={() => prefetchPostDetail(post.id)}
+                            onTouchStart={() => prefetchPostDetail(post.id)}
                             className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                           >
                             {/* 标题显示逻辑 */}
@@ -294,7 +348,9 @@ export default function HomeContent({
                               {post.postType === "VIDEO" && post.video?.coverUrl && (
                                 <button
                                   type="button"
-                                  onClick={() => router.push(`/post/${post.id}`)}
+                                  onClick={() => navigateToPostDetail(post.id)}
+                                  onMouseEnter={() => prefetchPostDetail(post.id)}
+                                  onTouchStart={() => prefetchPostDetail(post.id)}
                                   className="group relative mt-3 block w-full aspect-video overflow-hidden rounded-lg border border-gray-200 bg-black"
                                   aria-label="查看视频详情"
                                 >

@@ -4,7 +4,7 @@ import { getPostById } from "@/lib/post";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { isValidElement, type ReactNode } from "react";
+import { cache, isValidElement, type ReactNode } from "react";
 
 import Link from "next/link";
 import LikeButton from "@/components/LikeButton";
@@ -71,6 +71,11 @@ interface PostDetailProps {
   } | null;
 }
 
+const getPostByIdCached = cache(
+  async (id: string): Promise<PostDetailProps | null> =>
+    (await getPostById(id)) as unknown as PostDetailProps | null
+);
+
 function getTextFromReactNode(node: ReactNode): string {
   if (typeof node === "string" || typeof node === "number") {
     return String(node);
@@ -93,7 +98,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const post = (await getPostById(id)) as unknown as PostDetailProps | null;
+  const post = await getPostByIdCached(id);
 
   if (!post) {
     return {
@@ -142,7 +147,7 @@ export default async function PostDetailPage({
     user?: { id?: string; role?: string };
   } | null;
   const postId = id;
-  const post = (await getPostById(postId)) as unknown as PostDetailProps | null;
+  const post = await getPostByIdCached(postId);
 
   if (!post) {
     return (

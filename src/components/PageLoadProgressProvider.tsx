@@ -21,7 +21,7 @@ interface PageLoadProgressContextValue {
   trackPromise: <T>(promise: Promise<T>, label?: string) => Promise<T>;
 }
 
-const DISPLAY_DELAY_MS = 90;
+const DISPLAY_DELAY_MS = 20;
 const HIDE_DELAY_MS = 220;
 const MAX_PROGRESS_WHILE_LOADING = 93;
 const FULLSCREEN_MIN_VISIBLE_MS = 300;
