@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
@@ -76,6 +77,26 @@ export default function UserPostList({
     } catch {
       alert("网络错误，删除失败");
     }
+  };
+
+  const markdownComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const isAnchorLink = typeof href === "string" && href.startsWith("#");
+
+      if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
   };
 
   if (posts.length === 0) {
@@ -164,7 +185,10 @@ export default function UserPostList({
                       viewMode === "titleAndContent" ||
                       (viewMode === "both" && !post.title)) && (
                       <div className="prose prose-sm max-w-none line-clamp-4 break-words">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={markdownComponents}
+                        >
                           {post.content}
                         </ReactMarkdown>
                       </div>

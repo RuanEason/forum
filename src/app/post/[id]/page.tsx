@@ -176,6 +176,23 @@ export default async function PostDetailPage({
   const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
   const generateHeadingId = createHeadingIdGenerator();
   const markdownComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const isAnchorLink = typeof href === "string" && href.startsWith("#");
+
+      if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
     h1: ({ children, className, ...props }) => {
       const headingText = getTextFromReactNode(children);
       const headingId = generateHeadingId(headingText);
@@ -366,35 +383,55 @@ export default async function PostDetailPage({
                     />
                   )}
                 </div>
-                <div className="mt-4 flex items-center space-x-8 pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-1 text-gray-500 p-2">
-                    <Eye className="w-5 h-5" />
-                    <span className="text-sm font-medium">
-                      {post.viewCount}
-                    </span>
+                <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="flex items-center space-x-8">
+                    <div className="flex items-center space-x-1 text-gray-500 p-2">
+                      <Eye className="w-5 h-5" />
+                      <span className="text-sm font-medium">
+                        {post.viewCount}
+                      </span>
+                    </div>
+                    <LikeButton
+                      targetType="post"
+                      targetId={post.id}
+                      initialLikesCount={post.likes.length}
+                      initialLikedByUser={
+                        session?.user?.id
+                          ? post.likes.some(
+                              (like) => like.userId === (session.user?.id ?? "")
+                            )
+                          : false
+                      }
+                    />
+                    <RepostButton
+                      postId={post.id}
+                      title={post.title}
+                      authorName={post.author.name}
+                      content={post.content}
+                      createdAt={post.createdAt}
+                    />
+                    {/* 置顶按钮 - 仅管理员可见 */}
+                    {session?.user?.role === "admin" && (
+                      <PinButton postId={post.id} isPinned={post.pinned || false} />
+                    )}
                   </div>
-                  <LikeButton
-                    targetType="post"
-                    targetId={post.id}
-                    initialLikesCount={post.likes.length}
-                    initialLikedByUser={
-                      session?.user?.id
-                        ? post.likes.some(
-                            (like) => like.userId === (session.user?.id ?? '')
-                          )
-                        : false
-                    }
-                  />
-                  <RepostButton
-                    postId={post.id}
-                    title={post.title}
-                    authorName={post.author.name}
-                    content={post.content}
-                    createdAt={post.createdAt}
-                  />
-                  {/* 置顶按钮 - 仅管理员可见 */}
-                  {session?.user?.role === "admin" && (
-                    <PinButton postId={post.id} isPinned={post.pinned || false} />
+                  {post.visibility === "UNLISTED" && (
+                    <div className="text-gray-400" aria-label="Unlisted post">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path d="M0 0h24v24H0z" fill="none" />
+                        <path
+                          fill="currentColor"
+                          d="M6 22q-.825 0-1.412-.587T4 20V10q0-.825.588-1.412T6 8h1V6q0-2.075 1.463-3.537T12 1t3.538 1.463T17 6v2h1q.825 0 1.413.588T20 10v10q0 .825-.587 1.413T18 22zm0-2h12V10H6zm7.413-3.588Q14 15.826 14 15t-.587-1.412T12 13t-1.412.588T10 15t.588 1.413T12 17t1.413-.587M9 8h6V6q0-1.25-.875-2.125T12 3t-2.125.875T9 6zM6 20V10z"
+                        />
+                      </svg>
+                    </div>
                   )}
                 </div>
               </div>

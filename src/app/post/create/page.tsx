@@ -63,6 +63,13 @@ type CosUploadProgress = {
   percent?: number;
 };
 
+type CreatePostResponse = {
+  error?: string;
+  post?: {
+    id?: string;
+  };
+};
+
 const MAX_TEXT_ATTACHMENTS = 5;
 const MAX_VIDEO_ATTACHMENTS = 5;
 const MAX_VIDEO_TITLE_LENGTH = 80;
@@ -807,10 +814,11 @@ export default function CreatePostPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as CreatePostResponse;
 
       if (response.ok) {
-        router.push("/");
+        const createdPostId = data.post?.id;
+        router.push(createdPostId ? `/post/${createdPostId}` : "/");
         router.refresh();
       } else {
         setError(data.error || "发布帖子失败");
@@ -866,10 +874,11 @@ export default function CreatePostPage() {
         }),
       });
 
-      const data = await response.json() as { error?: string };
+      const data = await response.json() as CreatePostResponse;
 
       if (response.ok) {
-        router.push("/");
+        const createdPostId = data.post?.id;
+        router.push(createdPostId ? `/post/${createdPostId}` : "/");
         router.refresh();
       } else {
         setVideoUploadError(data.error || "发布视频失败");

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
@@ -149,6 +150,26 @@ export default function HomeContent({
     }
   };
 
+  const markdownComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const isAnchorLink = typeof href === "string" && href.startsWith("#");
+
+      if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
+  };
+
   return (
     <div className={embedded ? undefined : "min-h-screen bg-gray-50 pb-16 sm:pb-0"}>
       <main className={embedded ? undefined : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"}>
@@ -255,7 +276,10 @@ export default function HomeContent({
                               viewMode === "titleAndContent" ||
                               (viewMode === "both" && !post.title)) && (
                               <div className="prose prose-sm max-w-none line-clamp-4 break-words">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={markdownComponents}
+                                >
                                   {post.content}
                                 </ReactMarkdown>
                               </div>

@@ -402,6 +402,23 @@ function ReplyItem({
   pinningCommentId: string | null;
 }) {
   const markdownComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const isAnchorLink = typeof href === "string" && href.startsWith("#");
+
+      if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
     img: ({ src, alt }) => {
       if (typeof src !== "string" || !src) return null;
 
@@ -575,6 +592,23 @@ function CommentItem({
   const isPinning = pinningCommentId === comment.id;
 
   const markdownComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const isAnchorLink = typeof href === "string" && href.startsWith("#");
+
+      if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
     img: ({ src, alt }) => {
       if (typeof src !== "string" || !src) return null;
 
