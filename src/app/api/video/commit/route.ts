@@ -8,6 +8,7 @@ type CommitRequestBody = {
   videoAssetId?: unknown;
   objectKey?: unknown;
   etag?: unknown;
+  draftId?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     const videoAssetId = typeof body.videoAssetId === "string" ? body.videoAssetId.trim() : "";
     const objectKey = typeof body.objectKey === "string" ? normalizeObjectKey(body.objectKey) : "";
     const etag = typeof body.etag === "string" ? body.etag.trim() : undefined;
+    const draftId = typeof body.draftId === "string" ? body.draftId.trim() : "";
 
     if (!videoAssetId || !objectKey) {
       return NextResponse.json(
@@ -87,6 +89,32 @@ export async function POST(request: Request) {
         updatedAt: true,
       },
     });
+
+    if (draftId) {
+      const linkedDraft = await prisma.postDraft.findFirst({
+        where: {
+          id: draftId,
+          authorId: session.user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+      if (linkedDraft) {
+        await prisma.draftAsset.updateMany({
+          where: {
+            draftId: linkedDraft.id,
+            type: "VIDEO",
+            videoAssetId: videoAsset.id,
+          },
+          data: {
+            status: "PROCESSING",
+            progress: 100,
+            errorMessage: null,
+          },
+        });
+      }
+    }
 
     return NextResponse.json({
       id: updated.id,

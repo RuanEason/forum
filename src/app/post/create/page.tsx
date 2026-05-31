@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import COS from "cos-js-sdk-v5";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
@@ -64,6 +64,62 @@ type CosUploadProgress = {
 };
 
 type CreatePostResponse = {
+  error?: string;
+  post?: {
+    id?: string;
+  };
+};
+
+type DraftPersistMode = "EPHEMERAL" | "SAVED";
+type DraftAssetType = "IMAGE" | "ATTACHMENT" | "VIDEO" | "COVER";
+type DraftAssetStatus = "PENDING" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+
+type DraftAsset = {
+  id: string;
+  type: DraftAssetType;
+  status: DraftAssetStatus;
+  progress: number;
+  url: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  mimeType: string | null;
+  videoAssetId: string | null;
+  errorMessage: string | null;
+  sortOrder: number;
+  videoAsset: {
+    id: string;
+    status: "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
+    coverUrl: string | null;
+  } | null;
+};
+
+type DraftDetail = {
+  id: string;
+  postType: PostMode;
+  title: string | null;
+  content: string;
+  visibility: PostVisibility;
+  topicId: string | null;
+  persistMode: DraftPersistMode;
+  assets: DraftAsset[];
+  status: "EDITING" | "UPLOADING" | "PROCESSING" | "FAILED" | "READY" | "PUBLISHED";
+  canPublish: boolean;
+  uploadSummary: {
+    total: number;
+    uploading: number;
+    processing: number;
+    failed: number;
+    ready: number;
+  };
+};
+
+type DraftResponse = {
+  error?: string;
+  draft?: DraftDetail;
+};
+
+type DraftPublishResponse = {
+  ok?: boolean;
   error?: string;
   post?: {
     id?: string;
@@ -134,6 +190,8 @@ export default function CreatePostPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const draftIdFromUrl = searchParams.get("draftId");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +232,13 @@ export default function CreatePostPage() {
   const [videoAttachmentUploading, setVideoAttachmentUploading] = useState(false);
   const [videoCoverUrl, setVideoCoverUrl] = useState<string | null>(null);
   const [videoCoverUploading, setVideoCoverUploading] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [autoSaveAt, setAutoSaveAt] = useState<string>("");
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSavingRef = useRef(false);
+  const hasAnyContentRef = useRef(false);
   const stopVideoPolling = useCallback(() => {
     if (videoPollTimerRef.current) {
       clearInterval(videoPollTimerRef.current);
@@ -193,9 +258,432 @@ export default function CreatePostPage() {
     };
   }, [stopVideoPolling]);
 
-  const uploadFile = async (file: File, endpoint: string, onProgress: (percent: number, status: string) => void) => {
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const normalizeVideoWorkflowStatus = useCallback((statusValue?: string): VideoWorkflowStatus => {
+    return normalizeVideoStatus(statusValue);
+  }, []);
+
+  const hydrateFromDraft = useCallback((draft: DraftDetail) => {
+    setPostMode(draft.postType);
+    setVisibility(draft.visibility);
+    setTitle(draft.title ?? "");
+    setEnableTitle(Boolean(draft.title));
+    setSelectedTopicId(draft.topicId);
+    setVideoTopicId(draft.topicId);
+
+    const imageAssets = draft.assets
+      .filter((asset) => asset.type === "IMAGE" && asset.url)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((asset) => asset.url as string);
+    const attachmentAssets = draft.assets
+      .filter(
+        (asset) =>
+          asset.type === "ATTACHMENT"
+          && asset.url
+          && asset.fileName
+          && typeof asset.fileSize === "number"
+          && asset.mimeType,
+      )
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((asset) => ({
+        url: asset.url as string,
+        fileName: asset.fileName as string,
+        fileSize: asset.fileSize as number,
+        mimeType: asset.mimeType as string,
+      }));
+
+    const videoAsset = draft.assets.find((asset) => asset.type === "VIDEO");
+    const coverAsset = draft.assets.find((asset) => asset.type === "COVER" && asset.url);
+
+    if (draft.postType === "TEXT") {
+      setContent(draft.content ?? "");
+      setSelectedImages(imageAssets);
+      setSelectedAttachments(attachmentAssets);
+      return;
+    }
+
+    setVideoTitle(draft.title ?? "");
+    setVideoDescription(draft.content ?? "");
+    setVideoAttachments(attachmentAssets);
+    setVideoAssetId(videoAsset?.videoAssetId ?? null);
+    setVideoCoverUrl(coverAsset?.url ?? null);
+    const normalizedHydrateVideoStatus = videoAsset?.videoAsset
+      ? normalizeVideoWorkflowStatus(videoAsset.videoAsset.status)
+      : undefined;
+    setVideoMeta(videoAsset?.videoAsset
+      ? {
+          id: videoAsset.videoAsset.id,
+          status: normalizedHydrateVideoStatus === "IDLE" ? undefined : normalizedHydrateVideoStatus,
+          coverUrl: videoAsset.videoAsset.coverUrl,
+        }
+      : null);
+    setVideoFileName(videoAsset?.fileName ?? "");
+    setVideoFileSize(typeof videoAsset?.fileSize === "number" ? videoAsset.fileSize : 0);
+    setVideoStatus(normalizeVideoWorkflowStatus(videoAsset?.videoAsset?.status || videoAsset?.status));
+  }, [normalizeVideoWorkflowStatus]);
+
+  const fetchDraftDetail = useCallback(async (id: string) => {
+    setDraftLoading(true);
+    try {
+      const response = await fetch(`/api/drafts/${id}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const data = await response.json() as DraftResponse;
+      if (!response.ok || !data.draft) {
+        throw new Error(data.error || "加载草稿失败");
+      }
+      setDraftId(data.draft.id);
+      hydrateFromDraft(data.draft);
+    } catch (loadError) {
+      console.error("Load draft error:", loadError);
+      setError(loadError instanceof Error ? loadError.message : "加载草稿失败");
+    } finally {
+      setDraftLoading(false);
+    }
+  }, [hydrateFromDraft]);
+
+  const ensureDraftId = useCallback(async (persistMode: DraftPersistMode = "EPHEMERAL") => {
+    if (draftId) {
+      return draftId;
+    }
+
+    const payload = postMode === "VIDEO"
+      ? {
+          postType: "VIDEO" as const,
+          title: videoTitle.trim() || null,
+          content: videoDescription,
+          visibility,
+          topicId: videoTopicId,
+          persistMode,
+        }
+      : {
+          postType: "TEXT" as const,
+          title: enableTitle ? title.trim() || null : null,
+          content,
+          visibility,
+          topicId: selectedTopicId,
+          persistMode,
+        };
+
+    const response = await fetch("/api/drafts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json() as DraftResponse;
+    if (!response.ok || !data.draft) {
+      throw new Error(data.error || "创建草稿失败");
+    }
+
+    setDraftId(data.draft.id);
+    return data.draft.id;
+  }, [
+    content,
+    draftId,
+    enableTitle,
+    postMode,
+    selectedTopicId,
+    title,
+    videoDescription,
+    videoTitle,
+    videoTopicId,
+    visibility,
+  ]);
+
+  const buildDraftAssets = useCallback(() => {
+    const assets: Array<{
+      type: DraftAssetType;
+      status: DraftAssetStatus;
+      progress?: number;
+      url?: string | null;
+      fileName?: string | null;
+      fileSize?: number | null;
+      mimeType?: string | null;
+      videoAssetId?: string | null;
+      sortOrder?: number;
+    }> = [];
+
+    if (postMode === "TEXT") {
+      selectedImages.forEach((url, index) => {
+        assets.push({
+          type: "IMAGE",
+          status: "READY",
+          progress: 100,
+          url,
+          sortOrder: index,
+        });
+      });
+
+      selectedAttachments.forEach((attachment, index) => {
+        assets.push({
+          type: "ATTACHMENT",
+          status: "READY",
+          progress: 100,
+          url: attachment.url,
+          fileName: attachment.fileName,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+          sortOrder: index,
+        });
+      });
+
+      return assets;
+    }
+
+    if (videoAssetId) {
+      const videoAssetStatus: DraftAssetStatus = videoStatus === "READY"
+        ? "READY"
+        : videoStatus === "FAILED"
+          ? "FAILED"
+          : videoStatus === "PROCESSING"
+            ? "PROCESSING"
+            : "UPLOADING";
+      assets.push({
+        type: "VIDEO",
+        status: videoAssetStatus,
+        progress: videoUploadProgress,
+        videoAssetId,
+        fileName: videoFileName || null,
+        fileSize: videoFileSize || null,
+        sortOrder: 0,
+      });
+    }
+
+    if (videoCoverUrl) {
+      assets.push({
+        type: "COVER",
+        status: "READY",
+        progress: 100,
+        url: videoCoverUrl,
+        sortOrder: 0,
+      });
+    }
+
+    videoAttachments.forEach((attachment, index) => {
+      assets.push({
+        type: "ATTACHMENT",
+        status: "READY",
+        progress: 100,
+        url: attachment.url,
+        fileName: attachment.fileName,
+        fileSize: attachment.fileSize,
+        mimeType: attachment.mimeType,
+        sortOrder: index,
+      });
+    });
+
+    return assets;
+  }, [
+    postMode,
+    selectedImages,
+    selectedAttachments,
+    videoAssetId,
+    videoAttachments,
+    videoCoverUrl,
+    videoFileName,
+    videoFileSize,
+    videoStatus,
+    videoUploadProgress,
+  ]);
+
+  const saveDraft = useCallback(async (persistMode: DraftPersistMode = "SAVED") => {
+    setDraftSaving(true);
+    try {
+      const currentDraftId = await ensureDraftId(persistMode);
+      const persistPatch: { persistMode?: DraftPersistMode } = persistMode === "SAVED"
+        ? { persistMode: "SAVED" }
+        : {};
+      const payload = postMode === "VIDEO"
+        ? {
+            postType: "VIDEO" as const,
+            title: videoTitle.trim() || null,
+            content: videoDescription,
+            visibility,
+            topicId: videoTopicId,
+            ...persistPatch,
+            assets: buildDraftAssets(),
+          }
+        : {
+            postType: "TEXT" as const,
+            title: enableTitle ? title.trim() || null : null,
+            content,
+            visibility,
+            topicId: selectedTopicId,
+            ...persistPatch,
+            assets: buildDraftAssets(),
+          };
+
+      const response = await fetch(`/api/drafts/${currentDraftId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json() as DraftResponse;
+      if (!response.ok || !data.draft) {
+        throw new Error(data.error || "保存草稿失败");
+      }
+      setDraftId(data.draft.id);
+      return data.draft.id;
+    } finally {
+      setDraftSaving(false);
+    }
+  }, [
+    buildDraftAssets,
+    content,
+    enableTitle,
+    ensureDraftId,
+    postMode,
+    selectedTopicId,
+    title,
+    videoDescription,
+    videoTitle,
+    videoTopicId,
+    visibility,
+  ]);
+
+  const hasAnyContent = useMemo(() => {
+    if (postMode === "VIDEO") {
+      return Boolean(
+        videoTitle.trim()
+        || videoDescription.trim()
+        || videoAssetId
+        || videoAttachments.length > 0
+        || videoCoverUrl,
+      );
+    }
+
+    return Boolean(
+      content.trim()
+      || (enableTitle && title.trim())
+      || selectedImages.length > 0
+      || selectedAttachments.length > 0,
+    );
+  }, [
+    content,
+    enableTitle,
+    postMode,
+    selectedAttachments.length,
+    selectedImages.length,
+    title,
+    videoAssetId,
+    videoAttachments.length,
+    videoCoverUrl,
+    videoDescription,
+    videoTitle,
+  ]);
+
+  const unsavedChanges = hasAnyContent;
+
+  useEffect(() => {
+    hasAnyContentRef.current = hasAnyContent;
+    if (!hasAnyContent) {
+      setAutoSaveAt("");
+    }
+  }, [hasAnyContent]);
+
+  useEffect(() => {
+    if (!draftIdFromUrl || status !== "authenticated") {
+      return;
+    }
+    void fetchDraftDetail(draftIdFromUrl);
+  }, [draftIdFromUrl, fetchDraftDetail, status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") {
+      return;
+    }
+    if (!unsavedChanges) {
+      return;
+    }
+    if (loading || isUploading || videoUploading || videoAttachmentUploading || videoCoverUploading || draftLoading || draftSaving) {
+      return;
+    }
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (autoSavingRef.current) {
+        return;
+      }
+      if (!hasAnyContentRef.current) {
+        return;
+      }
+      autoSavingRef.current = true;
+      void saveDraft("SAVED")
+        .then(() => {
+          setAutoSaveAt(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
+        })
+        .catch((saveError) => {
+          console.error("Auto save failed:", saveError);
+        })
+        .finally(() => {
+          autoSavingRef.current = false;
+        });
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [
+    draftLoading,
+    draftSaving,
+    isUploading,
+    loading,
+    saveDraft,
+    status,
+    unsavedChanges,
+    videoAttachmentUploading,
+    videoCoverUploading,
+    videoUploading,
+  ]);
+
+  useEffect(() => {
+    if (!unsavedChanges) {
+      return;
+    }
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
+  const uploadFile = async (
+    file: File,
+    endpoint: string,
+    onProgress: (percent: number, status: string) => void,
+    bindDraftId?: string,
+  ) => {
     const formData = new FormData();
     formData.append("file", file);
+    if (bindDraftId) {
+      formData.append("draftId", bindDraftId);
+    }
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -275,6 +763,7 @@ export default function CreatePostPage() {
 
     try {
       const files = Array.from(e.target.files);
+      const bindDraftId = await ensureDraftId("EPHEMERAL");
       const uploadedUrls: string[] = [];
       const totalFiles = files.length;
 
@@ -293,7 +782,8 @@ export default function CreatePostPage() {
             const overallProgress = ((i + percent / 100) / totalFiles) * 100;
             setUploadProgress(Math.round(overallProgress));
             setUploadStatus(`第 ${i + 1}/${totalFiles} 张图片: ${statusMsg}`);
-          }
+          },
+          bindDraftId,
         ) as { url: string };
 
         uploadedUrls.push(result.url);
@@ -343,6 +833,7 @@ export default function CreatePostPage() {
 
     try {
       const files = Array.from(e.target.files);
+      const bindDraftId = await ensureDraftId("EPHEMERAL");
       const uploadedFiles: UploadedAttachment[] = [];
       const totalFiles = files.length;
 
@@ -361,7 +852,8 @@ export default function CreatePostPage() {
             const overallProgress = ((i + percent / 100) / totalFiles) * 100;
             setUploadProgress(Math.round(overallProgress));
             setUploadStatus(`第 ${i + 1}/${totalFiles} 个附件: ${statusMsg}`);
-          }
+          },
+          bindDraftId,
         ) as UploadedAttachment;
 
         uploadedFiles.push(result);
@@ -436,8 +928,12 @@ export default function CreatePostPage() {
   };
 
   const uploadVideoAttachment = async (file: File): Promise<UploadedAttachment> => {
+    const bindDraftId = await ensureDraftId("EPHEMERAL");
     const formData = new FormData();
     formData.append("file", file);
+    if (bindDraftId) {
+      formData.append("draftId", bindDraftId);
+    }
 
     const response = await fetch("/api/upload/attachment", {
       method: "POST",
@@ -458,8 +954,12 @@ export default function CreatePostPage() {
   };
 
   const uploadVideoCover = async (file: File): Promise<string> => {
+    const bindDraftId = await ensureDraftId("EPHEMERAL");
     const formData = new FormData();
     formData.append("file", file);
+    if (bindDraftId) {
+      formData.append("draftId", bindDraftId);
+    }
 
     const response = await fetch("/api/upload", {
       method: "POST",
@@ -584,6 +1084,7 @@ export default function CreatePostPage() {
     setVideoFileName(file.name);
     setVideoFileSize(file.size);
     setVideoUploadProgress(0);
+    const bindDraftId = await ensureDraftId("EPHEMERAL");
     setVideoUploadMessage("正在申请上传凭证...");
 
     try {
@@ -596,6 +1097,7 @@ export default function CreatePostPage() {
           fileName: file.name,
           fileSize: file.size,
           mimeType: file.type,
+          draftId: bindDraftId,
         }),
       });
 
@@ -680,6 +1182,7 @@ export default function CreatePostPage() {
           videoAssetId,
           objectKey: objectKey,
           etag: uploadResult.ETag ?? null,
+          draftId: bindDraftId,
         }),
       });
 
@@ -777,27 +1280,45 @@ export default function CreatePostPage() {
     setError("");
 
     if (!(session as { user?: { id?: string } } | null)?.user?.id) {
-      setError("请先登录才能发布帖子");
+      setError("请先登录后再发布。");
       return;
     }
 
     if (!content.trim() && selectedImages.length === 0 && selectedAttachments.length === 0) {
-      setError("帖子内容、图片或附件不能为空");
+      setError("正文、图片或附件至少需要填写一项。");
       return;
     }
 
     if (selectedAttachments.length > MAX_TEXT_ATTACHMENTS) {
-      setError(`最多只能上传 ${MAX_TEXT_ATTACHMENTS} 个附件`);
+      setError(`最多只能上传 ${MAX_TEXT_ATTACHMENTS} 个附件。`);
       return;
     }
 
     if (enableTitle && !title.trim()) {
-      setError("请输入标题");
+      setError("请输入标题。");
       return;
     }
 
     setLoading(true);
     try {
+      if (draftId) {
+        const patchedDraftId = await saveDraft("SAVED");
+        const draftPublishResponse = await fetch(`/api/drafts/${patchedDraftId}/publish`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const draftPublishData = await draftPublishResponse.json() as DraftPublishResponse;
+        if (!draftPublishResponse.ok) {
+          throw new Error(draftPublishData.error || "草稿发布失败");
+        }
+        const createdPostId = draftPublishData.post?.id;
+        router.push(createdPostId ? `/post/${createdPostId}` : "/");
+        router.refresh();
+        return;
+      }
+
       const response = await fetch("/api/post", {
         method: "POST",
         headers: {
@@ -821,10 +1342,16 @@ export default function CreatePostPage() {
         router.push(createdPostId ? `/post/${createdPostId}` : "/");
         router.refresh();
       } else {
-        setError(data.error || "发布帖子失败");
+        await saveDraft("SAVED");
+        setError(data.error || "发布失败，已为你保存到草稿箱。");
       }
-    } catch {
-      setError("网络错误，发布帖子失败");
+    } catch (postError) {
+      await saveDraft("SAVED");
+      setError(
+        postError instanceof Error
+          ? `发布失败，已保存到草稿箱：${postError.message}`
+          : "网络异常，已保存到草稿箱。",
+      );
     } finally {
       setLoading(false);
     }
@@ -836,27 +1363,47 @@ export default function CreatePostPage() {
     setVideoUploadError("");
 
     if (!(session as { user?: { id?: string } } | null)?.user?.id) {
-      setError("请先登录才能发布帖子");
+      setError("请先登录后再发布。");
       return;
     }
 
     if (!videoAssetId) {
-      setVideoUploadError("请先上传视频");
+      await saveDraft("SAVED");
+      setVideoUploadError("视频尚未上传完成，已保存到草稿箱。");
       return;
     }
 
     if (videoStatus !== "READY") {
-      setVideoUploadError("视频仍在处理中，处理完成后才能发布");
+      await saveDraft("SAVED");
+      setVideoUploadError("视频仍在处理中，已保存到草稿箱，稍后可继续发布。");
       return;
     }
 
     if (videoAttachments.length > MAX_VIDEO_ATTACHMENTS) {
-      setVideoUploadError(`最多只能上传 ${MAX_VIDEO_ATTACHMENTS} 个附件`);
+      setVideoUploadError(`最多只能上传 ${MAX_VIDEO_ATTACHMENTS} 个附件。`);
       return;
     }
 
     setLoading(true);
     try {
+      if (draftId) {
+        const patchedDraftId = await saveDraft("SAVED");
+        const draftPublishResponse = await fetch(`/api/drafts/${patchedDraftId}/publish`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const draftPublishData = await draftPublishResponse.json() as DraftPublishResponse;
+        if (!draftPublishResponse.ok) {
+          throw new Error(draftPublishData.error || "草稿发布失败");
+        }
+        const createdPostId = draftPublishData.post?.id;
+        router.push(createdPostId ? `/post/${createdPostId}` : "/");
+        router.refresh();
+        return;
+      }
+
       const response = await fetch("/api/post", {
         method: "POST",
         headers: {
@@ -881,12 +1428,34 @@ export default function CreatePostPage() {
         router.push(createdPostId ? `/post/${createdPostId}` : "/");
         router.refresh();
       } else {
-        setVideoUploadError(data.error || "发布视频失败");
+        await saveDraft("SAVED");
+        setVideoUploadError(data.error || "视频发布失败，已为你保存到草稿箱。");
       }
-    } catch {
-      setVideoUploadError("网络错误，发布视频失败");
+    } catch (postError) {
+      await saveDraft("SAVED");
+      setVideoUploadError(
+        postError instanceof Error
+          ? `视频发布失败，已保存到草稿箱：${postError.message}`
+          : "网络异常，已保存到草稿箱。",
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveDraftClick = async () => {
+    try {
+      const savedDraftId = await saveDraft("SAVED");
+      setError("");
+      setVideoUploadError("");
+      router.replace(savedDraftId ? `/post/create?draftId=${savedDraftId}` : "/post/create");
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : "保存草稿失败";
+      if (postMode === "VIDEO") {
+        setVideoUploadError(message);
+      } else {
+        setError(message);
+      }
     }
   };
 
@@ -897,6 +1466,21 @@ export default function CreatePostPage() {
     }
 
     void handleCreateTextPost();
+  };
+
+  const handleCancel = async () => {
+    if (!unsavedChanges) {
+      router.back();
+      return;
+    }
+
+    try {
+      await saveDraft("EPHEMERAL");
+    } catch (saveError) {
+      console.error("Save draft before leave failed:", saveError);
+    } finally {
+      router.back();
+    }
   };
 
   const canPublishText =
@@ -910,8 +1494,7 @@ export default function CreatePostPage() {
     && !videoUploading
     && !videoCoverUploading
     && !videoAttachmentUploading
-    && videoStatus === "READY"
-    && Boolean(videoAssetId);
+    && (videoStatus === "READY" || Boolean(draftId));
 
   const statusMeta = getVideoStatusMeta(videoStatus);
   const shouldShowVideoCoverUploader = Boolean(videoAssetId) && !videoUploading;
@@ -936,19 +1519,44 @@ export default function CreatePostPage() {
         <div className="flex items-center justify-between mb-4">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={handleCancel}
             className="text-gray-500 hover:text-gray-700 transition-colors"
           >
             取消
           </button>
           <h1 className="text-lg font-semibold text-gray-900">发布动态</h1>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/post/drafts")}
+              className="px-3 py-1.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-full hover:bg-gray-100 transition-colors"
+            >
+              草稿箱
+            </button>
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={postMode === "TEXT" ? !canPublishText : !canPublishVideo}
+              className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {loading ? "发布中..." : "发布"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between text-xs text-gray-500">
+          <div>
+            {draftId ? `草稿 ID: ${draftId}` : "未保存草稿"}
+            {draftLoading ? " | 草稿加载中" : ""}
+            {autoSaveAt ? ` | 已自动保存于 ${autoSaveAt}` : ""}
+          </div>
           <button
             type="button"
-            onClick={handlePublish}
-            disabled={postMode === "TEXT" ? !canPublishText : !canPublishVideo}
-            className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            onClick={handleSaveDraftClick}
+            disabled={loading || draftSaving}
+            className="px-3 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "发布中..." : "发布"}
+            {draftSaving ? "保存中..." : "保存草稿"}
           </button>
         </div>
 

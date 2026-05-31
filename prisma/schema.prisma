@@ -45,6 +45,7 @@ model User {
   following    Follow[]     @relation("UserFollowing")
   followers    Follow[]     @relation("UserFollowers")
   danmakus     Danmaku[]
+  drafts       PostDraft[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -69,6 +70,35 @@ enum VideoStatus {
   DELETED
 }
 
+enum DraftPersistMode {
+  EPHEMERAL
+  SAVED
+}
+
+enum DraftStatus {
+  EDITING
+  UPLOADING
+  PROCESSING
+  FAILED
+  READY
+  PUBLISHED
+}
+
+enum DraftAssetType {
+  IMAGE
+  ATTACHMENT
+  VIDEO
+  COVER
+}
+
+enum DraftAssetStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
 enum DanmakuType {
   SCROLL
 }
@@ -91,6 +121,7 @@ model Post {
   images      PostImage[]
   attachments PostAttachment[]
   notifications Notification[]
+  draft       PostDraft?       @relation("PublishedPostDraft")
   topicId     String?
   topic       Topic?           @relation(fields: [topicId], references: [id])
   viewCount   Int              @default(0)
@@ -131,6 +162,7 @@ model VideoAsset {
   ownerId            String
   owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   post               Post?
+  draftAssets        DraftAsset[]
 
   bucket             String
   region             String
@@ -161,12 +193,58 @@ model VideoAsset {
   @@index([createdAt])
 }
 
+model PostDraft {
+  id              String           @id @default(cuid())
+  authorId        String
+  author          User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  postType        PostType         @default(TEXT)
+  title           String?
+  content         String           @db.Text
+  visibility      PostVisibility   @default(PUBLIC)
+  topicId         String?
+  topic           Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  persistMode     DraftPersistMode @default(EPHEMERAL)
+  status          DraftStatus      @default(EDITING)
+  lastError       String?          @db.Text
+  publishedPostId String?          @unique
+  publishedPost   Post?            @relation("PublishedPostDraft", fields: [publishedPostId], references: [id], onDelete: SetNull)
+  assets          DraftAsset[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([authorId, persistMode, updatedAt])
+  @@index([authorId, status, updatedAt])
+}
+
+model DraftAsset {
+  id           String           @id @default(cuid())
+  draftId      String
+  draft        PostDraft        @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  type         DraftAssetType
+  status       DraftAssetStatus @default(PENDING)
+  progress     Int              @default(0)
+  url          String?
+  fileName     String?
+  fileSize     Int?
+  mimeType     String?
+  videoAssetId String?
+  videoAsset   VideoAsset?      @relation(fields: [videoAssetId], references: [id], onDelete: SetNull)
+  errorMessage String?          @db.Text
+  sortOrder    Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([draftId, status, type])
+  @@index([videoAssetId])
+}
+
 model Topic {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
   icon        String?
   posts       Post[]
+  drafts      PostDraft[]
   creatorId   String?
   creator     User?    @relation("TopicCreator", fields: [creatorId], references: [id])
   followers   User[]   @relation("TopicFollows")

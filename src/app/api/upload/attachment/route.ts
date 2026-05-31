@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToCOS } from "@/lib/cos";
+import { prisma } from "@/lib/prisma";
 
 const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
 
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const file = formData.get("file") as File;
+  const draftIdRaw = formData.get("draftId");
+  const draftId = typeof draftIdRaw === "string" ? draftIdRaw.trim() : "";
 
   if (!file) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -72,11 +75,50 @@ export async function POST(request: Request) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
+  let linkedDraftId: string | null = null;
+  if (draftId) {
+    const draft = await prisma.postDraft.findFirst({
+      where: {
+        id: draftId,
+        authorId: session.user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!draft) {
+      return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+    }
+    linkedDraftId = draft.id;
+  }
+
   const sanitizedFileName = sanitizeFileName(file.name);
   const filename = `attachments/${uuidv4()}-${sanitizedFileName}`;
 
   try {
     const cdnUrl = await uploadToCOS(buffer, filename);
+    if (linkedDraftId) {
+      const sortOrder = await prisma.draftAsset.count({
+        where: {
+          draftId: linkedDraftId,
+          type: "ATTACHMENT",
+        },
+      });
+      await prisma.draftAsset.create({
+        data: {
+          draftId: linkedDraftId,
+          type: "ATTACHMENT",
+          status: "READY",
+          progress: 100,
+          url: cdnUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
+          sortOrder,
+        },
+      });
+    }
+
     return NextResponse.json({
       url: cdnUrl,
       fileName: file.name,

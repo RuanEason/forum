@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import { uploadToCOS } from "@/lib/cos";
+import { prisma } from "@/lib/prisma";
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const file = formData.get("file") as File;
+  const draftIdRaw = formData.get("draftId");
+  const draftId = typeof draftIdRaw === "string" ? draftIdRaw.trim() : "";
 
   if (!file) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -63,6 +66,23 @@ export async function POST(request: Request) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
+  let linkedDraftId: string | null = null;
+  if (draftId) {
+    const draft = await prisma.postDraft.findFirst({
+      where: {
+        id: draftId,
+        authorId: session.user.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!draft) {
+      return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+    }
+    linkedDraftId = draft.id;
+  }
+
   // Generate unique filenames
   const filename = `images/${uuidv4()}`;
   const originalExt = file.type.split('/')[1]; // 保留原始文件扩展名
@@ -79,6 +99,27 @@ export async function POST(request: Request) {
       // 这里可以根据需要调整，现在保持原始格式
 
       const cdnUrl = await uploadToCOS(uploadBuffer, uploadFilename);
+      if (linkedDraftId) {
+        const sortOrder = await prisma.draftAsset.count({
+          where: {
+            draftId: linkedDraftId,
+            type: "IMAGE",
+          },
+        });
+        await prisma.draftAsset.create({
+          data: {
+            draftId: linkedDraftId,
+            type: "IMAGE",
+            status: "READY",
+            progress: 100,
+            url: cdnUrl,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            sortOrder,
+          },
+        });
+      }
       return NextResponse.json({ url: cdnUrl });
     } else {
       // 文件 >10MB: 上传原图 + 缩略图
@@ -96,6 +137,28 @@ export async function POST(request: Request) {
         .toBuffer();
 
       const thumbnailUrl = await uploadToCOS(thumbnailBuffer, thumbnailFilename);
+
+      if (linkedDraftId) {
+        const sortOrder = await prisma.draftAsset.count({
+          where: {
+            draftId: linkedDraftId,
+            type: "IMAGE",
+          },
+        });
+        await prisma.draftAsset.create({
+          data: {
+            draftId: linkedDraftId,
+            type: "IMAGE",
+            status: "READY",
+            progress: 100,
+            url: originalUrl,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            sortOrder,
+          },
+        });
+      }
 
       return NextResponse.json({
         url: originalUrl,

@@ -501,6 +501,18 @@ export async function POST(request: Request) {
         },
       });
 
+      await prisma.draftAsset.updateMany({
+        where: {
+          type: "VIDEO",
+          videoAssetId: videoAsset.id,
+        },
+        data: {
+          status: "READY",
+          progress: 100,
+          errorMessage: null,
+        },
+      });
+
       return NextResponse.json({ ok: true, status: "READY" });
     }
 
@@ -527,6 +539,17 @@ export async function POST(request: Request) {
         status: "FAILED",
         workflowRunId: parsed.workflowRunId || undefined,
         errorCode: parsed.errorCode || "WORKFLOW_FAILED",
+        errorMessage: parsed.errorMessage || `Workflow failed with status: ${parsed.rawStatus}`,
+      },
+    });
+
+    await prisma.draftAsset.updateMany({
+      where: {
+        type: "VIDEO",
+        videoAssetId: videoAsset.id,
+      },
+      data: {
+        status: "FAILED",
         errorMessage: parsed.errorMessage || `Workflow failed with status: ${parsed.rawStatus}`,
       },
     });

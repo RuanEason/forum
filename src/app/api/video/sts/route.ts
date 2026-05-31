@@ -14,6 +14,7 @@ type StsRequestBody = {
   fileName?: unknown;
   fileSize?: unknown;
   mimeType?: unknown;
+  draftId?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
     const mimeType = typeof body.mimeType === "string" ? body.mimeType.trim() : "";
     const fileSize = typeof body.fileSize === "number" ? body.fileSize : Number.NaN;
+    const draftId = typeof body.draftId === "string" ? body.draftId.trim() : "";
     const constraints = getVideoPublicConstraints();
 
     if (!fileName) {
@@ -54,6 +56,23 @@ export async function POST(request: Request) {
     const objectKey = createVideoRawObjectKey(session.user.id, fileName, mimeType);
     const rawUrl = buildVideoCdnUrl(objectKey);
 
+    let linkedDraftId: string | null = null;
+    if (draftId) {
+      const draft = await prisma.postDraft.findFirst({
+        where: {
+          id: draftId,
+          authorId: session.user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+      if (!draft) {
+        return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+      }
+      linkedDraftId = draft.id;
+    }
+
     const [videoAsset, credentials] = await Promise.all([
       prisma.videoAsset.create({
         data: {
@@ -71,6 +90,30 @@ export async function POST(request: Request) {
         userId: session.user.id,
       }),
     ]);
+
+    if (linkedDraftId) {
+      await prisma.$transaction(async (tx) => {
+        await tx.draftAsset.deleteMany({
+          where: {
+            draftId: linkedDraftId as string,
+            type: "VIDEO",
+          },
+        });
+        await tx.draftAsset.create({
+          data: {
+            draftId: linkedDraftId as string,
+            type: "VIDEO",
+            status: "UPLOADING",
+            progress: 0,
+            videoAssetId: videoAsset.id,
+            fileName,
+            fileSize: Number.isFinite(fileSize) ? Math.trunc(fileSize) : null,
+            mimeType,
+            sortOrder: 0,
+          },
+        });
+      });
+    }
 
     return NextResponse.json({
       videoAssetId: videoAsset.id,
