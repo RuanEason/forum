@@ -298,11 +298,11 @@ export default function HomeContent({
                         <div className="mt-2 text-sm text-gray-800">
                           {/* 置顶标识 */}
                           {post.pinned && (
-                            <div className="flex items-center gap-1 text-orange-500 text-xs font-medium mb-2">
+                            <div className="flex items-center gap-1 text-gray-200 text-xs font-medium mb-2">
                               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                                 <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
                               </svg>
-                              <span>已置顶</span>
+                              <span>已全站置顶</span>
                             </div>
                           )}
                           <div
