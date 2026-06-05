@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -187,6 +187,22 @@ function getVideoStatusMeta(status: VideoWorkflowStatus) {
 }
 
 export default function CreatePostPage() {
+  return (
+    <Suspense fallback={<CreatePostPageFallback />}>
+      <CreatePostPageContent />
+    </Suspense>
+  );
+}
+
+function CreatePostPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-gray-500">加载中...</div>
+    </div>
+  );
+}
+
+function CreatePostPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
