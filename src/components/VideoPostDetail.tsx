@@ -130,9 +130,9 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
   return (
     <>
       <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
-        <div className="p-4 sm:p-6">
+        <div className="sm:p-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center min-w-0">
+            <div className="flex px-2 pt-3 items-center min-w-0 sm:px-0 pt-0">
               <Avatar src={post.author.avatar} name={post.author.name} size="md" />
               <div className="ml-4 min-w-0">
                 <Link
@@ -155,7 +155,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
               </div>
             </div>
 
-            <div className="flex min-w-0 shrink-0 items-start gap-2 sm:max-w-[52%]">
+            <div className="flex pt-3 min-w-0 shrink-0 items-start gap-2 sm:max-w-[52%] pt-0">
               {post.title && (
                 <h1 className="hidden min-w-0 text-right text-xl font-bold text-gray-900 line-clamp-2 sm:block">
                   {post.title}
@@ -166,7 +166,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
           </div>
 
           {post.title && (
-            <h1 className="sm:hidden mt-4 text-2xl font-bold text-gray-900">
+            <h1 className="px-4 sm:hidden mt-4 text-2xl font-bold text-gray-900">
               {post.title}
             </h1>
           )}
@@ -180,7 +180,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
                 title={post.title}
               />
             ) : (
-              <div className="relative overflow-hidden rounded-lg bg-black aspect-video border border-gray-200">
+              <div className="relative overflow-hidden bg-black aspect-video border border-gray-200">
                 <div className="flex h-full w-full items-center justify-center px-4 text-center text-sm text-white/80">
                   {videoMessage}
                 </div>
@@ -201,7 +201,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
             </div>
           )}
 
-          <div className="mt-4 flex items-center space-x-8 pt-4 border-t border-gray-100">
+          <div className="m-4 flex items-center space-x-8 pt-4 border-t border-gray-100 sm:m-0 mt-4">
             <div className="flex items-center space-x-1 text-gray-500 p-2">
               <Eye className="w-5 h-5" />
               <span className="text-sm font-medium">{post.viewCount}</span>

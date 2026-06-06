@@ -933,6 +933,45 @@ function CreatePostPageContent() {
     );
   };
 
+  const openEditorWorkspace = useCallback(async () => {
+    if (postMode !== "TEXT") {
+      window.open("/editor", "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const hasAnyTextDraftContent = Boolean(
+      content.trim()
+      || (enableTitle && title.trim())
+      || selectedImages.length > 0
+      || selectedAttachments.length > 0
+      || selectedTopicId
+      || visibility === "UNLISTED",
+    );
+
+    if (!hasAnyTextDraftContent) {
+      window.open("/editor", "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    try {
+      const savedDraftId = await saveDraft("SAVED");
+      window.open(`/editor?draftId=${savedDraftId}`, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.error("Open editor workspace failed:", error);
+      setError(error instanceof Error ? error.message : "打开编辑器失败");
+    }
+  }, [
+    content,
+    enableTitle,
+    postMode,
+    saveDraft,
+    selectedAttachments.length,
+    selectedImages.length,
+    selectedTopicId,
+    title,
+    visibility,
+  ]);
+
   const cancelUpload = () => {
     setCancelRequested(true);
     setUploadStatus("正在取消上传...");
@@ -1630,6 +1669,7 @@ function CreatePostPageContent() {
               onCancelUpload={cancelUpload}
               uploadProgress={uploadProgress}
               uploadStatus={uploadStatus}
+              onOpenEditor={openEditorWorkspace}
               topicSelector={
                 <TopicSelector
                   selectedTopicId={selectedTopicId}

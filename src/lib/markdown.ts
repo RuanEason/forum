@@ -6,6 +6,7 @@ export interface MarkdownHeading {
   depth: number;
   text: string;
   id: string;
+  lineNumber: number;
 }
 
 const ATX_HEADING_REGEX = /^(#{1,6})[ \t]+(.+?)\s*#*\s*$/;
@@ -91,6 +92,7 @@ export function extractMarkdownHeadings(markdown: string): MarkdownHeading[] {
           depth,
           text,
           id: generateId(text),
+          lineNumber: index + 1,
         });
       }
 
@@ -112,6 +114,7 @@ export function extractMarkdownHeadings(markdown: string): MarkdownHeading[] {
           depth,
           text,
           id: generateId(text),
+          lineNumber: index + 1,
         });
       }
 

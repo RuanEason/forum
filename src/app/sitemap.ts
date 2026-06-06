@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
-import { getSiteOriginOrThrow } from "@/lib/site-url";
+import { resolveSiteOrigin } from "@/lib/site-url";
 
 /**
  * 动态生成网站 Sitemap
@@ -27,8 +27,8 @@ import { getSiteOriginOrThrow } from "@/lib/site-url";
  * // ]
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // 统一从站点 URL 工具读取，避免线上生成 localhost 链接。
-  const baseUrl = getSiteOriginOrThrow();
+  // 本地/未配置域名时兜底到 localhost，避免生产构建前置失败。
+  const baseUrl = resolveSiteOrigin({ allowLocalhost: true }) || "http://localhost:3000";
 
   // 获取所有帖子的 ID 和更新时间
   const posts = await prisma.post.findMany({

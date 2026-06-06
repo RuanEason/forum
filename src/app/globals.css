@@ -62,6 +62,21 @@ body {
   overflow-x: hidden; /* Prevent horizontal scroll to blank areas */
 }
 
+body.editor-route {
+  background: #eef3f9;
+}
+
+body.editor-route [data-site-chrome="profile"],
+body.editor-route [data-site-chrome="nav"],
+body.editor-route [data-site-chrome="ad"],
+body.editor-route [data-site-chrome="footer"] {
+  display: none !important;
+}
+
+body.editor-route [data-site-main="app"] {
+  min-height: 100vh;
+}
+
 /* Custom utilities for better UI */
 @layer utilities {
   .text-shadow-sm {

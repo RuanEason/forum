@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback } from "react";
 import "./SimpleMarkdownEditor.css";
 
 interface SimpleMarkdownEditorProps {
@@ -20,12 +20,7 @@ interface SimpleMarkdownEditorProps {
   onCancelUpload?: () => void;
   uploadProgress?: number;
   uploadStatus?: string;
-}
-
-interface ToolbarButton {
-  icon: React.ReactNode;
-  title: string;
-  action: () => void;
+  onOpenEditor?: () => void;
 }
 
 export default function SimpleMarkdownEditor({
@@ -45,9 +40,9 @@ export default function SimpleMarkdownEditor({
   onCancelUpload,
   uploadProgress = 0,
   uploadStatus = "",
+  onOpenEditor,
 }: SimpleMarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showToolbar, setShowToolbar] = useState(false);
 
   // Insert text at cursor position or wrap selected text
   const insertText = useCallback(
@@ -83,139 +78,6 @@ export default function SimpleMarkdownEditor({
     [value, onChange]
   );
 
-  // Insert at line start
-  const insertAtLineStart = useCallback(
-    (prefix: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-
-      const newValue =
-        value.substring(0, lineStart) + prefix + value.substring(lineStart);
-
-      onChange(newValue);
-
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + prefix.length, start + prefix.length);
-      }, 0);
-    },
-    [value, onChange]
-  );
-
-  const toolbarButtons: ToolbarButton[] = [
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h8m-4-4v8" />
-          <text x="14" y="16" fontSize="10" fontWeight="bold" fill="currentColor">B</text>
-        </svg>
-      ),
-      title: "粗体 (Ctrl+B)",
-      action: () => insertText("**", "**", "粗体文本"),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <text x="8" y="17" fontSize="14" fontStyle="italic" fill="currentColor">I</text>
-        </svg>
-      ),
-      title: "斜体 (Ctrl+I)",
-      action: () => insertText("*", "*", "斜体文本"),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h12" style={{ textDecoration: 'line-through' }} />
-          <text x="6" y="16" fontSize="10" fill="currentColor" style={{ textDecoration: 'line-through' }}>S</text>
-        </svg>
-      ),
-      title: "删除线",
-      action: () => insertText("~~", "~~", "删除文本"),
-    },
-    { icon: <span className="text-gray-300">|</span>, title: "", action: () => {} },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <text x="4" y="16" fontSize="12" fontWeight="bold" fill="currentColor">H</text>
-        </svg>
-      ),
-      title: "标题",
-      action: () => insertAtLineStart("## "),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      ),
-      title: "分割线",
-      action: () => insertText("\n---\n", "", ""),
-    },
-    { icon: <span className="text-gray-300">|</span>, title: "", action: () => {} },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-      ),
-      title: "链接",
-      action: () => insertText("[", "](https://)", "链接文本"),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-        </svg>
-      ),
-      title: "引用",
-      action: () => insertAtLineStart("> "),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-        </svg>
-      ),
-      title: "代码",
-      action: () => insertText("`", "`", "code"),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={2} />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8h.01M8 12h.01M8 16h.01M12 8h4M12 12h4M12 16h4" />
-        </svg>
-      ),
-      title: "代码块",
-      action: () => insertText("\n```\n", "\n```\n", "// 代码"),
-    },
-    { icon: <span className="text-gray-300">|</span>, title: "", action: () => {} },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-      ),
-      title: "无序列表",
-      action: () => insertAtLineStart("- "),
-    },
-    {
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 6h13M7 12h13M7 18h13" />
-          <text x="2" y="8" fontSize="6" fill="currentColor">1</text>
-          <text x="2" y="14" fontSize="6" fill="currentColor">2</text>
-          <text x="2" y="20" fontSize="6" fill="currentColor">3</text>
-        </svg>
-      ),
-      title: "有序列表",
-      action: () => insertAtLineStart("1. "),
-    },
-  ];
-
   // Handle keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey || e.metaKey) {
@@ -238,28 +100,7 @@ export default function SimpleMarkdownEditor({
 
   return (
     <div className="simple-md-editor w-full">
-      {/* Toolbar - 根据状态显示/隐藏 */}
-      {showToolbar && (
-        <div className="simple-md-editor-toolbar">
-          {toolbarButtons.map((btn, index) =>
-            btn.title === "" ? (
-              <span key={index} className="toolbar-divider">
-                {btn.icon}
-              </span>
-            ) : (
-              <button
-                key={index}
-                type="button"
-                title={btn.title}
-                onClick={btn.action}
-                className="toolbar-btn"
-              >
-                {btn.icon}
-              </button>
-            )
-          )}
-        </div>
-      )}
+      {/* Markdown 工具栏已停用，统一引导到 /editor 使用桌面编辑器体验 */}
 
       {/* Textarea */}
       <textarea
@@ -341,18 +182,19 @@ export default function SimpleMarkdownEditor({
                   </button>
                 )}
 
-                {/* Markdown 工具栏切换按钮 */}
-                <button
-                  type="button"
-                  onClick={() => setShowToolbar(!showToolbar)}
-                  className={`footer-action-btn ${showToolbar ? "active" : ""}`}
-                  title={showToolbar ? "隐藏 Markdown 工具栏" : "显示 Markdown 工具栏"}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <span className="text-xs font-bold">T</span>
-                </button>
+                {onOpenEditor && (
+                  <button
+                    type="button"
+                    onClick={onOpenEditor}
+                    className="footer-action-btn"
+                    title="在编辑器中继续编辑"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <span className="text-xs font-bold">T</span>
+                  </button>
+                )}
               </div>
 
               {/* 右侧：话题选择器 */}

@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next';
-import { getSiteOriginOrThrow } from "@/lib/site-url";
+import { resolveSiteOrigin } from "@/lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = getSiteOriginOrThrow();
+  const baseUrl = resolveSiteOrigin({ allowLocalhost: true }) || "http://localhost:3000";
 
   return {
     rules: {

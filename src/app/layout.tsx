@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Ad from "@/components/Ad";
 import { PageLoadProgressProvider } from "@/components/PageLoadProgressProvider";
 import { defaultMetadata } from "@/lib/seo";
+import RouteChromeController from "@/components/RouteChromeController";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,16 +32,25 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
+        <RouteChromeController />
         <Providers>
           <PageLoadProgressProvider>
             <div className="flex flex-col min-h-screen">
-              <ProfileCompletionCheck />
-              <Navbar />
-              <Ad />
-              <main className="flex-grow">
+              <div data-site-chrome="profile">
+                <ProfileCompletionCheck />
+              </div>
+              <div data-site-chrome="nav">
+                <Navbar />
+              </div>
+              <div data-site-chrome="ad">
+                <Ad />
+              </div>
+              <main className="flex-grow" data-site-main="app">
                 {children}
               </main>
-              <Footer />
+              <div data-site-chrome="footer">
+                <Footer />
+              </div>
             </div>
           </PageLoadProgressProvider>
         </Providers>

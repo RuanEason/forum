@@ -1328,7 +1328,7 @@ export default function VideoPlayer({ postId, src, poster, title }: VideoPlayerP
         className={`relative bg-black ${
           isFullscreen
             ? "h-full w-full overflow-hidden rounded-none border-0"
-            : "aspect-video overflow-visible rounded-lg border border-gray-200"
+            : "aspect-video overflow-visible border border-gray-200"
         }`}
         onMouseMove={revealControlsTemporarily}
         onMouseLeave={() => {
