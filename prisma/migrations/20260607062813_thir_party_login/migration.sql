@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `casdoorUserId` VARCHAR(191) NULL;
+ALTER TABLE `User` ADD COLUMN `casdoorUserId` VARCHAR(191) NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX `User_casdoorUserId_key` ON `User`(`casdoorUserId`);
