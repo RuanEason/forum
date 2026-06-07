@@ -1,3 +1,8 @@
+import "next-auth";
+import "next-auth/jwt";
+
+export {};
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -30,7 +35,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: string;
+    role?: string;
     avatar?: string | null;
     postViewMode?: string;
     showUserData?: boolean;

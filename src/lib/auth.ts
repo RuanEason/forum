@@ -1,7 +1,33 @@
 import CredentialsProvider from "next-auth/providers/credentials";
+import type { Session } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { getUserLevel, rewardDailyLoginExperience } from "@/lib/experience";
+import { findCasdoorLinkedLoginUser } from "@/lib/third-party-auth";
+import type { CasdoorIdentity } from "@/lib/casdoor";
+
+type AuthUserPayload = {
+  role: string;
+  avatar?: string | null;
+  postViewMode?: string;
+  showUserData?: boolean;
+  coverImage?: string | null;
+  experience?: number;
+  level?: number;
+};
+
+type JwtCallbackParams = {
+  token: JWT;
+  user?: AuthUserPayload;
+  trigger?: "signIn" | "signUp" | "update";
+  session?: Session;
+};
+
+type SessionCallbackParams = {
+  session: Session;
+  token: JWT;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const authOptions: any = {
@@ -54,11 +80,54 @@ export const authOptions: any = {
           role: user.role,
           avatar: user.avatar,
           postViewMode: user.postViewMode,
+          showUserData: user.showUserData,
+          coverImage: user.coverImage,
           experience: currentExperience,
           level: getUserLevel(currentExperience),
         };
       }
-    })
+    }),
+    CredentialsProvider({
+      id: "casdoor",
+      name: "Casdoor",
+      credentials: {
+        identity: { label: "Identity", type: "text" },
+      },
+      async authorize(credentials) {
+        const rawIdentity = credentials?.identity;
+
+        if (typeof rawIdentity !== "string" || !rawIdentity.trim()) {
+          return null;
+        }
+
+        let identity: CasdoorIdentity;
+
+        try {
+          identity = JSON.parse(rawIdentity) as CasdoorIdentity;
+        } catch {
+          throw new Error("Invalid third-party identity payload");
+        }
+
+        const user = await findCasdoorLinkedLoginUser(identity);
+
+        if (!user) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar,
+          postViewMode: user.postViewMode,
+          showUserData: user.showUserData,
+          coverImage: user.coverImage,
+          experience: user.experience,
+          level: user.level,
+        };
+      },
+    }),
   ],
   session: {
     strategy: "jwt",
@@ -66,11 +135,13 @@ export const authOptions: any = {
   },
     
   callbacks: {
-    async jwt({ token, user, trigger, session }: any) {
+    async jwt({ token, user, trigger, session }: JwtCallbackParams) {
       if (user) {
         token.role = user.role;
         token.avatar = user.avatar;
         token.postViewMode = user.postViewMode;
+        token.showUserData = user.showUserData;
+        token.coverImage = user.coverImage;
         token.experience = user.experience;
         token.level = user.level;
       }
@@ -96,8 +167,7 @@ export const authOptions: any = {
       }
       return token;
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async session({ session, token }: any) {
+    async session({ session, token }: SessionCallbackParams) {
       if (token) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
