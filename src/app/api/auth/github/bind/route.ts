@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const pending = await readPendingGitHubLogin();
 
     if (!pending) {
-      return NextResponse.json({ error: "GitHub login session expired" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub 登录会话已过期，请重新登录" }, { status: 400 });
     }
 
     const body = (await request.json()) as BindBody;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const password = typeof body.password === "string" ? body.password : "";
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+      return NextResponse.json({ error: "请输入邮箱和密码" }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -39,20 +39,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user || !user.password) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
+      return NextResponse.json({ error: "邮箱或密码不正确" }, { status: 400 });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
+      return NextResponse.json({ error: "邮箱或密码不正确" }, { status: 400 });
     }
 
     if (user.banned) {
-      return NextResponse.json({ error: "This account has been disabled" }, { status: 403 });
+      return NextResponse.json({ error: "该账号已被禁用" }, { status: 403 });
     }
 
     if (user.githubUserId && user.githubUserId !== pending.githubUserId) {
-      return NextResponse.json({ error: "This account is already linked to another GitHub account" }, { status: 400 });
+      return NextResponse.json({ error: "这个论坛账号已经绑定了其他 GitHub 账号" }, { status: 400 });
     }
 
     const duplicateLinkedUser = await prisma.user.findUnique({
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (duplicateLinkedUser && duplicateLinkedUser.id !== user.id) {
-      return NextResponse.json({ error: "This GitHub account is already linked" }, { status: 400 });
+      return NextResponse.json({ error: "这个 GitHub 账号已经绑定过论坛账号" }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({
@@ -131,6 +131,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("GitHub bind error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "服务器开小差了，请稍后再试" }, { status: 500 });
   }
 }

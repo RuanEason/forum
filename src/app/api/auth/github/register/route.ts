@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
     const pending = await readPendingGitHubLogin();
 
     if (!pending) {
-      return NextResponse.json({ error: "GitHub login session expired" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub 登录会话已过期，请重新登录" }, { status: 400 });
     }
 
     if (!pending.email) {
       return NextResponse.json(
-        { error: "GitHub did not provide a verified email address" },
+        { error: "GitHub 未提供已验证的邮箱地址，暂时无法创建新账号" },
         { status: 400 },
       );
     }
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingLinkedUser) {
-      return NextResponse.json({ error: "This GitHub account is already linked" }, { status: 400 });
+      return NextResponse.json({ error: "这个 GitHub 账号已经绑定过论坛账号" }, { status: 400 });
     }
 
     const body = (await request.json()) as RegisterBody;
@@ -51,13 +51,13 @@ export async function POST(request: NextRequest) {
 
     if (providedName.length > MAX_NAME_LENGTH) {
       return NextResponse.json(
-        { error: `Display name must be ${MAX_NAME_LENGTH} characters or fewer` },
+        { error: `显示名称不能超过 ${MAX_NAME_LENGTH} 个字符` },
         { status: 400 },
       );
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters long" }, { status: 400 });
+      return NextResponse.json({ error: "密码长度不能少于 6 位" }, { status: 400 });
     }
 
     const existingEmailUser = await prisma.user.findUnique({
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     if (existingEmailUser) {
       return NextResponse.json(
-        { error: "This email is already used by an existing account, please choose bind old account" },
+        { error: "这个邮箱已经注册过账号，请选择绑定已有账号" },
         { status: 400 },
       );
     }
@@ -141,6 +141,6 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("GitHub register error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "服务器开小差了，请稍后再试" }, { status: 500 });
   }
 }

@@ -21,6 +21,7 @@ type GitHubLinkFormProps = {
 
 export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
   const router = useRouter();
+  const unavailableText = "未提供";
   const [registerName, setRegisterName] = useState(pending.name ?? "");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
@@ -35,12 +36,12 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
     setRegisterError("");
 
     if (registerPassword.length < 6) {
-      setRegisterError("Password must be at least 6 characters long");
+      setRegisterError("密码长度不能少于 6 位");
       return;
     }
 
     if (registerPassword !== registerConfirmPassword) {
-      setRegisterError("Passwords do not match");
+      setRegisterError("两次输入的密码不一致");
       return;
     }
 
@@ -61,14 +62,14 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setRegisterError(data.error || "Failed to register");
+        setRegisterError(data.error || "创建账号失败，请稍后重试");
         return;
       }
 
       router.push(data.redirectPath || pending.redirectPath);
       router.refresh();
     } catch {
-      setRegisterError("Network error, please try again");
+      setRegisterError("网络异常，请稍后重试");
     } finally {
       setRegisterLoading(false);
     }
@@ -94,14 +95,14 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setBindError(data.error || "Failed to bind account");
+        setBindError(data.error || "绑定账号失败，请稍后重试");
         return;
       }
 
       router.push(data.redirectPath || pending.redirectPath);
       router.refresh();
     } catch {
-      setBindError("Network error, please try again");
+      setBindError("网络异常，请稍后重试");
     } finally {
       setBindLoading(false);
     }
@@ -111,34 +112,35 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">Complete GitHub sign in</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">完成 GitHub 登录</h1>
           <p className="mt-3 text-sm text-gray-600">
-            This GitHub account is not linked to a forum account yet. Choose whether to create a new account or bind an existing one.
+            当前 GitHub 账号还没有绑定论坛账号，请选择创建新账号，或绑定已有账号继续登录。
           </p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="mb-3 text-sm font-semibold text-gray-900">当前 GitHub 账号信息</p>
           <div className="space-y-2 text-sm text-gray-700">
-            <p><span className="font-medium">GitHub ID:</span> {pending.githubUserId}</p>
-            {pending.login ? <p><span className="font-medium">GitHub username:</span> {pending.login}</p> : null}
-            <p><span className="font-medium">GitHub email:</span> {pending.email || "Unavailable"}</p>
-            <p><span className="font-medium">GitHub display name:</span> {pending.name || "Unavailable"}</p>
+            <p><span className="font-medium">GitHub ID：</span>{pending.githubUserId}</p>
+            {pending.login ? <p><span className="font-medium">GitHub 用户名：</span>{pending.login}</p> : null}
+            <p><span className="font-medium">GitHub 邮箱：</span>{pending.email || unavailableText}</p>
+            <p><span className="font-medium">GitHub 显示名称：</span>{pending.name || unavailableText}</p>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="space-y-5 p-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Create a new account</h2>
+              <h2 className="text-xl font-bold text-gray-900">新用户：创建账号</h2>
               <p className="mt-2 text-sm text-gray-600">
-                Confirm the email from GitHub, set a password for local login, and create a new forum account bound to this GitHub identity.
+                使用 GitHub 提供的邮箱创建论坛账号，并设置一个密码。创建完成后，这个 GitHub 账号会自动与新账号绑定。
               </p>
             </div>
 
             <Input
               id="register-email"
               name="register-email"
-              label="GitHub email"
+              label="GitHub 邮箱"
               type="email"
               value={pending.email ?? ""}
               disabled
@@ -148,9 +150,9 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
             <Input
               id="register-name"
               name="register-name"
-              label="Display name"
+              label="显示名称"
               type="text"
-              placeholder="Optional display name"
+              placeholder="选填，作为论坛昵称使用"
               value={registerName}
               onChange={(e) => setRegisterName(e.target.value)}
             />
@@ -158,10 +160,10 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
             <Input
               id="register-password"
               name="register-password"
-              label="Password"
+              label="登录密码"
               type="password"
               required
-              placeholder="At least 6 characters"
+              placeholder="至少 6 位字符"
               value={registerPassword}
               onChange={(e) => setRegisterPassword(e.target.value)}
             />
@@ -169,10 +171,10 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
             <Input
               id="register-confirm-password"
               name="register-confirm-password"
-              label="Confirm password"
+              label="确认密码"
               type="password"
               required
-              placeholder="Enter the password again"
+              placeholder="请再次输入密码"
               value={registerConfirmPassword}
               onChange={(e) => setRegisterConfirmPassword(e.target.value)}
             />
@@ -180,15 +182,15 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
             {registerError && <div className="text-sm text-red-600">{registerError}</div>}
 
             <Button type="button" variant="primary" fullWidth disabled={registerLoading} onClick={handleRegister}>
-              {registerLoading ? "Creating account..." : "Create and bind account"}
+              {registerLoading ? "正在创建并绑定账号..." : "创建并绑定新账号"}
             </Button>
           </Card>
 
           <Card className="space-y-5 p-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Bind an existing account</h2>
+              <h2 className="text-xl font-bold text-gray-900">老用户：绑定已有账号</h2>
               <p className="mt-2 text-sm text-gray-600">
-                Enter the email and password of your existing forum account. After binding, you can sign in directly with GitHub.
+                输入你已有论坛账号的邮箱和密码。绑定成功后，后续可以直接使用 GitHub 登录这个账号。
               </p>
             </div>
 
@@ -196,20 +198,20 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
               <Input
                 id="bind-email"
                 name="bind-email"
-                label="Account email"
+                label="账号邮箱"
                 type="email"
                 required
-                placeholder="Enter your existing account email"
+                placeholder="请输入已有账号邮箱"
                 value={bindEmail}
                 onChange={(e) => setBindEmail(e.target.value)}
               />
               <Input
                 id="bind-password"
                 name="bind-password"
-                label="Account password"
+                label="账号密码"
                 type="password"
                 required
-                placeholder="Enter your existing account password"
+                placeholder="请输入已有账号密码"
                 value={bindPassword}
                 onChange={(e) => setBindPassword(e.target.value)}
               />
@@ -217,7 +219,7 @@ export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
               {bindError && <div className="text-sm text-red-600">{bindError}</div>}
 
               <Button type="submit" variant="secondary" fullWidth disabled={bindLoading}>
-                {bindLoading ? "Binding account..." : "Bind existing account"}
+                {bindLoading ? "正在绑定账号..." : "绑定已有账号"}
               </Button>
             </form>
           </Card>
