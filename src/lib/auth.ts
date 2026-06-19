@@ -4,8 +4,8 @@ import type { JWT } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { getUserLevel, rewardDailyLoginExperience } from "@/lib/experience";
-import { findCasdoorLinkedLoginUser } from "@/lib/third-party-auth";
-import type { CasdoorIdentity } from "@/lib/casdoor";
+import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
+import type { GitHubIdentity } from "@/lib/github";
 
 type AuthUserPayload = {
   role: string;
@@ -88,8 +88,8 @@ export const authOptions: any = {
       }
     }),
     CredentialsProvider({
-      id: "casdoor",
-      name: "Casdoor",
+      id: "github",
+      name: "GitHub",
       credentials: {
         identity: { label: "Identity", type: "text" },
       },
@@ -100,15 +100,15 @@ export const authOptions: any = {
           return null;
         }
 
-        let identity: CasdoorIdentity;
+        let identity: GitHubIdentity;
 
         try {
-          identity = JSON.parse(rawIdentity) as CasdoorIdentity;
+          identity = JSON.parse(rawIdentity) as GitHubIdentity;
         } catch {
-          throw new Error("Invalid third-party identity payload");
+          throw new Error("Invalid GitHub identity payload");
         }
 
-        const user = await findCasdoorLinkedLoginUser(identity);
+        const user = await findGitHubLinkedLoginUser(identity);
 
         if (!user) {
           return null;

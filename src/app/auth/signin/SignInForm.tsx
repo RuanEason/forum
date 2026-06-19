@@ -50,7 +50,7 @@ export default function SignInForm({ redirectPath }: SignInFormProps) {
     redirectPath === "/"
       ? "/auth/signup"
       : `/auth/signup?redirect=${encodeURIComponent(redirectPath)}`;
-  const thirdPartyLoginPath = `/api/auth/tpl/login?redirect=${encodeURIComponent(
+  const thirdPartyLoginPath = `/api/auth/github/login?redirect=${encodeURIComponent(
     getAuthPageRedirectPath(redirectPath),
   )}`;
 
@@ -108,7 +108,7 @@ export default function SignInForm({ redirectPath }: SignInFormProps) {
             </div>
             <a href={thirdPartyLoginPath} className="block">
               <Button type="button" variant="secondary" fullWidth>
-                GitHub / 第三方登录
+                Continue with GitHub
               </Button>
             </a>
           </div>

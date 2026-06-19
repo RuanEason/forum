@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { readPendingCasdoorLogin } from "@/lib/casdoor";
+import { readPendingGitHubLogin } from "@/lib/github";
 import { toSignInPath } from "@/lib/auth-redirect";
-import CasdoorLinkForm from "./CasdoorLinkForm";
+import GitHubLinkForm from "./GitHubLinkForm";
 
-export default async function CasdoorLinkPage() {
+export default async function GitHubLinkPage() {
   const session = (await getServerSession(authOptions)) as {
     user?: { id?: string };
   } | null;
@@ -14,11 +14,11 @@ export default async function CasdoorLinkPage() {
     redirect("/");
   }
 
-  const pending = await readPendingCasdoorLogin();
+  const pending = await readPendingGitHubLogin();
 
   if (!pending) {
     redirect(toSignInPath("/"));
   }
 
-  return <CasdoorLinkForm pending={pending} />;
+  return <GitHubLinkForm pending={pending} />;
 }

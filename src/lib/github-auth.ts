@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUserLevel, rewardDailyLoginExperience } from "@/lib/experience";
-import {
-  type CasdoorIdentity,
-} from "@/lib/casdoor";
+import type { GitHubIdentity } from "@/lib/github";
 
 type LoginUser = {
   id: string;
@@ -23,7 +21,7 @@ async function buildLoginUser(userId: string): Promise<LoginUser> {
   });
 
   if (!user) {
-    throw new Error("User not found after third-party login");
+    throw new Error("User not found after GitHub login");
   }
 
   if (user.banned) {
@@ -55,12 +53,12 @@ async function buildLoginUser(userId: string): Promise<LoginUser> {
   };
 }
 
-export async function findCasdoorLinkedLoginUser(identity: CasdoorIdentity): Promise<LoginUser | null> {
-  const existingByCasdoorId = await prisma.user.findUnique({
-    where: { casdoorUserId: identity.casdoorUserId },
+export async function findGitHubLinkedLoginUser(identity: GitHubIdentity): Promise<LoginUser | null> {
+  const existingByGitHubId = await prisma.user.findUnique({
+    where: { githubUserId: identity.githubUserId },
   });
 
-  if (!existingByCasdoorId) {
+  if (!existingByGitHubId) {
     return null;
   }
 
@@ -70,31 +68,31 @@ export async function findCasdoorLinkedLoginUser(identity: CasdoorIdentity): Pro
     avatar?: string | null;
   } = {};
 
-  if (identity.email && existingByCasdoorId.email !== identity.email) {
+  if (identity.email && existingByGitHubId.email !== identity.email) {
     const emailOwner = await prisma.user.findUnique({
       where: { email: identity.email },
       select: { id: true },
     });
 
-    if (!emailOwner || emailOwner.id === existingByCasdoorId.id) {
+    if (!emailOwner || emailOwner.id === existingByGitHubId.id) {
       updates.email = identity.email;
     }
   }
 
-  if (!existingByCasdoorId.name && identity.name) {
+  if (!existingByGitHubId.name && identity.name) {
     updates.name = identity.name;
   }
 
-  if (!existingByCasdoorId.avatar && identity.avatar) {
+  if (!existingByGitHubId.avatar && identity.avatar) {
     updates.avatar = identity.avatar;
   }
 
   if (Object.keys(updates).length > 0) {
     await prisma.user.update({
-      where: { id: existingByCasdoorId.id },
+      where: { id: existingByGitHubId.id },
       data: updates,
     });
   }
 
-  return buildLoginUser(existingByCasdoorId.id);
+  return buildLoginUser(existingByGitHubId.id);
 }

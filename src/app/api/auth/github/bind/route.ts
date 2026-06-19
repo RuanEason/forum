@@ -3,10 +3,8 @@ import bcrypt from "bcryptjs";
 import { encode } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import {
-  CASDOOR_PENDING_COOKIE,
-  readPendingCasdoorLogin,
-} from "@/lib/casdoor";
+import { getUserLevel } from "@/lib/experience";
+import { GITHUB_PENDING_COOKIE, readPendingGitHubLogin } from "@/lib/github";
 
 const SESSION_COOKIE_NAME_SECURE = "__Secure-next-auth.session-token";
 const SESSION_COOKIE_NAME = "next-auth.session-token";
@@ -22,10 +20,10 @@ function getSessionCookieName(isSecure: boolean) {
 
 export async function POST(request: NextRequest) {
   try {
-    const pending = await readPendingCasdoorLogin();
+    const pending = await readPendingGitHubLogin();
 
     if (!pending) {
-      return NextResponse.json({ error: "Third-party login session expired" }, { status: 400 });
+      return NextResponse.json({ error: "GitHub login session expired" }, { status: 400 });
     }
 
     const body = (await request.json()) as BindBody;
@@ -53,23 +51,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This account has been disabled" }, { status: 403 });
     }
 
-    if (user.casdoorUserId && user.casdoorUserId !== pending.casdoorUserId) {
-      return NextResponse.json({ error: "This account is already linked to another third-party identity" }, { status: 400 });
+    if (user.githubUserId && user.githubUserId !== pending.githubUserId) {
+      return NextResponse.json({ error: "This account is already linked to another GitHub account" }, { status: 400 });
     }
 
     const duplicateLinkedUser = await prisma.user.findUnique({
-      where: { casdoorUserId: pending.casdoorUserId },
+      where: { githubUserId: pending.githubUserId },
       select: { id: true },
     });
 
     if (duplicateLinkedUser && duplicateLinkedUser.id !== user.id) {
-      return NextResponse.json({ error: "This third-party account is already linked" }, { status: 400 });
+      return NextResponse.json({ error: "This GitHub account is already linked" }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
-        casdoorUserId: pending.casdoorUserId,
+        githubUserId: pending.githubUserId,
         ...(user.name ? {} : { name: pending.name }),
         ...(user.avatar ? {} : { avatar: pending.avatar }),
       },
@@ -96,7 +94,12 @@ export async function POST(request: NextRequest) {
           showUserData: updatedUser.showUserData,
           coverImage: updatedUser.coverImage,
           experience: updatedUser.experience,
-          level: 1,
+          level: getUserLevel(updatedUser.experience),
+        },
+        account: {
+          provider: "github",
+          providerAccountId: pending.githubUserId,
+          type: "credentials",
         },
         trigger: "signIn",
       }),
@@ -117,7 +120,7 @@ export async function POST(request: NextRequest) {
       expires: new Date(Date.now() + authOptions.session.maxAge * 1000),
     });
 
-    response.cookies.set(CASDOOR_PENDING_COOKIE, "", {
+    response.cookies.set(GITHUB_PENDING_COOKIE, "", {
       httpOnly: true,
       sameSite: "lax",
       secure: isSecure,
@@ -127,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("Casdoor bind error:", error);
+    console.error("GitHub bind error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

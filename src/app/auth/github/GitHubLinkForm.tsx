@@ -6,21 +6,24 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-type PendingCasdoorLogin = {
-  casdoorUserId: string;
+type PendingGitHubLogin = {
+  githubUserId: string;
   email: string | null;
   name: string | null;
   avatar: string | null;
+  login: string | null;
   redirectPath: string;
 };
 
-type CasdoorLinkFormProps = {
-  pending: PendingCasdoorLogin;
+type GitHubLinkFormProps = {
+  pending: PendingGitHubLogin;
 };
 
-export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
+export default function GitHubLinkForm({ pending }: GitHubLinkFormProps) {
   const router = useRouter();
   const [registerName, setRegisterName] = useState(pending.name ?? "");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [bindEmail, setBindEmail] = useState(pending.email ?? "");
   const [bindPassword, setBindPassword] = useState("");
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -30,30 +33,42 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
 
   const handleRegister = async () => {
     setRegisterError("");
+
+    if (registerPassword.length < 6) {
+      setRegisterError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (registerPassword !== registerConfirmPassword) {
+      setRegisterError("Passwords do not match");
+      return;
+    }
+
     setRegisterLoading(true);
 
     try {
-      const response = await fetch("/api/auth/casdoor/register", {
+      const response = await fetch("/api/auth/github/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: registerName.trim(),
+          password: registerPassword,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setRegisterError(data.error || "注册失败");
+        setRegisterError(data.error || "Failed to register");
         return;
       }
 
       router.push(data.redirectPath || pending.redirectPath);
       router.refresh();
     } catch {
-      setRegisterError("网络错误，请稍后重试");
+      setRegisterError("Network error, please try again");
     } finally {
       setRegisterLoading(false);
     }
@@ -65,7 +80,7 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
     setBindLoading(true);
 
     try {
-      const response = await fetch("/api/auth/casdoor/bind", {
+      const response = await fetch("/api/auth/github/bind", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,14 +94,14 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setBindError(data.error || "绑定失败");
+        setBindError(data.error || "Failed to bind account");
         return;
       }
 
       router.push(data.redirectPath || pending.redirectPath);
       router.refresh();
     } catch {
-      setBindError("网络错误，请稍后重试");
+      setBindError("Network error, please try again");
     } finally {
       setBindLoading(false);
     }
@@ -96,33 +111,34 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">完成第三方账号接入</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Complete GitHub sign in</h1>
           <p className="mt-3 text-sm text-gray-600">
-            当前 Casdoor 身份尚未绑定论坛账号，请选择注册新用户或绑定已有账号。
+            This GitHub account is not linked to a forum account yet. Choose whether to create a new account or bind an existing one.
           </p>
         </div>
 
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="text-sm text-gray-700 space-y-2">
-            <p><span className="font-medium">Casdoor ID：</span>{pending.casdoorUserId}</p>
-            <p><span className="font-medium">第三方邮箱：</span>{pending.email || "未提供"}</p>
-            <p><span className="font-medium">第三方昵称：</span>{pending.name || "未提供"}</p>
+          <div className="space-y-2 text-sm text-gray-700">
+            <p><span className="font-medium">GitHub ID:</span> {pending.githubUserId}</p>
+            {pending.login ? <p><span className="font-medium">GitHub username:</span> {pending.login}</p> : null}
+            <p><span className="font-medium">GitHub email:</span> {pending.email || "Unavailable"}</p>
+            <p><span className="font-medium">GitHub display name:</span> {pending.name || "Unavailable"}</p>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="space-y-5 p-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">注册新用户</h2>
+              <h2 className="text-xl font-bold text-gray-900">Create a new account</h2>
               <p className="mt-2 text-sm text-gray-600">
-                用当前 Casdoor 身份创建一个新的论坛账号，并使用第三方返回的邮箱自动完成绑定。
+                Confirm the email from GitHub, set a password for local login, and create a new forum account bound to this GitHub identity.
               </p>
             </div>
 
             <Input
               id="register-email"
               name="register-email"
-              label="第三方邮箱"
+              label="GitHub email"
               type="email"
               value={pending.email ?? ""}
               disabled
@@ -132,25 +148,47 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
             <Input
               id="register-name"
               name="register-name"
-              label="显示名称"
+              label="Display name"
               type="text"
-              placeholder="给新账号起个名字"
+              placeholder="Optional display name"
               value={registerName}
               onChange={(e) => setRegisterName(e.target.value)}
+            />
+
+            <Input
+              id="register-password"
+              name="register-password"
+              label="Password"
+              type="password"
+              required
+              placeholder="At least 6 characters"
+              value={registerPassword}
+              onChange={(e) => setRegisterPassword(e.target.value)}
+            />
+
+            <Input
+              id="register-confirm-password"
+              name="register-confirm-password"
+              label="Confirm password"
+              type="password"
+              required
+              placeholder="Enter the password again"
+              value={registerConfirmPassword}
+              onChange={(e) => setRegisterConfirmPassword(e.target.value)}
             />
 
             {registerError && <div className="text-sm text-red-600">{registerError}</div>}
 
             <Button type="button" variant="primary" fullWidth disabled={registerLoading} onClick={handleRegister}>
-              {registerLoading ? "注册中..." : "注册并绑定"}
+              {registerLoading ? "Creating account..." : "Create and bind account"}
             </Button>
           </Card>
 
           <Card className="space-y-5 p-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">绑定老账号</h2>
+              <h2 className="text-xl font-bold text-gray-900">Bind an existing account</h2>
               <p className="mt-2 text-sm text-gray-600">
-                输入你已有论坛账号的邮箱和密码，绑定后以后可直接通过 Casdoor 登录。
+                Enter the email and password of your existing forum account. After binding, you can sign in directly with GitHub.
               </p>
             </div>
 
@@ -158,20 +196,20 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
               <Input
                 id="bind-email"
                 name="bind-email"
-                label="账号邮箱"
+                label="Account email"
                 type="email"
                 required
-                placeholder="请输入已有账号邮箱"
+                placeholder="Enter your existing account email"
                 value={bindEmail}
                 onChange={(e) => setBindEmail(e.target.value)}
               />
               <Input
                 id="bind-password"
                 name="bind-password"
-                label="账号密码"
+                label="Account password"
                 type="password"
                 required
-                placeholder="请输入已有账号密码"
+                placeholder="Enter your existing account password"
                 value={bindPassword}
                 onChange={(e) => setBindPassword(e.target.value)}
               />
@@ -179,7 +217,7 @@ export default function CasdoorLinkForm({ pending }: CasdoorLinkFormProps) {
               {bindError && <div className="text-sm text-red-600">{bindError}</div>}
 
               <Button type="submit" variant="secondary" fullWidth disabled={bindLoading}>
-                {bindLoading ? "绑定中..." : "绑定已有账号"}
+                {bindLoading ? "Binding account..." : "Bind existing account"}
               </Button>
             </form>
           </Card>
