@@ -11,7 +11,7 @@ import {
   UpdatedImage,
   useEditor as useCurrentEditor,
 } from "novel";
-import type { Editor as TiptapEditor, JSONContent } from "novel";
+import type { EditorInstance as TiptapEditor, JSONContent } from "novel";
 import type { MutableRefObject } from "react";
 import { Markdown } from "tiptap-markdown";
 import { cn } from "@/lib/utils";

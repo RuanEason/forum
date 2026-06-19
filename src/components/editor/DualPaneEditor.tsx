@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import type { MDEditorProps } from "@uiw/react-md-editor";
 import { cn } from "@/lib/utils";
 
@@ -147,14 +148,16 @@ export default function DualPaneEditor({
             }}
             components={{
               textarea: (props) => {
+                const textareaComponentProps = props as ComponentPropsWithoutRef<"textarea">;
+
                 return (
                   <textarea
-                    {...props}
+                    {...textareaComponentProps}
                     ref={(node) => {
                       textareaRef.current = node;
                     }}
                     className={cn(
-                      props.className,
+                      textareaComponentProps.className,
                       "font-mono text-[15px] leading-7 text-slate-800",
                     )}
                   />
