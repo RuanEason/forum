@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { encode } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth";
 import { getAuthPageRedirectPath } from "@/lib/auth-redirect";
+import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
 import {
   encodePendingGitHubLogin,
   fetchGitHubUserEmails,
@@ -66,23 +67,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(target);
     }
 
-    const authorize = authOptions.providers.find((provider: { id?: string; authorize?: unknown }) => provider.id === "github")?.authorize;
-
-    if (typeof authorize !== "function") {
-      throw new Error("GitHub auth provider is not configured");
-    }
-
-    const user = await authorize(
-      {
-        identity: JSON.stringify(identity),
-      },
-      {
-        query: Object.fromEntries(url.searchParams),
-        body: undefined,
-        headers: Object.fromEntries(request.headers),
-        method: "GET",
-      },
-    );
+    const user = await findGitHubLinkedLoginUser(identity);
 
     if (!user) {
       const pendingToken = await encodePendingGitHubLogin({
