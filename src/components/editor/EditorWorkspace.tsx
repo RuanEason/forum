@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
+import EditorDocumentTabs from "@/components/editor/EditorDocumentTabs";
 import EditorOutline from "@/components/editor/EditorOutline";
 import EditorSidebar, { type SidebarTab } from "@/components/editor/EditorSidebar";
 import EditorStatusbar from "@/components/editor/EditorStatusbar";
 import EditorTopbar from "@/components/editor/EditorTopbar";
 import MarkdownDocEditor from "@/components/editor/MarkdownDocEditor";
 import MobileEditorRedirect from "@/components/editor/MobileEditorRedirect";
+import StyleCodeEditor, { DEFAULT_STYLE_TEMPLATE } from "@/components/editor/StyleCodeEditor";
 import {
   buildOutlineItems,
   formatEditorTime,
@@ -19,6 +21,7 @@ import {
 } from "@/components/editor/editor-utils";
 import type {
   EditorDraftAsset,
+  EditorDocumentTab,
   EditorDraftDetail,
   EditorDraftSummary,
   PostVisibility,
@@ -61,12 +64,14 @@ export default function EditorWorkspace() {
   const [draftId, setDraftId] = useState<string | null>(initialDraftId);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [styleCss, setStyleCss] = useState("");
   const [draftStatus, setDraftStatus] = useState<EditorDraftDetail["status"]>("EDITING");
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedAttachments, setSelectedAttachments] = useState<UploadedAttachment[]>([]);
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("history");
+  const [activeDocumentTab, setActiveDocumentTab] = useState<EditorDocumentTab>("content");
   const [isUploadingAssets, setIsUploadingAssets] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
@@ -88,6 +93,7 @@ export default function EditorWorkspace() {
     draftId: null as string | null,
     title: "",
     content: "",
+    styleCss: "",
     visibility: "PUBLIC" as PostVisibility,
     topicId: null as string | null,
     imageSignature: "[]",
@@ -95,23 +101,31 @@ export default function EditorWorkspace() {
   });
   const titleRef = useRef(title);
   const contentRef = useRef(content);
+  const styleCssRef = useRef(styleCss);
   const draftIdRef = useRef<string | null>(draftId);
   const visibilityRef = useRef<PostVisibility>(visibility);
   const selectedTopicIdRef = useRef<string | null>(selectedTopicId);
   const selectedImagesRef = useRef<string[]>(selectedImages);
   const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
+  const activeDocumentTabRef = useRef<EditorDocumentTab>(activeDocumentTab);
 
   titleRef.current = title;
   contentRef.current = content;
+  styleCssRef.current = styleCss;
   draftIdRef.current = draftId;
   visibilityRef.current = visibility;
   selectedTopicIdRef.current = selectedTopicId;
   selectedImagesRef.current = selectedImages;
   selectedAttachmentsRef.current = selectedAttachments;
+  activeDocumentTabRef.current = activeDocumentTab;
 
   const historyGroups = useMemo(() => groupDraftsByDate(drafts), [drafts]);
   const outlineItems = useMemo(() => buildOutlineItems(content), [content]);
-  const wordCount = useMemo(() => content.trim().length, [content]);
+  const contentLineCount = useMemo(() => Math.max(content.split(/\r?\n/).length, 1), [content]);
+  const wordCount = useMemo(
+    () => (activeDocumentTab === "content" ? content.trim().length : styleCss.trim().length),
+    [activeDocumentTab, content, styleCss],
+  );
   const saveStateLabel = getSaveStateLabel(saveState, errorMessage);
   const currentTitle = title.trim() || getDraftDisplayTitle({ title, content });
   const imageSignature = useMemo(() => JSON.stringify(selectedImages), [selectedImages]);
@@ -135,7 +149,10 @@ export default function EditorWorkspace() {
     };
   }, []);
 
-  const hydrateDraft = useCallback((draft: EditorDraftDetail) => {
+  const hydrateDraft = useCallback((
+    draft: EditorDraftDetail,
+    options?: { activeDocumentTab?: EditorDocumentTab },
+  ) => {
     const assets = Array.isArray(draft.assets) ? draft.assets : [];
     const imageAssets = assets
       .filter((asset) => asset.type === "IMAGE" && asset.url)
@@ -162,6 +179,7 @@ export default function EditorWorkspace() {
     draftIdRef.current = draft.id;
     setTitle(draft.title ?? "");
     setContent(draft.content ?? "");
+    setStyleCss(draft.styleCss ?? "");
     setDraftStatus(draft.status);
     setVisibility((draft.visibility as PostVisibility | undefined) ?? "PUBLIC");
     setSelectedTopicId(draft.topicId ?? null);
@@ -175,11 +193,13 @@ export default function EditorWorkspace() {
     setUploadProgress(0);
     setIsUploadingAssets(false);
     setActiveLineNumber(1);
+    setActiveDocumentTab(options?.activeDocumentTab ?? "content");
     dirtyRef.current = false;
     persistedSnapshotRef.current = {
       draftId: draft.id,
       title: draft.title ?? "",
       content: draft.content ?? "",
+      styleCss: draft.styleCss ?? "",
       visibility: (draft.visibility as PostVisibility | undefined) ?? "PUBLIC",
       topicId: draft.topicId ?? null,
       imageSignature: JSON.stringify(imageAssets),
@@ -301,6 +321,8 @@ export default function EditorWorkspace() {
         postType: "TEXT",
         title: titleRef.current.trim() || null,
         content: contentRef.current,
+        styleConfig: null,
+        styleCss: styleCssRef.current || null,
         visibility: visibilityRef.current,
         topicId: selectedTopicIdRef.current,
         persistMode: "SAVED",
@@ -371,6 +393,8 @@ export default function EditorWorkspace() {
           postType: "TEXT",
           title: titleRef.current.trim() || null,
           content: contentRef.current,
+          styleConfig: null,
+          styleCss: styleCssRef.current || null,
           visibility: visibilityRef.current,
           topicId: selectedTopicIdRef.current,
           persistMode: "SAVED",
@@ -393,7 +417,9 @@ export default function EditorWorkspace() {
         throw new Error(data.error || "保存草稿失败");
       }
 
-      hydrateDraft(data.draft);
+      hydrateDraft(data.draft, {
+        activeDocumentTab: activeDocumentTabRef.current,
+      });
       await loadHistory();
       return data.draft.id;
     } catch (error) {
@@ -407,7 +433,12 @@ export default function EditorWorkspace() {
   }, [buildDraftAssets, createDraftIfNeeded, hydrateDraft, loadHistory]);
 
   const handleManualSave = useCallback(() => {
-    if (!titleRef.current.trim() && !contentRef.current.trim() && !draftIdRef.current) {
+    if (
+      !titleRef.current.trim()
+      && !contentRef.current.trim()
+      && !styleCssRef.current.trim()
+      && !draftIdRef.current
+    ) {
       return;
     }
 
@@ -483,6 +514,7 @@ export default function EditorWorkspace() {
     draftIdRef.current = null;
     setTitle("");
     setContent("");
+    setStyleCss("");
     setDraftStatus("EDITING");
     setVisibility("PUBLIC");
     setSelectedTopicId(null);
@@ -496,11 +528,13 @@ export default function EditorWorkspace() {
     setUploadProgress(0);
     setIsUploadingAssets(false);
     setActiveLineNumber(1);
+    setActiveDocumentTab("content");
     dirtyRef.current = false;
     persistedSnapshotRef.current = {
       draftId: null,
       title: "",
       content: "",
+      styleCss: "",
       visibility: "PUBLIC",
       topicId: null,
       imageSignature: "[]",
@@ -647,6 +681,32 @@ export default function EditorWorkspace() {
     setSelectedAttachments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
   }, []);
 
+  const handleOpenStyleEditor = useCallback(async () => {
+    if (!draftIdRef.current) {
+      try {
+        await createDraftIfNeeded();
+      } catch {
+        return;
+      }
+    }
+
+    if (!styleCssRef.current.trim()) {
+      setStyleCss(DEFAULT_STYLE_TEMPLATE);
+    }
+
+    setActiveDocumentTab("style");
+  }, [createDraftIfNeeded]);
+
+  useEffect(() => {
+    if (activeDocumentTab !== "style") {
+      return;
+    }
+
+    if (!styleCssRef.current.trim()) {
+      setStyleCss(DEFAULT_STYLE_TEMPLATE);
+    }
+  }, [activeDocumentTab]);
+
   useEffect(() => {
     if (!hasHydratedRef.current || !didMountEditor) {
       return;
@@ -656,6 +716,7 @@ export default function EditorWorkspace() {
       persistedSnapshotRef.current.draftId === draftIdRef.current
       && persistedSnapshotRef.current.title === title
       && persistedSnapshotRef.current.content === content
+      && persistedSnapshotRef.current.styleCss === styleCss
       && persistedSnapshotRef.current.visibility === visibility
       && persistedSnapshotRef.current.topicId === selectedTopicId
       && persistedSnapshotRef.current.imageSignature === imageSignature
@@ -671,6 +732,7 @@ export default function EditorWorkspace() {
     if (
       !title.trim()
       && !content.trim()
+      && !styleCss.trim()
       && selectedImages.length === 0
       && selectedAttachments.length === 0
       && !selectedTopicId
@@ -708,6 +770,7 @@ export default function EditorWorkspace() {
     selectedAttachments.length,
     selectedImages.length,
     selectedTopicId,
+    styleCss,
     title,
     visibility,
   ]);
@@ -756,7 +819,7 @@ export default function EditorWorkspace() {
           : "编辑中";
 
   return (
-    <div className="flex h-screen flex-col bg-[#eef3f9] text-slate-900">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#f3f5f7] text-slate-900">
       <EditorTopbar
         title={currentTitle}
         draftStatusLabel={draftStatusLabel}
@@ -799,33 +862,69 @@ export default function EditorWorkspace() {
           onAttachmentUpload={handleAttachmentUpload}
           onRemoveImage={removeImage}
           onRemoveAttachment={removeAttachment}
+          onOpenStyleEditor={handleOpenStyleEditor}
         />
 
-        <MarkdownDocEditor
-          documentKey={draftId ?? "new"}
-          title={title}
-          content={content}
-          onTitleChange={setTitle}
-          onContentChange={setContent}
-          onSave={handleManualSave}
-          onPublish={handlePublish}
-          activeLineNumber={activeLineNumber}
-          setActiveLineNumber={setActiveLineNumber}
-          externalJumpLine={jumpLineNumber}
-          onExternalJumpHandled={() => setJumpLineNumber(null)}
-        />
+        <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
+          <EditorDocumentTabs
+            activeTab={activeDocumentTab}
+            onChange={setActiveDocumentTab}
+          />
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            {activeDocumentTab === "content" ? (
+              <MarkdownDocEditor
+                documentKey={draftId ?? "new"}
+                title={title}
+                content={content}
+                styleConfig={null}
+                styleCss={styleCss}
+                onTitleChange={setTitle}
+                onContentChange={setContent}
+                onSave={handleManualSave}
+                onPublish={handlePublish}
+                activeLineNumber={activeLineNumber}
+                setActiveLineNumber={setActiveLineNumber}
+                externalJumpLine={jumpLineNumber}
+                onExternalJumpHandled={() => setJumpLineNumber(null)}
+              />
+            ) : (
+              <StyleCodeEditor
+                styleConfig={null}
+                value={styleCss}
+                previewTitle={title}
+                previewContent={content}
+                previewPostId={draftId ?? "style-preview"}
+                onChange={setStyleCss}
+              />
+            )}
+          </div>
+        </div>
 
-        <EditorOutline
-          items={outlineItems}
-          activeLineNumber={activeLineNumber}
-          onSelectLine={(lineNumber) => setJumpLineNumber(lineNumber)}
-        />
+        {activeDocumentTab === "content" ? (
+          <EditorOutline
+            items={outlineItems}
+            activeLineNumber={activeLineNumber}
+            onSelectLine={(lineNumber) => setJumpLineNumber(lineNumber)}
+          />
+        ) : (
+          <aside className="hidden w-[280px] border-l border-slate-200 bg-white/80 xl:flex xl:flex-col">
+            <div className="border-b border-slate-200 px-5 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              样式说明
+            </div>
+            <div className="space-y-4 px-5 py-5 text-sm leading-6 text-slate-600">
+              <p>模板里已经放了常用选择器，直接在花括号里补充样式声明即可。</p>
+              <p>如果某个规则块是空的，发布后不会真正对详情页产生影响。</p>
+              <p>这里写的 CSS 只作用于当前帖子正文，不会影响站点其他页面。</p>
+            </div>
+          </aside>
+        )}
       </div>
 
       <EditorStatusbar
         wordCount={wordCount}
-        headingCount={outlineItems.length}
+        headingCount={activeDocumentTab === "content" ? outlineItems.length : 0}
         saveStateLabel={saveStateLabel}
+        documentLabel={activeDocumentTab === "content" ? "正文.md" : "样式.css"}
       />
     </div>
   );

@@ -1,11 +1,14 @@
 "use client";
 
 import UnifiedEditor from "@/components/editor/UnifiedEditor";
+import type { PostStyleConfig } from "@/types/post-style";
 
 interface MarkdownDocEditorProps {
   documentKey: string;
   title: string;
   content: string;
+  styleConfig?: PostStyleConfig | null;
+  styleCss?: string;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onSave: () => void;
@@ -14,12 +17,15 @@ interface MarkdownDocEditorProps {
   setActiveLineNumber: (lineNumber: number) => void;
   externalJumpLine: number | null;
   onExternalJumpHandled: () => void;
+  hideTitleInput?: boolean;
 }
 
 export default function MarkdownDocEditor({
   documentKey,
   title,
   content,
+  styleConfig = null,
+  styleCss = "",
   onTitleChange,
   onContentChange,
   onSave,
@@ -28,12 +34,15 @@ export default function MarkdownDocEditor({
   setActiveLineNumber,
   externalJumpLine,
   onExternalJumpHandled,
+  hideTitleInput = false,
 }: MarkdownDocEditorProps) {
   return (
     <UnifiedEditor
       documentKey={documentKey}
       title={title}
       content={content}
+      styleConfig={styleConfig}
+      styleCss={styleCss}
       onTitleChange={onTitleChange}
       onContentChange={onContentChange}
       onSave={onSave}
@@ -42,6 +51,7 @@ export default function MarkdownDocEditor({
       setActiveLineNumber={setActiveLineNumber}
       externalJumpLine={externalJumpLine}
       onExternalJumpHandled={onExternalJumpHandled}
+      hideTitleInput={hideTitleInput}
     />
   );
 }

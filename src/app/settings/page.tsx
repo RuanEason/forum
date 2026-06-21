@@ -710,15 +710,6 @@ export default function SettingsPage() {
             </div>
             <div className="relative">
               <div className="hidden sm:block absolute right-full top-1/2 -translate-y-1/2 pr-6">
-                <BackButton
-                  href="/"
-                  onBeforeNavigate={() => {
-                    if (hasTextUnsavedChanges) {
-                      return !confirm("昵称或个人简介尚未保存，确定要离开吗？");
-                    }
-                    return false;
-                  }}
-                />
               </div>
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 编辑个人资料

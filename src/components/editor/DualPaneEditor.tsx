@@ -1,18 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import type { ComponentPropsWithoutRef } from "react";
-import type { MDEditorProps } from "@uiw/react-md-editor";
-import { cn } from "@/lib/utils";
-
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
-  ssr: false,
-});
+import PostContentRenderer from "@/components/PostContentRenderer";
+import { extractMarkdownHeadings, normalizeMarkdownForDisplay } from "@/lib/markdown";
 
 interface DualPaneEditorProps {
   content: string;
+  styleCss?: string;
   onChange: (value: string) => void;
   onSave: () => void;
   onPublish: () => void;
@@ -22,43 +17,165 @@ interface DualPaneEditorProps {
   onExternalJumpHandled: () => void;
 }
 
+function getScrollableDistance(element: HTMLElement) {
+  return Math.max(element.scrollHeight - element.clientHeight, 0);
+}
+
+function syncScrollByProgress(source: HTMLElement, target: HTMLElement) {
+  const sourceDistance = getScrollableDistance(source);
+  const targetDistance = getScrollableDistance(target);
+  const progress = sourceDistance === 0 ? 0 : source.scrollTop / sourceDistance;
+
+  target.scrollTop = targetDistance * progress;
+}
+
+function getEditorLineHeight(textarea: HTMLTextAreaElement) {
+  const lineHeight = Number.parseFloat(window.getComputedStyle(textarea).lineHeight);
+  return Number.isFinite(lineHeight) ? lineHeight : 28;
+}
+
+function escapeAttributeValue(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 export default function DualPaneEditor({
   content,
+  styleCss = "",
   onChange,
   onSave,
   onPublish,
-  activeLineNumber,
+  activeLineNumber: _activeLineNumber,
   setActiveLineNumber,
   externalJumpLine,
   onExternalJumpHandled,
 }: DualPaneEditorProps) {
+  void _activeLineNumber;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const previewPaneRef = useRef<HTMLDivElement | null>(null);
+  const isSyncingScrollRef = useRef(false);
+  const scrollSyncFrameRef = useRef<number | null>(null);
 
-  const visibleLineCount = useMemo(() => {
-    return Math.max(content.split(/\r?\n/).length, 1);
-  }, [content]);
+  const normalizedContent = useMemo(() => normalizeMarkdownForDisplay(content), [content]);
+  const contentHeadings = useMemo(() => extractMarkdownHeadings(normalizedContent), [normalizedContent]);
+  const visibleLineCount = useMemo(() => Math.max(normalizedContent.split(/\r?\n/).length, 1), [normalizedContent]);
 
   useEffect(() => {
-    if (!externalJumpLine || !textareaRef.current) {
+    const textarea = textareaRef.current;
+    const previewPane = previewPaneRef.current;
+    if (!textarea || !previewPane) {
+      return;
+    }
+
+    const releaseScrollLock = () => {
+      if (scrollSyncFrameRef.current !== null) {
+        cancelAnimationFrame(scrollSyncFrameRef.current);
+      }
+
+      scrollSyncFrameRef.current = window.requestAnimationFrame(() => {
+        isSyncingScrollRef.current = false;
+        scrollSyncFrameRef.current = null;
+      });
+    };
+
+    const syncPreviewFromEditor = (source: HTMLElement) => {
+      if (isSyncingScrollRef.current) {
+        return;
+      }
+
+      isSyncingScrollRef.current = true;
+      syncScrollByProgress(source, previewPane);
+      releaseScrollLock();
+    };
+
+    const syncEditorFromPreview = (source: HTMLElement) => {
+      if (isSyncingScrollRef.current) {
+        return;
+      }
+
+      isSyncingScrollRef.current = true;
+      syncScrollByProgress(source, textarea);
+      releaseScrollLock();
+    };
+
+    const handleEditorScroll = (event: Event) => {
+      const source = event.currentTarget;
+      if (!(source instanceof HTMLElement)) {
+        return;
+      }
+
+      const lineHeight = getEditorLineHeight(textarea);
+      const nextLineNumber = Math.max(1, Math.floor(source.scrollTop / lineHeight) + 1);
+      setActiveLineNumber(Math.min(nextLineNumber, visibleLineCount));
+      syncPreviewFromEditor(source);
+    };
+
+    const handlePreviewScroll = (event: Event) => {
+      const source = event.currentTarget;
+      if (!(source instanceof HTMLElement)) {
+        return;
+      }
+
+      syncEditorFromPreview(source);
+    };
+
+    textarea.addEventListener("scroll", handleEditorScroll, { passive: true });
+    previewPane.addEventListener("scroll", handlePreviewScroll, { passive: true });
+
+    return () => {
+      textarea.removeEventListener("scroll", handleEditorScroll);
+      previewPane.removeEventListener("scroll", handlePreviewScroll);
+      if (scrollSyncFrameRef.current !== null) {
+        cancelAnimationFrame(scrollSyncFrameRef.current);
+        scrollSyncFrameRef.current = null;
+      }
+      isSyncingScrollRef.current = false;
+    };
+  }, [setActiveLineNumber, visibleLineCount]);
+
+  useEffect(() => {
+    if (!externalJumpLine) {
       return;
     }
 
     const textarea = textareaRef.current;
-    const lines = content.split(/\r?\n/);
+    const previewPane = previewPaneRef.current;
+    if (!textarea || !previewPane) {
+      onExternalJumpHandled();
+      return;
+    }
+
+    const lines = normalizedContent.split(/\r?\n/);
+    const targetHeading = contentHeadings.find((heading) => heading.lineNumber === externalJumpLine);
     let cursor = 0;
 
     for (let index = 0; index < Math.max(0, externalJumpLine - 1); index += 1) {
       cursor += (lines[index]?.length ?? 0) + 1;
     }
 
+    const nextScrollTop = Math.max(0, (externalJumpLine - 3) * getEditorLineHeight(textarea));
+
     textarea.focus();
     textarea.setSelectionRange(cursor, cursor);
-    textarea.scrollTop = Math.max(0, (externalJumpLine - 3) * 28);
+    textarea.scrollTop = nextScrollTop;
+
+    const targetPreviewHeading = targetHeading
+      ? previewPane.querySelector<HTMLElement>(
+        `[data-editor-heading-id="${escapeAttributeValue(targetHeading.id)}"]`,
+      )
+      : null;
+
+    if (targetPreviewHeading) {
+      previewPane.scrollTop = Math.max(targetPreviewHeading.offsetTop - 24, 0);
+    } else {
+      syncScrollByProgress(textarea, previewPane);
+    }
+
     setActiveLineNumber(externalJumpLine);
     onExternalJumpHandled();
   }, [
-    content,
+    contentHeadings,
     externalJumpLine,
+    normalizedContent,
     onExternalJumpHandled,
     setActiveLineNumber,
   ]);
@@ -96,80 +213,43 @@ export default function DualPaneEditor({
 
   const handleTextareaChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     updateLineFromSelection(event.target.value, event.target.selectionStart);
-  };
-
-  const textareaProps: MDEditorProps["textareaProps"] = {
-    placeholder: "# 从这里开始写作\n\n## Markdown 模式会同步展示实时预览",
-    onChange: handleTextareaChange,
-    onClick: syncSelection,
-    onKeyUp: syncSelection,
-    onSelect: syncSelection,
-    onKeyDown: handleTextareaKeyDown,
-    spellCheck: false,
-    wrap: "off",
+    onChange(event.target.value);
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="border-b border-slate-200 bg-white/90 px-6 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">Markdown 双栏模式</p>
-            <p className="mt-1 text-xs text-slate-500">
-              左侧源码，右侧预览，适合熟悉 Markdown 的用户。
-            </p>
-          </div>
-          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
-            当前行 {Math.min(activeLineNumber, visibleLineCount)} / {visibleLineCount}
-          </div>
+    <div className="flex min-h-0 flex-1 gap-0 bg-[#f5f7fa] p-4">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+        <div className="border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Markdown 源码
         </div>
+        <textarea
+          ref={textareaRef}
+          value={normalizedContent}
+          onChange={handleTextareaChange}
+          onClick={syncSelection}
+          onKeyUp={syncSelection}
+          onSelect={syncSelection}
+          onKeyDown={handleTextareaKeyDown}
+          placeholder="# 从这里开始写作"
+          spellCheck={false}
+          wrap="off"
+          className="min-h-0 flex-1 resize-none border-0 bg-white px-5 py-4 font-mono text-[14px] leading-7 text-slate-900 outline-none"
+        />
       </div>
 
-      <div className="min-h-0 flex-1 bg-[linear-gradient(180deg,_#ffffff_0%,_#f7fbff_100%)] p-5">
-        <div
-          data-color-mode="light"
-          className={cn(
-            "editor-md-shell h-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]",
-            "ring-1 ring-white/70",
-          )}
-        >
-          <MDEditor
-            value={content}
-            onChange={(value) => onChange(value ?? "")}
-            preview="live"
-            visibleDragbar={false}
-            height="100%"
-            hideToolbar={false}
-            textareaProps={textareaProps}
-            onStatistics={(stats) => {
-              if (stats.lineCount && activeLineNumber > stats.lineCount) {
-                setActiveLineNumber(stats.lineCount);
-              }
-            }}
-            components={{
-              textarea: (props) => {
-                const textareaComponentProps = props as ComponentPropsWithoutRef<"textarea">;
-
-                return (
-                  <textarea
-                    {...textareaComponentProps}
-                    ref={(node) => {
-                      textareaRef.current = node;
-                    }}
-                    className={cn(
-                      textareaComponentProps.className,
-                      "font-mono text-[15px] leading-7 text-slate-800",
-                    )}
-                  />
-                );
-              },
-            }}
-            className="h-full"
-            enableScroll
-            highlightEnable={false}
-            previewOptions={{
-              className: "wmde-markdown !bg-white px-4 py-3",
-            }}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden border border-l-0 border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+        <div className="border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          详情页预览
+        </div>
+        <div ref={previewPaneRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <PostContentRenderer
+            postId="editor-preview"
+            title={null}
+            content={normalizedContent}
+            styleConfig={null}
+            styleCss={styleCss}
+            withHeadingIds={true}
+            headingDataAttributeName="data-editor-heading-id"
           />
         </div>
       </div>

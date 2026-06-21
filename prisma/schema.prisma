@@ -108,6 +108,8 @@ model Post {
   id          String           @id @default(cuid())
   title       String?
   content     String           @db.Text
+  styleConfig Json?
+  styleCss    String?          @db.Text
   postType    PostType         @default(TEXT)
   visibility  PostVisibility   @default(PUBLIC)
   videoId     String?          @unique
@@ -201,6 +203,8 @@ model PostDraft {
   postType        PostType         @default(TEXT)
   title           String?
   content         String           @db.Text
+  styleConfig     Json?
+  styleCss        String?          @db.Text
   visibility      PostVisibility   @default(PUBLIC)
   topicId         String?
   topic           Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)

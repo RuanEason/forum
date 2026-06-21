@@ -4,17 +4,22 @@ interface EditorStatusbarProps {
   wordCount: number;
   headingCount: number;
   saveStateLabel: string;
+  documentLabel: string;
+  activeLineLabel?: string;
 }
 
 export default function EditorStatusbar({
   wordCount,
   headingCount,
   saveStateLabel,
+  documentLabel,
+  activeLineLabel,
 }: EditorStatusbarProps) {
   return (
-    <footer className="flex h-10 items-center justify-between border-t border-slate-200 bg-slate-900 px-4 text-xs text-slate-200">
+    <footer className="flex h-10 items-center justify-between border-t border-slate-200 bg-[#f7f7f5] px-4 text-xs text-slate-600">
       <div className="flex items-center gap-4">
-        <span>Markdown</span>
+        <span>{documentLabel}</span>
+        {activeLineLabel ? <span>{activeLineLabel}</span> : null}
         <span>字数 {wordCount}</span>
         <span>标题 {headingCount}</span>
         <span>{saveStateLabel}</span>

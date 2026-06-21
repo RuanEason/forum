@@ -64,8 +64,11 @@ body {
   overflow-x: hidden; /* Prevent horizontal scroll to blank areas */
 }
 
+html.editor-route,
 body.editor-route {
   background: #eef3f9;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 body.editor-route [data-site-chrome="profile"],
@@ -76,7 +79,9 @@ body.editor-route [data-site-chrome="footer"] {
 }
 
 body.editor-route [data-site-main="app"] {
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .editor-md-shell .w-md-editor {
@@ -118,6 +123,63 @@ body.editor-route [data-site-main="app"] {
 .editor-md-shell .w-md-editor-preview {
   padding: 0.5rem !important;
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+}
+
+.editor-md-shell .w-md-editor-preview .wmde-markdown h1,
+.editor-md-shell .w-md-editor-preview .wmde-markdown h2 {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.editor-md-shell .w-md-editor-preview .wmde-markdown blockquote {
+  margin: 0 0 1rem !important;
+  padding: 0.875rem 1rem !important;
+  border-left: 4px solid #bae6fd !important;
+  border-radius: 0 1rem 1rem 0 !important;
+  background: linear-gradient(180deg, rgba(240, 249, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
+  color: #334155 !important;
+}
+
+.editor-md-shell .w-md-editor-preview .wmde-markdown blockquote p {
+  margin-bottom: 0 !important;
+}
+
+.editor-md-shell .w-md-editor-preview .wmde-markdown hr {
+  margin: 1.25rem 0 !important;
+  height: 1px !important;
+  border: 0 !important;
+  background: #dbe7f3 !important;
+}
+
+.code-scroll,
+.novel-editor .ProseMirror pre {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.18);
+}
+
+.code-scroll::-webkit-scrollbar,
+.novel-editor .ProseMirror pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-scroll::-webkit-scrollbar-track,
+.novel-editor .ProseMirror pre::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.18);
+  border-radius: 999px;
+}
+
+.code-scroll::-webkit-scrollbar-thumb,
+.novel-editor .ProseMirror pre::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover,
+.novel-editor .ProseMirror pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(203, 213, 225, 0.7);
 }
 
 .novel-editor .ProseMirror p.is-editor-empty:first-child::before {

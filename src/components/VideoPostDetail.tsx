@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { Eye } from "lucide-react";
@@ -13,6 +12,7 @@ import PostAttachments from "@/components/PostAttachments";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
 import { formatDateTime } from "@/lib/datetime";
+import { createMarkdownComponents } from "@/lib/markdown-components";
 
 type VideoStatus = "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
 
@@ -107,25 +107,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
     images: [],
     attachments: post.attachments,
   };
-  const markdownComponents: Components = {
-    a: ({ href, children, ...props }) => {
-      const isAnchorLink = typeof href === "string" && href.startsWith("#");
-
-      if (isAnchorLink) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
-      }
-
-      return (
-        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-          {children}
-        </a>
-      );
-    },
-  };
+  const markdownComponents = createMarkdownComponents();
 
   return (
     <>

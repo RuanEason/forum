@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated";
+import type { PostStyleConfig } from "@/types/post-style";
 
 type PostAttachmentInput = {
   url: string;
   fileName: string;
   fileSize: number;
   mimeType: string;
+};
+
+type PostStyleInput = {
+  styleConfig?: PostStyleConfig | null;
+  styleCss?: string | null;
 };
 
 type UpdatePostAttachmentInput = PostAttachmentInput & {
@@ -15,16 +22,32 @@ type CreatePostOptions = {
   postType?: "TEXT" | "VIDEO";
   visibility?: "PUBLIC" | "UNLISTED";
   videoId?: string | null;
-};
+} & PostStyleInput;
 
 type UpdatePostInput = {
   title?: string | null;
   content: string;
+  styleConfig?: PostStyleConfig | null;
+  styleCss?: string | null;
   visibility?: "PUBLIC" | "UNLISTED";
   images?: string[];
   attachments?: UpdatePostAttachmentInput[];
   topicId?: string | null;
 };
+
+function toNullableJsonInput(
+  value: PostStyleConfig | null | undefined,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
+}
 
 export async function getPosts(topicId?: string) {
   return prisma.post.findMany({
@@ -36,6 +59,8 @@ export async function getPosts(topicId?: string) {
       id: true,
       title: true,
       content: true,
+      styleConfig: true,
+      styleCss: true,
       postType: true,
       visibility: true,
       viewCount: true,
@@ -119,6 +144,8 @@ export async function createPost(
     data: {
       title: title || null,
       content,
+      styleConfig: toNullableJsonInput(options.styleConfig),
+      styleCss: options.styleCss ?? null,
       authorId,
       postType: options.postType || "TEXT",
       visibility: options.visibility || "PUBLIC",
@@ -146,6 +173,8 @@ export async function getPostById(id: string) {
       id: true,
       title: true,
       content: true,
+      styleConfig: true,
+      styleCss: true,
       postType: true,
       visibility: true,
       pinned: true,
@@ -301,14 +330,18 @@ export async function updatePost(id: string, input: UpdatePostInput) {
     : null;
 
   return prisma.$transaction(async (tx) => {
+    const postData: Prisma.PostUncheckedUpdateInput = {
+      content: input.content,
+      ...(input.styleConfig !== undefined ? { styleConfig: toNullableJsonInput(input.styleConfig) } : {}),
+      ...(input.styleCss !== undefined ? { styleCss: input.styleCss } : {}),
+      title: input.title?.trim() ? input.title.trim() : null,
+      ...(input.visibility ? { visibility: input.visibility } : {}),
+      ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
+    };
+
     await tx.post.update({
       where: { id },
-      data: {
-        content: input.content,
-        title: input.title?.trim() ? input.title.trim() : null,
-        ...(input.visibility ? { visibility: input.visibility } : {}),
-        ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
-      },
+      data: postData,
     });
 
     if (nextImages) {

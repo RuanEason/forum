@@ -1,10 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getPostById } from "@/lib/post";
-import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { cache, isValidElement, type ReactNode } from "react";
+import { cache } from "react";
 
 import Link from "next/link";
 import LikeButton from "@/components/LikeButton";
@@ -17,18 +14,15 @@ import PostImages from "@/components/PostImages";
 import { Metadata } from "next";
 import { Eye } from "lucide-react";
 import ViewTracker from "@/components/ViewTracker";
-import remarkBreaks from "remark-breaks";
 import PostAttachments from "@/components/PostAttachments";
 import MobileArticleCatalog from "@/components/MobileArticleCatalog";
 import CatalogSidebar from "@/components/CatalogSidebar";
+import PostContentRenderer from "@/components/PostContentRenderer";
 import VideoPostDetail from "@/components/VideoPostDetail";
-import {
-  createHeadingIdGenerator,
-  extractMarkdownHeadings,
-} from "@/lib/markdown";
+import { extractMarkdownHeadings } from "@/lib/markdown";
 import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
-import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/datetime";
+import type { PostStyleConfig } from "@/types/post-style";
 
 interface AuthorProps {
   id: string;
@@ -40,6 +34,8 @@ interface PostDetailProps {
   id: string;
   title: string | null;
   content: string;
+  styleConfig?: PostStyleConfig | null;
+  styleCss?: string | null;
   postType: "TEXT" | "VIDEO";
   visibility: "PUBLIC" | "UNLISTED";
   author: AuthorProps;
@@ -75,22 +71,6 @@ const getPostByIdCached = cache(
   async (id: string): Promise<PostDetailProps | null> =>
     (await getPostById(id)) as unknown as PostDetailProps | null
 );
-
-function getTextFromReactNode(node: ReactNode): string {
-  if (typeof node === "string" || typeof node === "number") {
-    return String(node);
-  }
-
-  if (Array.isArray(node)) {
-    return node.map((child) => getTextFromReactNode(child)).join("");
-  }
-
-  if (isValidElement(node)) {
-    return getTextFromReactNode((node.props as { children?: ReactNode }).children);
-  }
-
-  return "";
-}
 
 export async function generateMetadata({
   params,
@@ -179,86 +159,6 @@ export default async function PostDetailPage({
   const markdownHeadings = isVideoPost ? [] : extractMarkdownHeadings(post.content);
   const showToc = !isVideoPost && markdownHeadings.length > 0;
   const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
-  const generateHeadingId = createHeadingIdGenerator();
-  const markdownComponents: Components = {
-    a: ({ href, children, ...props }) => {
-      const isAnchorLink = typeof href === "string" && href.startsWith("#");
-
-      if (isAnchorLink) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
-      }
-
-      return (
-        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-          {children}
-        </a>
-      );
-    },
-    h1: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h1 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h1>
-      );
-    },
-    h2: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h2 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h2>
-      );
-    },
-    h3: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h3 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h3>
-      );
-    },
-    h4: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h4 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h4>
-      );
-    },
-    h5: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h5 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h5>
-      );
-    },
-    h6: ({ children, className, ...props }) => {
-      const headingText = getTextFromReactNode(children);
-      const headingId = generateHeadingId(headingText);
-
-      return (
-        <h6 id={headingId} className={cn("scroll-mt-24", className)} {...props}>
-          {children}
-        </h6>
-      );
-    },
-  };
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -329,11 +229,6 @@ export default async function PostDetailPage({
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6">
-                <div className="mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {post.title || ""}
-                  </h1>
-                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Avatar
@@ -366,14 +261,14 @@ export default async function PostDetailPage({
 
 
                 <div className="mt-4">
-                  <div className="prose prose-sm sm:prose-base max-w-none break-words">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
-                      components={markdownComponents}
-                    >
-                      {post.content}
-                    </ReactMarkdown>
-                  </div>
+                  <PostContentRenderer
+                    postId={post.id}
+                    title={post.title}
+                    content={post.content}
+                    styleConfig={post.styleConfig ?? null}
+                    styleCss={post.styleCss ?? null}
+                    withHeadingIds={true}
+                  />
                   {post.images && post.images.length > 0 && (
                     <PostImages
                       images={post.images.map((img) => img.url)}

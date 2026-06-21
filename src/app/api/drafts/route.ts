@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDraft, listDrafts } from "@/lib/draft";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
+import type { PostStyleConfig } from "@/types/post-style";
 
 function toUpperValue(value: string | null): string | null {
   if (!value) {
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
       postType?: "TEXT" | "VIDEO";
       title?: string | null;
       content?: string;
+      styleConfig?: PostStyleConfig | null;
+      styleCss?: string | null;
       visibility?: "PUBLIC" | "UNLISTED";
       topicId?: string | null;
       persistMode?: "EPHEMERAL" | "SAVED";
@@ -75,4 +78,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

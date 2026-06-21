@@ -12,9 +12,11 @@ export default function RouteChromeController() {
   useEffect(() => {
     const isEditorRoute = pathname?.startsWith(EDITOR_ROUTE_PREFIX);
 
+    document.documentElement.classList.toggle(EDITOR_BODY_CLASS, Boolean(isEditorRoute));
     document.body.classList.toggle(EDITOR_BODY_CLASS, Boolean(isEditorRoute));
 
     return () => {
+      document.documentElement.classList.remove(EDITOR_BODY_CLASS);
       document.body.classList.remove(EDITOR_BODY_CLASS);
     };
   }, [pathname]);

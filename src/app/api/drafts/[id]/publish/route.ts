@@ -3,6 +3,7 @@ import { buildPublishPayload } from "@/lib/draft";
 import { rewardActionExperience } from "@/lib/experience";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated";
 
 export async function POST(
   _request: NextRequest,
@@ -65,6 +66,10 @@ export async function POST(
         data: {
           title: payload.title,
           content: payload.content,
+          styleConfig: payload.styleConfig === null
+            ? Prisma.JsonNull
+            : (payload.styleConfig as Prisma.InputJsonValue),
+          styleCss: payload.styleCss,
           authorId: user.id,
           postType: payload.postType,
           visibility: payload.visibility,

@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated";
+import {
+  normalizePostStyleConfig,
+  normalizePostStyleCss,
+} from "@/lib/post-style";
+import type { PostStyleConfig } from "@/types/post-style";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
@@ -32,6 +37,8 @@ export type DraftUpsertInput = {
   postType?: PostType;
   title?: string | null;
   content?: string;
+  styleConfig?: PostStyleConfig | null;
+  styleCss?: string | null;
   visibility?: PostVisibility;
   topicId?: string | null;
   persistMode?: DraftPersistMode;
@@ -42,6 +49,8 @@ export type DraftUpsertInput = {
 type DraftPublishPayload = {
   title: string | null;
   content: string;
+  styleConfig: PostStyleConfig | null;
+  styleCss: string | null;
   visibility: PostVisibility;
   topicId: string | null;
   postType: PostType;
@@ -62,6 +71,8 @@ const draftArgs = Prisma.validator<Prisma.PostDraftDefaultArgs>()({
     postType: true,
     title: true,
     content: true,
+    styleConfig: true,
+    styleCss: true,
     visibility: true,
     topicId: true,
     persistMode: true,
@@ -110,55 +121,6 @@ const draftArgs = Prisma.validator<Prisma.PostDraftDefaultArgs>()({
 type DraftWithAssets = Prisma.PostDraftGetPayload<typeof draftArgs>;
 type DraftAssetInDraft = DraftWithAssets["assets"][number];
 
-const draftSelect = {
-  id: true,
-  postType: true,
-  title: true,
-  content: true,
-  visibility: true,
-  topicId: true,
-  persistMode: true,
-  status: true,
-  lastError: true,
-  publishedPostId: true,
-  createdAt: true,
-  updatedAt: true,
-  topic: {
-    select: {
-      id: true,
-      name: true,
-    },
-  },
-  assets: {
-    orderBy: [
-      { sortOrder: "asc" },
-      { createdAt: "asc" },
-    ],
-    select: {
-      id: true,
-      type: true,
-      status: true,
-      progress: true,
-      url: true,
-      fileName: true,
-      fileSize: true,
-      mimeType: true,
-      videoAssetId: true,
-      errorMessage: true,
-      sortOrder: true,
-      createdAt: true,
-      updatedAt: true,
-      videoAsset: {
-        select: {
-          id: true,
-          status: true,
-          coverUrl: true,
-        },
-      },
-    },
-  },
-};
-
 function clampProgress(value: number | undefined): number {
   if (!Number.isFinite(value)) {
     return 0;
@@ -179,6 +141,20 @@ function normalizeContent(value: string | undefined): string {
     return "";
   }
   return value.slice(0, MAX_CONTENT_LENGTH);
+}
+
+function toNullableJsonInput(
+  value: PostStyleConfig | null | undefined,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
 }
 
 function normalizeTitle(value: string | null | undefined): string | null {
@@ -423,6 +399,8 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
   const postType = normalizePostType(input.postType);
   const title = normalizeTitle(input.title);
   const content = normalizeContent(input.content);
+  const styleConfig = normalizePostStyleConfig(input.styleConfig ?? null);
+  const styleCss = normalizePostStyleCss(input.styleCss ?? null);
   const visibility = normalizeVisibility(input.visibility);
   const topicId = normalizeText(input.topicId ?? null);
   const persistMode = normalizePersistMode(input.persistMode);
@@ -436,6 +414,8 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
       postType,
       title,
       content,
+      styleConfig: toNullableJsonInput(styleConfig),
+      styleCss,
       visibility,
       topicId,
       persistMode,
@@ -604,6 +584,8 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       postType: true,
       title: true,
       content: true,
+      styleConfig: true,
+      styleCss: true,
       visibility: true,
       topicId: true,
       persistMode: true,
@@ -633,6 +615,12 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
   const nextPostType = input.postType ? normalizePostType(input.postType) : (existing.postType as PostType);
   const nextTitle = input.title !== undefined ? normalizeTitle(input.title) : existing.title;
   const nextContent = input.content !== undefined ? normalizeContent(input.content) : existing.content;
+  const nextStyleConfig = input.styleConfig !== undefined
+    ? normalizePostStyleConfig(input.styleConfig ?? null)
+    : normalizePostStyleConfig(existing.styleConfig);
+  const nextStyleCss = input.styleCss !== undefined
+    ? normalizePostStyleCss(input.styleCss ?? null)
+    : normalizePostStyleCss(existing.styleCss);
   const nextVisibility = input.visibility ? normalizeVisibility(input.visibility) : (existing.visibility as PostVisibility);
   const nextTopicId = input.topicId !== undefined ? normalizeText(input.topicId ?? null) : existing.topicId;
   const requestedPersistMode = input.persistMode ? normalizePersistMode(input.persistMode) : null;
@@ -665,6 +653,8 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       postType: nextPostType,
       title: nextTitle,
       content: nextContent,
+      styleConfig: toNullableJsonInput(nextStyleConfig),
+      styleCss: nextStyleCss,
       visibility: nextVisibility,
       topicId: nextTopicId,
       persistMode: nextPersistMode,
@@ -795,6 +785,8 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
 
   const normalizedTitle = normalizeTitle(draft.title);
   const normalizedContent = normalizeContent(draft.content);
+  const normalizedStyleConfig = normalizePostStyleConfig(draft.styleConfig);
+  const normalizedStyleCss = normalizePostStyleCss(draft.styleCss);
 
   if (draft.postType === "TEXT") {
     const textAssets = pickReadyTextAssets(draft);
@@ -805,6 +797,8 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
     return {
       title: normalizedTitle,
       content: normalizedContent,
+      styleConfig: normalizedStyleConfig,
+      styleCss: normalizedStyleCss,
       visibility: draft.visibility as PostVisibility,
       topicId: draft.topicId,
       postType: "TEXT",
@@ -819,6 +813,8 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
   return {
     title: normalizedTitle,
     content: normalizedContent,
+    styleConfig: normalizedStyleConfig,
+    styleCss: normalizedStyleCss,
     visibility: draft.visibility as PostVisibility,
     topicId: draft.topicId,
     postType: "VIDEO",

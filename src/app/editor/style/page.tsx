@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
-import EditorWorkspace from "@/components/editor/EditorWorkspace";
+import StyleWorkspace from "@/components/editor/StyleWorkspace";
 
 export const metadata: Metadata = {
-  title: "Markdown编辑器",
-  description: "支持 Markdown 与视觉模式切换的论坛发帖工作台",
+  title: "样式工作区",
+  description: "仅供高级用户手写帖子 CSS 的独立工作区",
 };
 
-export default function EditorPage() {
+export default function EditorStylePage() {
   return (
     <Suspense fallback={<EditorBootScreen />}>
-      <EditorWorkspace />
+      <StyleWorkspace />
     </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteDraft, getDraftById, updateDraft } from "@/lib/draft";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
+import type { PostStyleConfig } from "@/types/post-style";
 
 export async function GET(
   _request: NextRequest,
@@ -48,6 +49,8 @@ export async function PATCH(
       postType?: "TEXT" | "VIDEO";
       title?: string | null;
       content?: string;
+      styleConfig?: PostStyleConfig | null;
+      styleCss?: string | null;
       visibility?: "PUBLIC" | "UNLISTED";
       topicId?: string | null;
       persistMode?: "EPHEMERAL" | "SAVED";
@@ -111,4 +114,3 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {
+  Code2,
   EyeOff,
   FileImage,
   FilePlus2,
@@ -52,6 +53,7 @@ interface EditorSidebarProps {
   onAttachmentUpload: () => void;
   onRemoveImage: (index: number) => void;
   onRemoveAttachment: (index: number) => void;
+  onOpenStyleEditor: () => void;
 }
 
 export default function EditorSidebar({
@@ -77,13 +79,14 @@ export default function EditorSidebar({
   onAttachmentUpload,
   onRemoveImage,
   onRemoveAttachment,
+  onOpenStyleEditor,
 }: EditorSidebarProps) {
   return (
-    <aside className="flex h-full w-[360px] border-r border-slate-200 bg-[#f8fbff]">
-      <div className="flex w-14 flex-shrink-0 flex-col items-center border-r border-slate-200 bg-[#eef4fb]">
+    <aside className="flex h-full w-[360px] border-r border-slate-200 bg-[#f7f7f5]">
+      <div className="flex w-14 flex-shrink-0 flex-col items-center border-r border-slate-200 bg-[#f1f1ee]">
         <SidebarRailButton
           icon={<History className="h-5 w-5" />}
-          label="最近"
+          label="历史"
           active={activeTab === "history"}
           onClick={() => onTabChange("history")}
         />
@@ -116,12 +119,12 @@ export default function EditorSidebar({
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
               {loading ? (
-                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
+                <div className="flex items-center gap-2 border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   正在加载历史草稿...
                 </div>
               ) : groups.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm leading-6 text-slate-500">
+                <div className="border border-dashed border-slate-300 bg-white px-4 py-6 text-sm leading-6 text-slate-500">
                   还没有已保存草稿。可以先新建一篇文档开始写作。
                 </div>
               ) : (
@@ -216,7 +219,7 @@ export default function EditorSidebar({
                     >
                       <div className="text-sm font-medium">仅链接可见</div>
                       <div className="mt-1 text-xs text-slate-500">
-                        不在首页和搜索展示，仅通过链接访问
+                        不在首页和搜索展示，仅能通过链接访问
                       </div>
                     </button>
                   </div>
@@ -323,6 +326,24 @@ export default function EditorSidebar({
                   )}
                 </section>
 
+                <section className="space-y-3 border border-dashed border-slate-300 bg-white p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                    <Code2 className="h-4 w-4 text-slate-500" />
+                    高级样式
+                  </div>
+                  <p className="text-sm leading-6 text-slate-500">
+                    默认发帖不需要写 CSS。只有想精细控制展示时，再打开样式文件去手写规则。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onOpenStyleEditor}
+                    className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-slate-950 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                  >
+                    <Code2 className="h-4 w-4" />
+                    打开样式.css
+                  </button>
+                </section>
+
                 {(isUploadingAssets || uploadError || uploadStatus) ? (
                   <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between text-sm font-medium text-slate-800">
@@ -376,14 +397,21 @@ function SidebarRailButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full flex-col items-center gap-2 px-2 py-3 text-[11px] font-medium transition-colors",
+        "group mt-2 inline-flex w-full flex-col items-center gap-1 px-2 py-3 text-[11px] font-medium transition-colors",
         active
-          ? "bg-white text-slate-900 shadow-sm"
-          : "text-slate-500 hover:bg-white/70 hover:text-slate-800",
+          ? "text-slate-900"
+          : "text-slate-500 hover:text-slate-800",
       )}
     >
-      {icon}
-      <span className="tracking-[0.08em]">{label}</span>
+      <span
+        className={cn(
+          "rounded-xl p-2 transition-colors",
+          active ? "bg-white text-slate-900 shadow-sm" : "bg-transparent group-hover:bg-white/70",
+        )}
+      >
+        {icon}
+      </span>
+      <span>{label}</span>
     </button>
   );
 }

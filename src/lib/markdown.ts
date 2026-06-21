@@ -51,6 +51,13 @@ export function createHeadingIdGenerator(): (text: string) => string {
   };
 }
 
+export function normalizeMarkdownForDisplay(markdown: string): string {
+  return markdown.replace(
+    /([^\n])(```[^\n]*\r?\n|~~~[^\n]*\r?\n)/g,
+    (_, previous: string, fence: string) => `${previous}\n${fence}`,
+  );
+}
+
 export function extractMarkdownHeadings(markdown: string): MarkdownHeading[] {
   const lines = markdown.split(/\r?\n/);
   const headings: MarkdownHeading[] = [];
