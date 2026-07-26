@@ -21,7 +21,7 @@ import PostContentRenderer from "@/components/PostContentRenderer";
 import VideoPostDetail from "@/components/VideoPostDetail";
 import { extractMarkdownHeadings } from "@/lib/markdown";
 import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
-import { formatDateTime } from "@/lib/datetime";
+import PostEditHistory from "@/components/PostEditHistory";
 import type { PostStyleConfig } from "@/types/post-style";
 
 interface AuthorProps {
@@ -40,6 +40,11 @@ interface PostDetailProps {
   visibility: "PUBLIC" | "UNLISTED";
   author: AuthorProps;
   createdAt: Date;
+  editHistory: Array<{
+    id: string;
+    editorName: string;
+    createdAt: Date;
+  }>;
   viewCount: number;
   pinned?: boolean;
   pinnedAt?: Date | null;
@@ -253,7 +258,11 @@ export default async function PostDetailPage({
                         {post.author.name || "匿名用户"}
                       </Link>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{formatDateTime(post.createdAt, { style: "cn" })}</span>
+                        <PostEditHistory
+                          createdAt={post.createdAt}
+                          history={post.editHistory}
+                          dateStyle="cn"
+                        />
                         {post.topic && (
                           <Link
                             href={`/topic/${post.topic.id}`}

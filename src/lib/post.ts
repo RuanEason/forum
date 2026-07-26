@@ -35,6 +35,11 @@ type UpdatePostInput = {
   topicId?: string | null;
 };
 
+type PostEditActor = {
+  id: string;
+  name?: string | null;
+};
+
 function toNullableJsonInput(
   value: PostStyleConfig | null | undefined,
 ): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
@@ -47,6 +52,67 @@ function toNullableJsonInput(
   }
 
   return value as Prisma.InputJsonValue;
+}
+
+function normalizeTitle(value: string | null | undefined): string | null {
+  return value?.trim() ? value.trim() : null;
+}
+
+function stableJson(value: unknown): string {
+  if (value === undefined) {
+    return "undefined";
+  }
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(",")}]`;
+  }
+
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
+    .join(",")}}`;
+}
+
+function sameUrlSet(existing: Array<{ url: string }>, next: string[]): boolean {
+  const existingUrls = new Set(existing.map((image) => image.url));
+  return existingUrls.size === next.length && next.every((url) => existingUrls.has(url));
+}
+
+function sameAttachments(
+  existing: Array<{
+    id: string;
+    url: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+  }>,
+  next: UpdatePostAttachmentInput[],
+): boolean {
+  if (existing.length !== next.length) {
+    return false;
+  }
+
+  const existingById = new Map(existing.map((attachment) => [attachment.id, attachment]));
+  const seenIds = new Set<string>();
+
+  return next.every((attachment) => {
+    if (!attachment.id || seenIds.has(attachment.id)) {
+      return false;
+    }
+    seenIds.add(attachment.id);
+
+    const current = existingById.get(attachment.id);
+    return Boolean(
+      current
+      && current.url === attachment.url
+      && current.fileName === attachment.fileName
+      && current.fileSize === attachment.fileSize
+      && current.mimeType === attachment.mimeType,
+    );
+  });
 }
 
 export async function getPosts(topicId?: string) {
@@ -181,6 +247,16 @@ export async function getPostById(id: string) {
       pinnedAt: true,
       createdAt: true,
       updatedAt: true,
+      editHistory: {
+        select: {
+          id: true,
+          editorName: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       viewCount: true,
       author: {
         select: {
@@ -303,38 +379,62 @@ export async function getPostById(id: string) {
   });
 }
 
-export async function updatePost(id: string, input: UpdatePostInput) {
-  const existingPost = await prisma.post.findUnique({
-    where: { id },
-    include: {
-      images: true,
-      attachments: true,
-    },
-  });
-
-  if (!existingPost) {
-    throw new Error("Post not found");
-  }
-
-  const nextImages = input.images
-    ? Array.from(new Set(input.images.map((url) => url.trim()).filter(Boolean)))
-    : null;
-  const nextAttachments = input.attachments
-    ? input.attachments.map((attachment) => ({
-        ...attachment,
-        id: attachment.id || null,
-        url: attachment.url.trim(),
-        fileName: attachment.fileName.trim(),
-        mimeType: attachment.mimeType.trim(),
-      }))
-    : null;
-
+export async function updatePost(id: string, input: UpdatePostInput, editor: PostEditActor) {
   return prisma.$transaction(async (tx) => {
+    const existingPost = await tx.post.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        attachments: true,
+      },
+    });
+
+    if (!existingPost) {
+      throw new Error("Post not found");
+    }
+
+    const nextImages = input.images !== undefined
+      ? Array.from(new Set(input.images.map((url) => url.trim()).filter(Boolean)))
+      : null;
+    const nextAttachments = input.attachments !== undefined
+      ? input.attachments.map((attachment) => ({
+          ...attachment,
+          id: attachment.id || null,
+          url: attachment.url.trim(),
+          fileName: attachment.fileName.trim(),
+          mimeType: attachment.mimeType.trim(),
+        }))
+      : null;
+    const nextTitle = input.title === undefined ? existingPost.title : normalizeTitle(input.title);
+    const hasImageChanges = nextImages !== null && !sameUrlSet(existingPost.images, nextImages);
+    const hasAttachmentChanges = nextAttachments !== null && !sameAttachments(existingPost.attachments, nextAttachments);
+    const hasPostChanges = (
+      existingPost.content !== input.content
+      || existingPost.title !== nextTitle
+      || (input.styleConfig !== undefined && stableJson(existingPost.styleConfig) !== stableJson(input.styleConfig))
+      || (input.styleCss !== undefined && existingPost.styleCss !== input.styleCss)
+      || (input.visibility !== undefined && existingPost.visibility !== input.visibility)
+      || (input.topicId !== undefined && existingPost.topicId !== input.topicId)
+      || hasImageChanges
+      || hasAttachmentChanges
+    );
+
+    if (!hasPostChanges) {
+      return tx.post.findUnique({
+        where: { id },
+        include: {
+          images: true,
+          attachments: true,
+          topic: true,
+        },
+      });
+    }
+
     const postData: Prisma.PostUncheckedUpdateInput = {
       content: input.content,
       ...(input.styleConfig !== undefined ? { styleConfig: toNullableJsonInput(input.styleConfig) } : {}),
       ...(input.styleCss !== undefined ? { styleCss: input.styleCss } : {}),
-      title: input.title?.trim() ? input.title.trim() : null,
+      title: nextTitle,
       ...(input.visibility ? { visibility: input.visibility } : {}),
       ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
     };
@@ -344,7 +444,7 @@ export async function updatePost(id: string, input: UpdatePostInput) {
       data: postData,
     });
 
-    if (nextImages) {
+    if (hasImageChanges && nextImages) {
       const existingImageUrls = new Set(existingPost.images.map((image) => image.url));
 
       if (nextImages.length > 0) {
@@ -374,7 +474,7 @@ export async function updatePost(id: string, input: UpdatePostInput) {
       }
     }
 
-    if (nextAttachments) {
+    if (hasAttachmentChanges && nextAttachments) {
       const existingAttachmentsById = new Map(
         existingPost.attachments.map((attachment) => [attachment.id, attachment])
       );
@@ -422,6 +522,14 @@ export async function updatePost(id: string, input: UpdatePostInput) {
         }
       }
     }
+
+    await tx.postEditHistory.create({
+      data: {
+        postId: id,
+        editorId: editor.id,
+        editorName: editor.name?.trim() || "匿名用户",
+      },
+    });
 
     return tx.post.findUnique({
       where: { id },

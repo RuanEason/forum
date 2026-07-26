@@ -52,6 +52,7 @@ model User {
   followers    Follow[]     @relation("UserFollowers")
   danmakus     Danmaku[]
   drafts       PostDraft[]
+  postEditHistory PostEditHistory[] @relation("PostEditHistoryEditor")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -129,6 +130,7 @@ model Post {
   images      PostImage[]
   attachments PostAttachment[]
   notifications Notification[]
+  editHistory PostEditHistory[]
   draft       PostDraft?       @relation("PublishedPostDraft")
   topicId     String?
   topic       Topic?           @relation(fields: [topicId], references: [id])
@@ -143,6 +145,19 @@ model Post {
   @@index([visibility])
   @@index([topicId])
   @@index([pinned, pinnedAt])
+}
+
+model PostEditHistory {
+  id         String   @id @default(cuid())
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  editorId   String?
+  editor     User?    @relation("PostEditHistoryEditor", fields: [editorId], references: [id], onDelete: SetNull)
+  editorName String
+  createdAt  DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([editorId])
 }
 
 model Danmaku {

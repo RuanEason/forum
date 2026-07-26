@@ -24,6 +24,7 @@ type SessionShape = {
   user?: {
     id?: string;
     role?: string;
+    name?: string | null;
   };
 } | null;
 
@@ -563,6 +564,9 @@ export async function PUT(request: NextRequest) {
       images: existingPost.postType === "VIDEO" ? [] : nextImages,
       attachments: nextAttachments,
       topicId: topicId === undefined ? undefined : topicId || null,
+    }, {
+      id: session.user.id,
+      name: session.user.name,
     });
 
     await Promise.all([

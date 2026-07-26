@@ -11,7 +11,7 @@ import PostMoreMenu from "@/components/PostMoreMenu";
 import PostAttachments from "@/components/PostAttachments";
 import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
-import { formatDateTime } from "@/lib/datetime";
+import PostEditHistory from "@/components/PostEditHistory";
 import { createMarkdownComponents } from "@/lib/markdown-components";
 
 type VideoStatus = "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
@@ -26,6 +26,11 @@ interface VideoPostDetailProps {
     styleConfig?: import("@/types/post-style").PostStyleConfig | null;
     styleCss?: string | null;
     createdAt: Date;
+    editHistory: Array<{
+      id: string;
+      editorName: string;
+      createdAt: Date;
+    }>;
     viewCount: number;
     pinned?: boolean;
     author: {
@@ -134,7 +139,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
                   {post.author.name || "匿名用户"}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span>{formatDateTime(post.createdAt)}</span>
+                  <PostEditHistory createdAt={post.createdAt} history={post.editHistory} />
                   {post.topic && (
                     <Link
                       href={`/topic/${post.topic.id}`}
