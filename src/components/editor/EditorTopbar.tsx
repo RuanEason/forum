@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Save, SendHorizonal } from "lucide-react";
+import { FileUp, Loader2, Save, SendHorizonal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SaveState } from "@/components/editor/types";
 
@@ -12,6 +12,8 @@ interface EditorTopbarProps {
   savedAtLabel: string;
   canPublish: boolean;
   isPublishing: boolean;
+  isImporting?: boolean;
+  onImport?: () => void;
   onSave: () => void;
   onPublish: () => void;
 }
@@ -24,6 +26,8 @@ export default function EditorTopbar({
   savedAtLabel,
   canPublish,
   isPublishing,
+  isImporting = false,
+  onImport,
   onSave,
   onPublish,
 }: EditorTopbarProps) {
@@ -54,6 +58,17 @@ export default function EditorTopbar({
       </div>
 
       <div className="ml-4 flex items-center gap-2">
+        {onImport ? (
+          <button
+            type="button"
+            onClick={onImport}
+            disabled={isImporting}
+            className="inline-flex items-center gap-2 rounded-sm border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            {isImporting ? "导入中" : "导入"}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onSave}

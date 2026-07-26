@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
@@ -12,6 +13,7 @@ import EditorTopbar from "@/components/editor/EditorTopbar";
 import MarkdownDocEditor from "@/components/editor/MarkdownDocEditor";
 import MobileEditorRedirect from "@/components/editor/MobileEditorRedirect";
 import StyleCodeEditor, { DEFAULT_STYLE_TEMPLATE } from "@/components/editor/StyleCodeEditor";
+import { parseMarkdownImport } from "@/components/editor/markdown-import";
 import {
   buildOutlineItems,
   formatEditorTime,
@@ -79,12 +81,15 @@ export default function EditorWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [importNotice, setImportNotice] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeLineNumber, setActiveLineNumber] = useState(1);
   const [jumpLineNumber, setJumpLineNumber] = useState<number | null>(null);
   const [didMountEditor, setDidMountEditor] = useState(false);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markdownImportInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingRef = useRef(false);
   const hasHydratedRef = useRef(false);
   const initialQueryDraftHandledRef = useRef(false);
@@ -445,6 +450,79 @@ export default function EditorWorkspace() {
     void saveDraft();
   }, [saveDraft]);
 
+  const handleOpenMarkdownImport = useCallback(() => {
+    const input = markdownImportInputRef.current;
+    if (!input || isImporting) {
+      return;
+    }
+
+    input.value = "";
+    input.click();
+  }, [isImporting]);
+
+  const handleMarkdownImport = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || isImporting) {
+      return;
+    }
+
+    setIsImporting(true);
+    setErrorMessage("");
+    setImportNotice("");
+
+    try {
+      const rawContent = await file.text();
+      const imported = parseMarkdownImport(file.name, rawContent);
+
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+
+      if (dirtyRef.current) {
+        await saveDraft();
+      }
+
+      const response = await fetch("/api/drafts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          postType: "TEXT",
+          title: null,
+          content: imported.content,
+          styleConfig: null,
+          styleCss: null,
+          visibility: "PUBLIC",
+          topicId: null,
+          persistMode: "SAVED",
+        }),
+      });
+      const data = await response.json() as DraftResponse;
+      if (!response.ok || !data.draft) {
+        throw new Error(data.error || "导入 Markdown 失败");
+      }
+
+      hydrateDraft(data.draft);
+      await loadHistory();
+
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("draftId", data.draft.id);
+      router.replace(`/editor?${params.toString()}`);
+
+      if (imported.wasTruncated) {
+        setImportNotice("文件超过 10000 字符，已仅导入前 10000 个字符。");
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "导入 Markdown 失败");
+    } finally {
+      setIsImporting(false);
+    }
+  }, [hydrateDraft, isImporting, loadHistory, router, saveDraft, searchParams]);
+
   const handlePublish = useCallback(async () => {
     if (
       !titleRef.current.trim()
@@ -497,6 +575,7 @@ export default function EditorWorkspace() {
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("draftId", draft.id);
+    setImportNotice("");
     router.replace(`/editor?${params.toString()}`);
     await loadDraft(draft.id);
   }, [loadDraft, router, saveDraft, searchParams, switchingId]);
@@ -523,6 +602,7 @@ export default function EditorWorkspace() {
     setSaveState("idle");
     setLastSavedAt("");
     setErrorMessage("");
+    setImportNotice("");
     setUploadError("");
     setUploadStatus("");
     setUploadProgress(0);
@@ -828,13 +908,29 @@ export default function EditorWorkspace() {
         savedAtLabel={formatEditorTime(lastSavedAt)}
         canPublish={canPublish}
         isPublishing={isPublishing}
+        isImporting={isImporting}
+        onImport={handleOpenMarkdownImport}
         onSave={handleManualSave}
         onPublish={handlePublish}
+      />
+
+      <input
+        ref={markdownImportInputRef}
+        type="file"
+        accept=".md,.markdown,text/markdown"
+        className="sr-only"
+        onChange={handleMarkdownImport}
       />
 
       {errorMessage ? (
         <div className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
           {errorMessage}
+        </div>
+      ) : null}
+
+      {importNotice ? (
+        <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
+          {importNotice}
         </div>
       ) : null}
 
