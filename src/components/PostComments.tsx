@@ -460,6 +460,8 @@ function ReplyItem({
   mounted,
   currentUserId,
   onReply,
+  onJumpToReply,
+  isHighlighted,
   onDeleteComment,
   onOpenImagePreview,
   deletingCommentId,
@@ -469,6 +471,8 @@ function ReplyItem({
   mounted: boolean;
   currentUserId: string | null;
   onReply: (target: { id: string; name: string | null }) => void;
+  onJumpToReply: (replyId: string) => void;
+  isHighlighted: boolean;
   onDeleteComment: (id: string) => void;
   onOpenImagePreview: (url: string, alt?: string) => void;
   deletingCommentId: string | null;
@@ -526,7 +530,12 @@ function ReplyItem({
   const isDeleting = deletingCommentId === reply.id;
 
   return (
-    <div id={`comment-${reply.id}`} className="border-t border-gray-100 pt-3">
+    <div
+      id={`comment-${reply.id}`}
+      className={`border-t border-gray-100 pt-3 transition-colors duration-300 ${
+        isHighlighted ? "rounded bg-blue-50 ring-2 ring-blue-200" : ""
+      }`}
+    >
       <div className="flex items-center">
         <Avatar
           src={reply.author.avatar}
@@ -548,9 +557,14 @@ function ReplyItem({
 
       <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
         {showReplyToPrefix && (
-          <p className="mb-1 text-xs text-gray-500 not-prose">
+          <button
+            type="button"
+            onClick={() => onJumpToReply(reply.replyToId!)}
+            className="mb-1 block text-left text-xs text-gray-500 not-prose hover:text-blue-500 hover:underline"
+            title="跳转到被回复的评论"
+          >
             对{reply.replyTo?.author.name || "匿名用户"}用户的回复：
-          </p>
+          </button>
         )}
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {reply.content}
@@ -621,9 +635,12 @@ function CommentItem({
     name: string | null;
   } | null>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [replyIdToFocus, setReplyIdToFocus] = useState<string | null>(null);
+  const [highlightedReplyId, setHighlightedReplyId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewImageAlt, setPreviewImageAlt] = useState("评论图片预览");
   const [mounted, setMounted] = useState(false);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const displayedReplies = showAllReplies
     ? comment.replies
@@ -635,9 +652,48 @@ function CommentItem({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!replyIdToFocus) return;
+
+    const frameId = requestAnimationFrame(() => {
+      const target = document.getElementById(`comment-${replyIdToFocus}`);
+      if (!target) {
+        setReplyIdToFocus(null);
+        return;
+      }
+
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedReplyId(replyIdToFocus);
+
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedReplyId(null);
+        highlightTimeoutRef.current = null;
+      }, 1000);
+      setReplyIdToFocus(null);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [replyIdToFocus]);
+
   const openReplyForm = (target?: { id: string; name: string | null }) => {
     setReplyTarget(target || null);
     setShowReplyForm(true);
+  };
+
+  const jumpToReply = (replyId: string) => {
+    setShowAllReplies(true);
+    setReplyIdToFocus(replyId);
   };
 
   const toggleRootReplyForm = () => {
@@ -833,6 +889,8 @@ function CommentItem({
               mounted={mounted}
               currentUserId={currentUserId}
               onReply={openReplyForm}
+              onJumpToReply={jumpToReply}
+              isHighlighted={highlightedReplyId === reply.id}
               onDeleteComment={onDeleteComment}
               onOpenImagePreview={openImagePreview}
               deletingCommentId={deletingCommentId}
