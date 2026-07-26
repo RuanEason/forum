@@ -42,7 +42,7 @@ export default function RootLayout({
               <div data-site-chrome="profile">
                 <ProfileCompletionCheck />
               </div>
-              <div data-site-chrome="nav">
+              <div className="sticky top-0 z-50" data-site-chrome="nav">
                 <Navbar />
               </div>
               <div data-site-chrome="ad">

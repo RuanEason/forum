@@ -155,7 +155,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="relative sticky top-0 z-50 border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md">
+      <header className="relative border-b border-gray-100 bg-white/80 shadow-sm backdrop-blur-md">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <Link

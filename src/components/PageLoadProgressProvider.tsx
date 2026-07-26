@@ -604,7 +604,7 @@ export function PageTopProgressBar() {
   const { visible, progress } = usePageLoadProgress();
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 bottom-0 z-[110] h-[2px] overflow-hidden">
       <div
         className={`h-full bg-indigo-500 transition-[width,opacity] duration-200 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
         style={{ width: `${progress}%` }}
