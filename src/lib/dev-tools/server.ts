@@ -121,7 +121,7 @@ async function executeGitHubPendingLogin({
       details: {
         mode: "direct-login",
         githubUserId,
-        email: linkedUser.email,
+        email: linkedUser.email ?? "",
         redirectPath,
       },
     } satisfies DevToolRunResult);

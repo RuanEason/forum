@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated";
 import { buildLoginUser, type LoginUser } from "@/lib/login-user";
 import type { WeChatIdentity } from "@/lib/wechat";
 
 export async function findWeChatLinkedLoginUser(identity: WeChatIdentity): Promise<LoginUser | null> {
-  const orConditions = [{ wechatOpenId: identity.wechatOpenId }];
+  const orConditions: Prisma.UserWhereInput[] = [{ wechatOpenId: identity.wechatOpenId }];
 
   if (identity.wechatUnionId) {
     orConditions.push({ wechatUnionId: identity.wechatUnionId });
