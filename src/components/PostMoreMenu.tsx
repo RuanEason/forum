@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MoreVertical, Pencil } from "lucide-react";
-import EditPost, { type EditablePost } from "@/components/EditPost";
+import PostEditDrawer, { type EditablePost } from "@/components/PostEditDrawer";
 
 type PostMoreMenuProps = {
   post: EditablePost;
@@ -63,7 +63,7 @@ export default function PostMoreMenu({ post, canEdit }: PostMoreMenuProps) {
         )}
       </div>
 
-      <EditPost post={post} open={editOpen} onOpenChange={setEditOpen} />
+      <PostEditDrawer post={post} open={editOpen} onOpenChange={setEditOpen} />
     </>
   );
 }

@@ -77,6 +77,7 @@ export default function TopicPostList({
           hideCreateButton={true}
           onPostDeleted={onPostDeleted}
           showAuthorLevel
+          embedded
         />
       )}
     </div>

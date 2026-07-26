@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getHomeTopics } from "@/lib/topic";
 
 // Maximum field lengths
 const MAX_TOPIC_NAME_LENGTH = 50;
@@ -11,6 +13,13 @@ const MAX_TOPIC_ICON_LENGTH = 100;
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const view = searchParams.get("view");
+
+    if (view === "home") {
+      const expanded = searchParams.get("expanded") === "1";
+      return NextResponse.json(await getHomeTopics({ expanded }));
+    }
+
     const query = searchParams.get("q");
 
     const topics = await prisma.topic.findMany({
@@ -42,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as Session | null;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

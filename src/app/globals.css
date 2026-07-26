@@ -64,6 +64,47 @@ body {
   overflow-x: hidden; /* Prevent horizontal scroll to blank areas */
 }
 
+.scrollbar-pretty {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.42) transparent;
+}
+
+.scrollbar-pretty::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-pretty::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-pretty::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.42);
+  background-clip: padding-box;
+}
+
+.scrollbar-pretty::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.68);
+  background-clip: padding-box;
+}
+
+html.home-feed-route,
+body.home-feed-route {
+  overflow: hidden;
+}
+
+body.home-feed-route [data-site-main="app"] {
+  height: calc(100dvh - 4rem);
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.home-feed-route [data-site-chrome="footer"] {
+  display: none;
+}
+
 html.editor-route,
 body.editor-route {
   background: #eef3f9;
@@ -1048,6 +1089,31 @@ html {
   /* 美化滚动条 */
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
+}
+
+.post-attachments-sidebar-list {
+  max-height: min(36vh, 20rem);
+  overflow-y: auto;
+  padding-right: 0.125rem;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.post-attachments-sidebar-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.post-attachments-sidebar-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-attachments-sidebar-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+.post-attachments-sidebar-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 .catalog-dir::-webkit-scrollbar {

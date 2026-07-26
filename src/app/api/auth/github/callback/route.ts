@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { encode } from "next-auth/jwt";
-import { authOptions } from "@/lib/auth";
 import { getAuthPageRedirectPath } from "@/lib/auth-redirect";
+import { createSessionToken, setSessionCookie } from "@/lib/auth-session";
 import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
 import {
   encodePendingGitHubLogin,
@@ -15,13 +14,6 @@ import {
   GITHUB_REDIRECT_COOKIE,
   verifyGitHubState,
 } from "@/lib/github";
-
-const SESSION_COOKIE_NAME_SECURE = "__Secure-next-auth.session-token";
-const SESSION_COOKIE_NAME = "next-auth.session-token";
-
-function getSessionCookieName(isSecure: boolean) {
-  return isSecure ? SESSION_COOKIE_NAME_SECURE : SESSION_COOKIE_NAME;
-}
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -62,11 +54,6 @@ export async function GET(request: NextRequest) {
       throw new Error("GitHub user id is missing");
     }
 
-    if (!identity.email) {
-      const target = new URL("/auth/signin?error=GitHubEmailMissing", origin);
-      return NextResponse.redirect(target);
-    }
-
     const user = await findGitHubLinkedLoginUser(identity);
 
     if (!user) {
@@ -96,41 +83,16 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const defaultToken = {
-      name: user.name,
-      email: user.email,
-      picture: user.avatar,
-      sub: user.id,
-    };
-
-    const sessionToken = await encode({
-      secret: authOptions.secret ?? process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "",
-      token: await authOptions.callbacks.jwt({
-        token: defaultToken,
-        user,
-        account: {
-          provider: "github",
-          providerAccountId: identity.githubUserId,
-          type: "credentials",
-        },
-        isNewUser: false,
-        trigger: "signIn",
-      }),
-      maxAge: authOptions.session.maxAge,
+    const sessionToken = await createSessionToken({
+      user,
+      provider: "github",
+      providerAccountId: identity.githubUserId,
     });
 
-    const cookieName = getSessionCookieName(isSecure);
-    const expires = new Date(Date.now() + authOptions.session.maxAge * 1000);
     const target = new URL(redirectPath, origin);
     const response = NextResponse.redirect(target);
 
-    response.cookies.set(cookieName, sessionToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isSecure,
-      path: "/",
-      expires,
-    });
+    setSessionCookie(response, sessionToken, isSecure);
 
     response.cookies.set(GITHUB_REDIRECT_COOKIE, "", {
       httpOnly: true,

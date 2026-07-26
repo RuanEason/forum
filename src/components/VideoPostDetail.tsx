@@ -23,6 +23,8 @@ interface VideoPostDetailProps {
     content: string;
     postType: "TEXT" | "VIDEO";
     visibility: "PUBLIC" | "UNLISTED";
+    styleConfig?: import("@/types/post-style").PostStyleConfig | null;
+    styleCss?: string | null;
     createdAt: Date;
     viewCount: number;
     pinned?: boolean;
@@ -104,6 +106,8 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
     content: post.content,
     postType: post.postType,
     visibility: post.visibility,
+    styleConfig: post.styleConfig,
+    styleCss: post.styleCss,
     images: [],
     attachments: post.attachments,
   };
@@ -113,6 +117,12 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
     <>
       <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
         <div className="sm:p-6">
+          {post.title && (
+            <h1 className="mb-4 break-words px-4 text-2xl font-bold text-gray-900 sm:px-0">
+              {post.title}
+            </h1>
+          )}
+
           <div className="flex items-start justify-between gap-4">
             <div className="flex px-2 pt-3 items-center min-w-0 sm:px-0 pt-0">
               <Avatar src={post.author.avatar} name={post.author.name} size="md" />
@@ -137,21 +147,10 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
               </div>
             </div>
 
-            <div className="flex pt-3 min-w-0 shrink-0 items-start gap-2 sm:max-w-[52%] pt-0">
-              {post.title && (
-                <h1 className="hidden min-w-0 text-right text-xl font-bold text-gray-900 line-clamp-2 sm:block">
-                  {post.title}
-                </h1>
-              )}
+            <div className="flex shrink-0 items-start">
               <PostMoreMenu post={editablePost} canEdit={canEditPost} />
             </div>
           </div>
-
-          {post.title && (
-            <h1 className="px-4 sm:hidden mt-4 text-2xl font-bold text-gray-900">
-              {post.title}
-            </h1>
-          )}
 
           <div className="mt-4">
             {canPlayVideo ? (

@@ -16,13 +16,18 @@ datasource db {
 
 model User {
   id           String        @id @default(cuid())
-  email        String        @unique
+  email        String?       @unique
   githubUserId String?       @unique
-  password     String
+  wechatOpenId String?       @unique
+  wechatUnionId String?      @unique
+  password     String?
   name         String?
   role         String        @default("user") // user or admin
   banned       Boolean       @default(false)
   avatar       String?
+  wechatNickname String?
+  wechatAvatar String?
+  wechatLastAuthAt DateTime?
   bio          String?
   postViewMode String        @default("both") // title, content, both
   coverImage   String?

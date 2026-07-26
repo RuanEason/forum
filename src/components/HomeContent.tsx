@@ -14,11 +14,14 @@ import PinButton from "@/components/PinButton";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
+import HomeTopicSidebar from "@/components/HomeTopicSidebar";
 import Badge from "@/components/ui/Badge";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
+import type { HomeTopic } from "@/types/topic";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
+const HOME_TOPIC_SIDEBAR_COLLAPSED_KEY = "forum:home-topic-sidebar-collapsed";
 
 const getUserLevel = (experience: number) =>
   LEVEL_THRESHOLDS.reduce((level, requiredExperience) => {
@@ -92,6 +95,8 @@ export default function HomeContent({
   currentUserId,
   showAuthorLevel = false,
   embedded = false,
+  initialTopics = [],
+  initialTopicsHasMore = false,
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
@@ -99,6 +104,8 @@ export default function HomeContent({
   currentUserId?: string;
   showAuthorLevel?: boolean;
   embedded?: boolean;
+  initialTopics?: HomeTopic[];
+  initialTopicsHasMore?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -106,6 +113,9 @@ export default function HomeContent({
   const { startTask } = usePageLoadProgress();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [mounted, setMounted] = useState(false);
+  const [topicSidebarCollapsed, setTopicSidebarCollapsed] = useState(false);
+  const [topicSidebarPreferenceReady, setTopicSidebarPreferenceReady] =
+    useState(false);
   const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
   const navigationTaskTimeoutRef = useRef<number | null>(null);
   const prefetchedPostIdsRef = useRef<Set<string>>(new Set());
@@ -147,9 +157,51 @@ export default function HomeContent({
   );
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (embedded) return;
+
+    try {
+      const storedValue = window.localStorage.getItem(
+        HOME_TOPIC_SIDEBAR_COLLAPSED_KEY
+      );
+
+      if (storedValue === "true" || storedValue === "false") {
+        setTopicSidebarCollapsed(storedValue === "true");
+      }
+    } catch {
+      // localStorage may be unavailable in private browsing or restricted contexts.
+    } finally {
+      setTopicSidebarPreferenceReady(true);
+    }
+  }, [embedded]);
+
+  useEffect(() => {
+    if (embedded || !topicSidebarPreferenceReady) return;
+
+    try {
+      window.localStorage.setItem(
+        HOME_TOPIC_SIDEBAR_COLLAPSED_KEY,
+        String(topicSidebarCollapsed)
+      );
+    } catch {
+      // Ignore storage failures so the sidebar remains usable.
+    }
+  }, [embedded, topicSidebarCollapsed, topicSidebarPreferenceReady]);
+
+  useEffect(() => {
+    if (embedded) return;
+
+    document.documentElement.classList.add("home-feed-route");
+    document.body.classList.add("home-feed-route");
+
+    return () => {
+      document.documentElement.classList.remove("home-feed-route");
+      document.body.classList.remove("home-feed-route");
+    };
+  }, [embedded]);
 
   useEffect(() => {
     finishPendingNavigationTask();
@@ -161,10 +213,10 @@ export default function HomeContent({
     };
   }, [finishPendingNavigationTask]);
 
-  const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
+  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
   useEffect(() => {
     console.log("组件挂载 - 视图模式:", viewMode);
-  }, []);
+  }, [viewMode]);
 
   /**
    * 处理删除帖子
@@ -223,15 +275,37 @@ export default function HomeContent({
   };
 
   return (
-    <div className={embedded ? undefined : "min-h-screen bg-gray-50 pb-16 sm:pb-0"}>
-      <main className={embedded ? undefined : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6"}>
-        <div className="px-0 sm:px-0">
+    <div className={embedded ? undefined : "h-full overflow-hidden bg-gray-50"}>
+      <main className={embedded ? undefined : "mx-auto h-full min-h-0 max-w-6xl sm:px-6 lg:px-8 md:py-6"}>
+        <div
+          className={
+            embedded
+              ? "px-0 sm:px-0"
+              : `grid h-full min-h-0 items-stretch gap-6 transition-[grid-template-columns,column-gap] duration-300 ease-in-out ${
+                  topicSidebarCollapsed
+                    ? "md:grid-cols-[0px_minmax(0,1fr)] md:gap-x-0"
+                    : "md:grid-cols-[240px_minmax(0,1fr)]"
+                }`
+          }
+        >
+          {!embedded && (
+            <HomeTopicSidebar
+              initialTopics={initialTopics}
+              initialHasMore={initialTopicsHasMore}
+              collapsed={topicSidebarCollapsed}
+              onToggleCollapsed={() =>
+                setTopicSidebarCollapsed((current) => !current)
+              }
+            />
+          )}
+
+          <section className={embedded ? undefined : "flex min-h-0 min-w-0 flex-col"}>
           {session && !hideCreateButton && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Avatar
-                  src={(session.user as any).avatar}
-                  name={(session.user as any).name}
+                  src={session.user.avatar}
+                  name={session.user.name}
                   size="md"
                 />
               </div>
@@ -245,7 +319,7 @@ export default function HomeContent({
             </div>
           )}
 
-          <div className="space-y-4 sm:space-y-6">
+          <div className={embedded ? "space-y-4 sm:space-y-6" : "scrollbar-pretty min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 pr-1 sm:space-y-6"}>
             {posts.length === 0 ? (
               <Card className="text-center py-12">
                 <p className="text-gray-500">
@@ -394,11 +468,11 @@ export default function HomeContent({
                               targetId={post.id}
                               initialLikesCount={post.likes.length}
                               initialLikedByUser={
-                                currentUserId || (session?.user as any)?.id
+                                currentUserId || session?.user?.id
                                   ? post.likes.some(
                                       (like) =>
                                         like.userId ===
-                                        (currentUserId || (session?.user as any)?.id)
+                                        (currentUserId || session?.user?.id)
                                     )
                                   : false
                               }
@@ -425,14 +499,14 @@ export default function HomeContent({
                             />
                           </div>
                           {/* 置顶按钮 - 仅管理员可见 */}
-                          {(session?.user as any)?.role === "admin" && (
+                          {session?.user?.role === "admin" && (
                             <div className="flex items-center">
                               <PinButton postId={post.id} isPinned={post.pinned || false} />
                             </div>
                           )}
                           {/* 删除按钮 */}
-                          {(session?.user as any)?.id &&
-                            (session?.user as any)?.id === post.author.id && (
+                          {session?.user?.id &&
+                            session.user.id === post.author.id && (
                               <button
                                 onClick={() => handleDeletePost(post.id)}
                                 className="text-red-500 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
@@ -450,6 +524,7 @@ export default function HomeContent({
               ))
             )}
           </div>
+          </section>
         </div>
       </main>
     </div>

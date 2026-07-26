@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { encode } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
-import { getUserLevel } from "@/lib/experience";
+import { createSessionToken, setSessionCookie } from "@/lib/auth-session";
+import { buildLoginUser } from "@/lib/login-user";
 import { GITHUB_PENDING_COOKIE, readPendingGitHubLogin } from "@/lib/github";
 import { toCompleteProfilePath } from "@/lib/auth-redirect";
-
-const SESSION_COOKIE_NAME_SECURE = "__Secure-next-auth.session-token";
-const SESSION_COOKIE_NAME = "next-auth.session-token";
 const MAX_NAME_LENGTH = 50;
 
 type RegisterBody = {
   name?: unknown;
   password?: unknown;
 };
-
-function getSessionCookieName(isSecure: boolean) {
-  return isSecure ? SESSION_COOKIE_NAME_SECURE : SESSION_COOKIE_NAME;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,37 +75,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const defaultToken = {
-      name: user.name,
-      email: user.email,
-      picture: user.avatar,
-      sub: user.id,
-    };
-
-    const sessionToken = await encode({
-      secret: authOptions.secret ?? process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "",
-      token: await authOptions.callbacks.jwt({
-        token: defaultToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatar: user.avatar,
-          postViewMode: user.postViewMode,
-          showUserData: user.showUserData,
-          coverImage: user.coverImage,
-          experience: user.experience,
-          level: getUserLevel(user.experience),
-        },
-        account: {
-          provider: "github",
-          providerAccountId: pending.githubUserId,
-          type: "credentials",
-        },
-        trigger: "signIn",
-      }),
-      maxAge: authOptions.session.maxAge,
+    const loginUser = await buildLoginUser(user.id);
+    const sessionToken = await createSessionToken({
+      user: loginUser,
+      provider: "github",
+      providerAccountId: pending.githubUserId,
     });
 
     const isSecure = request.nextUrl.protocol === "https:";
@@ -122,13 +88,7 @@ export async function POST(request: NextRequest) {
       redirectPath: finalName ? pending.redirectPath : toCompleteProfilePath(pending.redirectPath),
     });
 
-    response.cookies.set(getSessionCookieName(isSecure), sessionToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isSecure,
-      path: "/",
-      expires: new Date(Date.now() + authOptions.session.maxAge * 1000),
-    });
+    setSessionCookie(response, sessionToken, isSecure);
 
     response.cookies.set(GITHUB_PENDING_COOKIE, "", {
       httpOnly: true,

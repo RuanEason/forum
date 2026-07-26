@@ -12,6 +12,34 @@ type SessionShape = {
   };
 } | null;
 
+const MAX_COMMENT_IMAGES = 9;
+
+function normalizeImageUrls(images: unknown): string[] {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+
+  return images
+    .filter((image): image is string => typeof image === "string")
+    .map((image) => image.trim())
+    .filter(Boolean)
+    .slice(0, MAX_COMMENT_IMAGES);
+}
+
+function buildCommentContent(content: string, imageUrls: string[]): string {
+  const text = content.trim();
+
+  if (imageUrls.length === 0) {
+    return text;
+  }
+
+  const imageMarkdown = imageUrls
+    .map((url, index) => `![comment-image-${index + 1}](${url})`)
+    .join("\n");
+
+  return text ? `${text}\n${imageMarkdown}` : imageMarkdown;
+}
+
 /**
  * 创建评论或回复
  * 支持创建新评论或对现有评论进行回复
@@ -52,17 +80,24 @@ export async function POST(request: NextRequest) {
 
     const {
       content,
+      images,
       postId,
       parentId,
       replyToId,
     }: {
-      content: string;
+      content?: string;
+      images?: unknown;
       postId: string;
       parentId?: string | null;
       replyToId?: string | null;
     } = await request.json();
 
-    if (!content || !postId) {
+    const commentContent = buildCommentContent(
+      typeof content === "string" ? content : "",
+      normalizeImageUrls(images),
+    );
+
+    if (!commentContent || !postId) {
       return NextResponse.json({ error: "Content and postId are required" }, { status: 400 });
     }
 
@@ -98,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     const comment = await prisma.comment.create({
       data: {
-        content,
+        content: commentContent,
         postId,
         authorId,
         parentId: normalizedParentId,

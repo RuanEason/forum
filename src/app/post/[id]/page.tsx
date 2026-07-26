@@ -148,6 +148,8 @@ export default async function PostDetailPage({
     content: post.content,
     postType: post.postType,
     visibility: post.visibility,
+    styleConfig: post.styleConfig,
+    styleCss: post.styleCss,
     images: post.images,
     attachments: post.attachments,
   };
@@ -228,7 +230,14 @@ export default async function PostDetailPage({
         <div className={showToc ? "post-detail-main px-0" : "px-0"}>
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
-              <div className="p-4 sm:p-6">
+              <div className="p-4 sm:p-6" data-style-scope={`post-${post.id}`}>
+                {post.title && (
+                  <div className="mb-4">
+                    <h1 className="editor-style-title break-words text-2xl font-bold text-gray-900">
+                      {post.title}
+                    </h1>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Avatar
@@ -263,7 +272,7 @@ export default async function PostDetailPage({
                 <div className="mt-4">
                   <PostContentRenderer
                     postId={post.id}
-                    title={post.title}
+                    title={null}
                     content={post.content}
                     styleConfig={post.styleConfig ?? null}
                     styleCss={post.styleCss ?? null}
@@ -275,12 +284,14 @@ export default async function PostDetailPage({
                       isDetail={true}
                     />
                   )}
-                  {(post.attachments && post.attachments.length > 0) && (
-                    <PostAttachments
-                      attachments={post.attachments}
-                      postId={post.id}
-                      authorId={post.author.id}
-                    />
+                  {post.attachments && post.attachments.length > 0 && (
+                    <div className={showToc ? "lg:hidden" : undefined}>
+                      <PostAttachments
+                        attachments={post.attachments}
+                        postId={post.id}
+                        authorId={post.author.id}
+                      />
+                    </div>
                   )}
                 </div>
                 <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-100">
@@ -342,7 +353,12 @@ export default async function PostDetailPage({
         </div>
         {showToc && (
           <div className="post-detail-toc">
-            <CatalogSidebar items={catalogItems} />
+            <CatalogSidebar
+              items={catalogItems}
+              attachments={post.attachments}
+              postId={post.id}
+              authorId={post.author.id}
+            />
           </div>
         )}
       </div>

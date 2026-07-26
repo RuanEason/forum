@@ -8,7 +8,7 @@ export async function refreshUserSession() {
   // 获取当前会话
   const session = await getSession();
   
-  if (session?.user) {
+  if (session?.user?.email) {
     // 强制重新登录以刷新会话
     // 这将触发 NextAuth 的 authorize 函数重新从数据库获取用户信息
     await signIn("credentials", {

@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ImagePlus, Loader2, SendHorizontal } from "lucide-react";
+import { ImagePlus, Loader2, SendHorizontal, X } from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
 import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
@@ -172,6 +172,13 @@ interface CommentFormProps {
   onCommentPosted?: () => void;
 }
 
+interface UploadedCommentImage {
+  url: string;
+  name: string;
+}
+
+const MAX_COMMENT_IMAGES = 9;
+
 function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted }: CommentFormProps) {
   const { data: session } = useSession();
   const [content, setContent] = useState("");
@@ -179,6 +186,8 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
   const [loading, setLoading] = useState(false);
   const [isComposerActive, setIsComposerActive] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<UploadedCommentImage[]>([]);
+  const [previewImageIndex, setPreviewImageIndex] = useState<number | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
@@ -203,11 +212,6 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
     };
   }, [isComposerActive]);
 
-  const appendContent = (text: string) => {
-    setContent((prev) => (prev.trim() ? `${prev}\n${text}` : text));
-    setIsComposerActive(true);
-  };
-
   const uploadImage = async (file: File) => {
     setIsUploadingImage(true);
 
@@ -227,7 +231,8 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
       }
 
       if (data.url) {
-        appendContent(`![${file.name}](${data.url})`);
+        setUploadedImages((prev) => [...prev, { url: data.url, name: file.name }]);
+        setIsComposerActive(true);
       }
     } catch {
       setError("图片上传失败，请稍后重试");
@@ -237,13 +242,30 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
 
-    if (!file) return;
+    if (files.length === 0) return;
 
     setError("");
-    await uploadImage(file);
+    const availableSlots = MAX_COMMENT_IMAGES - uploadedImages.length;
+    if (availableSlots <= 0) {
+      setError(`最多上传 ${MAX_COMMENT_IMAGES} 张图片`);
+      return;
+    }
+
+    if (files.length > availableSlots) {
+      setError(`评论最多上传 ${MAX_COMMENT_IMAGES} 张图片`);
+    }
+
+    for (const file of files.slice(0, availableSlots)) {
+      await uploadImage(file);
+    }
+  };
+
+  const removeUploadedImage = (url: string) => {
+    setUploadedImages((prev) => prev.filter((image) => image.url !== url));
+    setIsComposerActive(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,7 +275,7 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
       setError("请先登录才能发表评论");
       return;
     }
-    if (!content.trim()) {
+    if (!content.trim() && uploadedImages.length === 0) {
       setError("评论内容不能为空");
       return;
     }
@@ -265,13 +287,20 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content, postId, parentId, replyToId }),
+        body: JSON.stringify({
+          content,
+          images: uploadedImages.map((image) => image.url),
+          postId,
+          parentId,
+          replyToId,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setContent("");
+        setUploadedImages([]);
         setIsComposerActive(false);
         onCommentPosted?.();
       } else {
@@ -324,6 +353,41 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
           ref={composerRef}
           className="space-y-2"
         >
+          {uploadedImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-1" aria-label="已上传图片">
+              {uploadedImages.map((image, index) => (
+                <div
+                  key={image.url}
+                  className="relative h-20 w-20 overflow-hidden rounded-md border border-slate-200 bg-slate-50"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImageIndex(index)}
+                    className="h-full w-full cursor-zoom-in"
+                    aria-label={`预览图片 ${image.name}`}
+                    title="预览图片"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeUploadedImage(image.url)}
+                    disabled={isBusy}
+                    className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`移除图片 ${image.name}`}
+                    title="移除图片"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <textarea
             className="w-full px-4 py-2.5 bg-slate-100 rounded-lg text-xs sm:text-sm text-slate-700 border-transparent focus:bg-white focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
             rows={1}
@@ -354,6 +418,7 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
                   ref={imageInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleImageUpload}
                   disabled={isBusy}
@@ -362,7 +427,7 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
 
               <button
                 type="submit"
-                disabled={isBusy || !content.trim()}
+                disabled={isBusy || (!content.trim() && uploadedImages.length === 0)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <SendHorizontal className="h-3.5 w-3.5" />
@@ -378,6 +443,14 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
         )}
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </form>
+      {previewImageIndex !== null && uploadedImages[previewImageIndex] && (
+        <ImagePreviewLightbox
+          images={uploadedImages.map((image) => ({ src: image.url, alt: image.name }))}
+          currentIndex={previewImageIndex}
+          onClose={() => setPreviewImageIndex(null)}
+          onIndexChange={setPreviewImageIndex}
+        />
+      )}
     </div>
   );
 }

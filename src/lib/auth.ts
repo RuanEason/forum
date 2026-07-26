@@ -8,6 +8,7 @@ import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
 import type { GitHubIdentity } from "@/lib/github";
 
 type AuthUserPayload = {
+  email?: string | null;
   role: string;
   avatar?: string | null;
   postViewMode?: string;
@@ -75,7 +76,7 @@ export const authOptions: any = {
 
         return {
           id: user.id.toString(),
-          email: user.email,
+          email: user.email ?? null,
           name: user.name,
           role: user.role,
           avatar: user.avatar,
@@ -116,7 +117,7 @@ export const authOptions: any = {
 
         return {
           id: user.id,
-          email: user.email,
+          email: user.email ?? null,
           name: user.name,
           role: user.role,
           avatar: user.avatar,

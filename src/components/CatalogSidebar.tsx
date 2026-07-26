@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import PostAttachments, {
+  type PostAttachmentItem,
+} from "@/components/PostAttachments";
 
 interface CatalogItem {
   id: string;
@@ -11,13 +14,20 @@ interface CatalogItem {
 interface CatalogSidebarPropsNew {
   items: CatalogItem[];
   title?: string;
+  attachments?: PostAttachmentItem[];
+  postId?: string;
+  authorId?: string;
 }
 
 export default function CatalogSidebar({
   items,
   title = "目录",
+  attachments = [],
+  postId,
+  authorId,
 }: CatalogSidebarPropsNew) {
   const dirRef = useRef<HTMLDivElement>(null);
+  const hasAttachments = attachments.length > 0 && Boolean(postId && authorId);
 
   useEffect(() => {
     const article = document.querySelector('.prose');
@@ -84,7 +94,7 @@ export default function CatalogSidebar({
     };
   }, [items]);
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && !hasAttachments) return null;
 
   return (
     <aside className="catalog-sidebar">
@@ -120,6 +130,16 @@ export default function CatalogSidebar({
           );
         })}
       </div>
+      {hasAttachments && (
+        <div className="hidden lg:block">
+          <PostAttachments
+            attachments={attachments}
+            postId={postId!}
+            authorId={authorId!}
+            variant="sidebar"
+          />
+        </div>
+      )}
     </aside>
   );
 }

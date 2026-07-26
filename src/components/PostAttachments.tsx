@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import FileIcon from "./FileIcon";
 import { Download, Trash2, FileText } from "lucide-react";
 
-interface Attachment {
+export interface PostAttachmentItem {
   id: string;
   url: string;
   fileName: string;
@@ -15,14 +15,21 @@ interface Attachment {
 }
 
 interface PostAttachmentsProps {
-  attachments: Attachment[];
+  attachments: PostAttachmentItem[];
   postId: string;
   authorId: string;
+  variant?: "default" | "sidebar";
 }
 
-export default function PostAttachments({ attachments, postId, authorId }: PostAttachmentsProps) {
+export default function PostAttachments({
+  attachments,
+  postId,
+  authorId,
+  variant = "default",
+}: PostAttachmentsProps) {
   const { data: session } = useSession();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const isSidebar = variant === "sidebar";
 
   if (!attachments || attachments.length === 0) return null;
 
@@ -34,7 +41,7 @@ export default function PostAttachments({ attachments, postId, authorId }: PostA
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const handleDownload = async (attachment: Attachment) => {
+  const handleDownload = async (attachment: PostAttachmentItem) => {
     try {
       await fetch("/api/attachment/download", {
         method: "POST",
@@ -80,29 +87,42 @@ export default function PostAttachments({ attachments, postId, authorId }: PostA
   const canDelete = !!(session && (isAuthor || isAdmin));
 
   return (
-    <div className="my-6">
-      <div className="border-t border-gray-100 pt-4">
+    <div className={isSidebar ? "post-attachments-sidebar" : "my-6"}>
+      <div className={isSidebar ? "border-t border-gray-200 pt-4" : "border-t border-gray-100 pt-4"}>
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <FileText className="h-4 w-4" />
           附件 ({attachments.length})
         </h3>
-        <div className="space-y-2">
+        <div className={isSidebar ? "post-attachments-sidebar-list" : "space-y-2"}>
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="group bg-gray-50 hover:bg-gray-100 rounded-lg p-3 transition-all duration-200 flex items-center gap-3"
+              className={
+                isSidebar
+                  ? "group flex items-center gap-2 rounded-lg bg-gray-50 p-2 transition-all duration-200 hover:bg-gray-100"
+                  : "group bg-gray-50 hover:bg-gray-100 rounded-lg p-3 transition-all duration-200 flex items-center gap-3"
+              }
             >
-              <div className="flex-shrink-0 text-gray-500">
-                <FileIcon mimeType={attachment.mimeType} size="md" />
+              <div className={isSidebar ? "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-500" : "flex-shrink-0 text-gray-500"}>
+                <FileIcon
+                  mimeType={attachment.mimeType}
+                  size={isSidebar ? "sm" : "md"}
+                />
               </div>
 
               <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className={isSidebar ? "truncate text-xs font-medium text-gray-900" : "text-sm font-medium text-gray-900 truncate"}>
                     {attachment.fileName}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                <div
+                  className={
+                    isSidebar
+                      ? "mt-1 flex items-center gap-2 text-[11px] text-gray-500"
+                      : "flex items-center gap-3 mt-1 text-xs text-gray-500"
+                  }
+                >
                   <span>{formatFileSize(attachment.fileSize)}</span>
                   <span>•</span>
                   <span>{attachment.downloadCount} 次下载</span>
@@ -111,11 +131,17 @@ export default function PostAttachments({ attachments, postId, authorId }: PostA
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
+                  type="button"
                   onClick={() => handleDownload(attachment)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                  className={
+                    isSidebar
+                      ? "inline-flex items-center justify-center rounded-md p-1.5 text-gray-500 transition-all duration-200 hover:bg-white hover:text-indigo-600"
+                      : "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                  }
+                  aria-label={`下载 ${attachment.fileName}`}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">下载</span>
+                  <span className={isSidebar ? "sr-only" : "hidden sm:inline"}>下载</span>
                 </button>
 
                 {canDelete && (
