@@ -2,6 +2,7 @@
 
 import UnifiedEditor from "@/components/editor/UnifiedEditor";
 import type { PostStyleConfig } from "@/types/post-style";
+import type { EditorImageInsertRequest } from "@/components/editor/types";
 
 interface MarkdownDocEditorProps {
   documentKey: string;
@@ -18,6 +19,8 @@ interface MarkdownDocEditorProps {
   externalJumpLine: number | null;
   onExternalJumpHandled: () => void;
   hideTitleInput?: boolean;
+  imageInsertRequest: EditorImageInsertRequest | null;
+  onImageInsertHandled: () => void;
 }
 
 export default function MarkdownDocEditor({
@@ -35,6 +38,8 @@ export default function MarkdownDocEditor({
   externalJumpLine,
   onExternalJumpHandled,
   hideTitleInput = false,
+  imageInsertRequest,
+  onImageInsertHandled,
 }: MarkdownDocEditorProps) {
   return (
     <UnifiedEditor
@@ -52,6 +57,8 @@ export default function MarkdownDocEditor({
       externalJumpLine={externalJumpLine}
       onExternalJumpHandled={onExternalJumpHandled}
       hideTitleInput={hideTitleInput}
+      imageInsertRequest={imageInsertRequest}
+      onImageInsertHandled={onImageInsertHandled}
     />
   );
 }

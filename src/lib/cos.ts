@@ -72,6 +72,16 @@ export async function uploadToCOS(fileBuffer: Buffer, filename: string): Promise
   });
 }
 
+export function getCOSPublicUrl(filename: string): string {
+  const cdnDomain = process.env.NEXT_PUBLIC_CDN_DOMAIN;
+
+  if (!cdnDomain) {
+    throw new Error('Missing COS configuration: NEXT_PUBLIC_CDN_DOMAIN is not set');
+  }
+
+  return `${cdnDomain}/${filename}`;
+}
+
 /**
  * 从腾讯云 COS 删除文件
  * @param filename - COS 中的文件路径（如 images/xxx.webp）

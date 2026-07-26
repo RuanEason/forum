@@ -4,6 +4,7 @@ export type DraftStatus = "EDITING" | "UPLOADING" | "PROCESSING" | "FAILED" | "R
 export type SaveState = "idle" | "saving" | "saved" | "error";
 export type PostVisibility = "PUBLIC" | "UNLISTED";
 export type EditorDocumentTab = "content" | "style";
+export type EditorImageAssetStatus = "PENDING" | "READY";
 
 export type PostStyleContentWidth = "prose" | "wide";
 export type PostStyleCardStyle = "soft" | "solid";
@@ -96,4 +97,19 @@ export interface EditorOutlineItem {
   depth: number;
   text: string;
   lineNumber: number;
+}
+
+export interface EditorImageAsset {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  status: EditorImageAssetStatus;
+  createdAt: string;
+}
+
+export interface EditorImageInsertRequest {
+  id: number;
+  url: string;
 }

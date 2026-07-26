@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import PostContentRenderer from "@/components/PostContentRenderer";
 import { extractMarkdownHeadings, normalizeMarkdownForDisplay } from "@/lib/markdown";
+import type { EditorImageInsertRequest } from "@/components/editor/types";
 
 interface DualPaneEditorProps {
   content: string;
@@ -15,6 +16,8 @@ interface DualPaneEditorProps {
   setActiveLineNumber: (lineNumber: number) => void;
   externalJumpLine: number | null;
   onExternalJumpHandled: () => void;
+  imageInsertRequest: EditorImageInsertRequest | null;
+  onImageInsertHandled: () => void;
 }
 
 function getScrollableDistance(element: HTMLElement) {
@@ -48,6 +51,8 @@ export default function DualPaneEditor({
   setActiveLineNumber,
   externalJumpLine,
   onExternalJumpHandled,
+  imageInsertRequest,
+  onImageInsertHandled,
 }: DualPaneEditorProps) {
   void _activeLineNumber;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -179,6 +184,31 @@ export default function DualPaneEditor({
     onExternalJumpHandled,
     setActiveLineNumber,
   ]);
+
+  useEffect(() => {
+    if (!imageInsertRequest) {
+      return;
+    }
+
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const imageMarkdown = `![图片](${imageInsertRequest.url})`;
+    const nextContent = `${textarea.value.slice(0, start)}${imageMarkdown}${textarea.value.slice(end)}`;
+    const nextCursor = start + imageMarkdown.length;
+
+    onChange(nextContent);
+    onImageInsertHandled();
+    window.requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(nextCursor, nextCursor);
+      setActiveLineNumber(nextContent.slice(0, nextCursor).split(/\r?\n/).length);
+    });
+  }, [imageInsertRequest, onChange, onImageInsertHandled, setActiveLineNumber]);
 
   const updateLineFromSelection = (value: string, selectionStart: number) => {
     const lineNumber = value.slice(0, selectionStart).split(/\r?\n/).length;

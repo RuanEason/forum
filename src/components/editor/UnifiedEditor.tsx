@@ -7,6 +7,7 @@ import NotionStyleEditor from "@/components/editor/NotionStyleEditor";
 import Toggle from "@/components/ui/Toggle";
 import { cn } from "@/lib/utils";
 import type { PostStyleConfig } from "@/types/post-style";
+import type { EditorImageInsertRequest } from "@/components/editor/types";
 
 export type UnifiedEditorMode = "markdown" | "visual";
 
@@ -25,6 +26,8 @@ interface UnifiedEditorProps {
   externalJumpLine: number | null;
   onExternalJumpHandled: () => void;
   hideTitleInput?: boolean;
+  imageInsertRequest: EditorImageInsertRequest | null;
+  onImageInsertHandled: () => void;
 }
 
 export default function UnifiedEditor({
@@ -42,6 +45,8 @@ export default function UnifiedEditor({
   externalJumpLine,
   onExternalJumpHandled,
   hideTitleInput = false,
+  imageInsertRequest,
+  onImageInsertHandled,
 }: UnifiedEditorProps) {
   void _styleConfig;
   const [mode, setMode] = useState<UnifiedEditorMode>("markdown");
@@ -135,6 +140,8 @@ export default function UnifiedEditor({
             setActiveLineNumber={setActiveLineNumber}
             externalJumpLine={externalJumpLine}
             onExternalJumpHandled={onExternalJumpHandled}
+            imageInsertRequest={imageInsertRequest}
+            onImageInsertHandled={onImageInsertHandled}
           />
         ) : (
           <NotionStyleEditor
@@ -143,6 +150,8 @@ export default function UnifiedEditor({
               onContentChange(value);
               setActiveLineNumber(1);
             }}
+            imageInsertRequest={imageInsertRequest}
+            onImageInsertHandled={onImageInsertHandled}
           />
         )}
       </div>

@@ -5,6 +5,7 @@ export { default as Textarea } from "./Textarea";
 export { default as Badge } from "./Badge";
 export { default as Modal } from "./Modal";
 export { default as Dropdown } from "./Dropdown";
+export { ToastProvider, useToast } from "./Toast";
 export type { ButtonProps } from "./Button";
 export type { CardProps } from "./Card";
 export type { InputProps } from "./Input";

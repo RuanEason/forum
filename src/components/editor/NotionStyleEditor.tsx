@@ -41,6 +41,7 @@ import type {
 import type { MutableRefObject, RefObject } from "react";
 import { Markdown } from "tiptap-markdown";
 import { cn } from "@/lib/utils";
+import type { EditorImageInsertRequest } from "@/components/editor/types";
 
 const NovelEditorContent = dynamic(
   async () => {
@@ -61,6 +62,8 @@ const NovelEditorRoot = dynamic(
 interface NotionStyleEditorProps {
   content: string;
   onChange: (value: string) => void;
+  imageInsertRequest: EditorImageInsertRequest | null;
+  onImageInsertHandled: () => void;
 }
 
 type SlashCommandItem = SuggestionItem & {
@@ -120,6 +123,8 @@ function filterSlashCommandItems(
 export default function NotionStyleEditor({
   content,
   onChange,
+  imageInsertRequest,
+  onImageInsertHandled,
 }: NotionStyleEditorProps) {
   const lastSyncedMarkdownRef = useRef(content);
   const editorFrameRef = useRef<HTMLDivElement | null>(null);
@@ -334,6 +339,10 @@ export default function NotionStyleEditor({
                 markdown={content}
                 lastSyncedMarkdownRef={lastSyncedMarkdownRef}
               />
+              <ImageInsertSync
+                request={imageInsertRequest}
+                onHandled={onImageInsertHandled}
+              />
 
               <CodeBlockLanguageToolbar editorFrameRef={editorFrameRef} />
 
@@ -371,6 +380,26 @@ export default function NotionStyleEditor({
       </div>
     </div>
   );
+}
+
+interface ImageInsertSyncProps {
+  request: EditorImageInsertRequest | null;
+  onHandled: () => void;
+}
+
+function ImageInsertSync({ request, onHandled }: ImageInsertSyncProps) {
+  const { editor } = useCurrentEditor();
+
+  useEffect(() => {
+    if (!editor || !request) {
+      return;
+    }
+
+    editor.chain().focus().setImage({ src: request.url, alt: "图片" }).run();
+    onHandled();
+  }, [editor, onHandled, request]);
+
+  return null;
 }
 
 interface ExternalMarkdownSyncProps {

@@ -7,6 +7,7 @@ import {
   FileImage,
   FilePlus2,
   History,
+  Images,
   Image as ImageIcon,
   Loader2,
   Paperclip,
@@ -15,10 +16,12 @@ import {
   X,
 } from "lucide-react";
 import TopicSelector from "@/components/TopicSelector";
+import EditorImagePool from "@/components/editor/EditorImagePool";
 import { cn } from "@/lib/utils";
 import type {
   DraftHistoryGroup,
   EditorDraftSummary,
+  EditorImageAsset,
   PostVisibility,
   UploadedAttachment,
 } from "@/components/editor/types";
@@ -28,7 +31,7 @@ import {
   getDraftSummaryText,
 } from "@/components/editor/editor-utils";
 
-export type SidebarTab = "history" | "properties";
+export type SidebarTab = "history" | "properties" | "assets";
 
 interface EditorSidebarProps {
   activeTab: SidebarTab;
@@ -44,6 +47,13 @@ interface EditorSidebarProps {
   isUploadingAssets: boolean;
   uploadStatus: string;
   uploadProgress: number;
+  imagePoolAssets: EditorImageAsset[];
+  imagePoolUsedBytes: number;
+  imagePoolMaxBytes: number;
+  imagePoolLoading: boolean;
+  imagePoolUploading: boolean;
+  imagePoolError: string;
+  imagePoolHasMore: boolean;
   onCreateNew: () => void;
   onTabChange: (tab: SidebarTab) => void;
   onSelectDraft: (draft: EditorDraftSummary) => void;
@@ -54,6 +64,10 @@ interface EditorSidebarProps {
   onRemoveImage: (index: number) => void;
   onRemoveAttachment: (index: number) => void;
   onOpenStyleEditor: () => void;
+  onImagePoolUpload: (files: File[]) => void;
+  onImagePoolLoadMore: () => void;
+  onImagePoolInsert: (asset: EditorImageAsset) => void;
+  onImagePoolDelete: (asset: EditorImageAsset) => Promise<void>;
 }
 
 export default function EditorSidebar({
@@ -70,6 +84,13 @@ export default function EditorSidebar({
   isUploadingAssets,
   uploadStatus,
   uploadProgress,
+  imagePoolAssets,
+  imagePoolUsedBytes,
+  imagePoolMaxBytes,
+  imagePoolLoading,
+  imagePoolUploading,
+  imagePoolError,
+  imagePoolHasMore,
   onCreateNew,
   onTabChange,
   onSelectDraft,
@@ -80,6 +101,10 @@ export default function EditorSidebar({
   onRemoveImage,
   onRemoveAttachment,
   onOpenStyleEditor,
+  onImagePoolUpload,
+  onImagePoolLoadMore,
+  onImagePoolInsert,
+  onImagePoolDelete,
 }: EditorSidebarProps) {
   return (
     <aside className="flex h-full w-[360px] border-r border-slate-200 bg-[#f7f7f5]">
@@ -89,6 +114,12 @@ export default function EditorSidebar({
           label="历史"
           active={activeTab === "history"}
           onClick={() => onTabChange("history")}
+        />
+        <SidebarRailButton
+          icon={<Images className="h-5 w-5" />}
+          label="图片池"
+          active={activeTab === "assets"}
+          onClick={() => onTabChange("assets")}
         />
         <SidebarRailButton
           icon={<Settings2 className="h-5 w-5" />}
@@ -177,6 +208,20 @@ export default function EditorSidebar({
               )}
             </div>
           </>
+        ) : activeTab === "assets" ? (
+          <EditorImagePool
+            assets={imagePoolAssets}
+            usedBytes={imagePoolUsedBytes}
+            maxBytes={imagePoolMaxBytes}
+            loading={imagePoolLoading}
+            uploading={imagePoolUploading}
+            error={imagePoolError}
+            hasMore={imagePoolHasMore}
+            onUpload={onImagePoolUpload}
+            onLoadMore={onImagePoolLoadMore}
+            onInsert={onImagePoolInsert}
+            onDelete={onImagePoolDelete}
+          />
         ) : (
           <div className="min-h-0 flex flex-1 flex-col">
             <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">

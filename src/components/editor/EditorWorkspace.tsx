@@ -26,6 +26,8 @@ import type {
   EditorDocumentTab,
   EditorDraftDetail,
   EditorDraftSummary,
+  EditorImageAsset,
+  EditorImageInsertRequest,
   PostVisibility,
   SaveState,
   UploadedAttachment,
@@ -47,6 +49,21 @@ type PublishResponse = {
   post?: {
     id?: string;
   };
+};
+
+type EditorImagePoolResponse = {
+  assets?: EditorImageAsset[];
+  nextCursor?: string | null;
+  usedBytes?: number;
+  maxBytes?: number;
+  error?: string;
+};
+
+type EditorImageUploadResponse = {
+  asset?: EditorImageAsset;
+  usedBytes?: number;
+  maxBytes?: number;
+  error?: string;
 };
 
 export default function EditorWorkspace() {
@@ -78,6 +95,15 @@ export default function EditorWorkspace() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [imagePoolAssets, setImagePoolAssets] = useState<EditorImageAsset[]>([]);
+  const [imagePoolUsedBytes, setImagePoolUsedBytes] = useState(0);
+  const [imagePoolMaxBytes, setImagePoolMaxBytes] = useState(1024 * 1024 * 1024);
+  const [imagePoolNextCursor, setImagePoolNextCursor] = useState<string | null>(null);
+  const [imagePoolLoaded, setImagePoolLoaded] = useState(false);
+  const [imagePoolLoading, setImagePoolLoading] = useState(false);
+  const [imagePoolUploading, setImagePoolUploading] = useState(false);
+  const [imagePoolError, setImagePoolError] = useState("");
+  const [imageInsertRequest, setImageInsertRequest] = useState<EditorImageInsertRequest | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -113,6 +139,7 @@ export default function EditorWorkspace() {
   const selectedImagesRef = useRef<string[]>(selectedImages);
   const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
   const activeDocumentTabRef = useRef<EditorDocumentTab>(activeDocumentTab);
+  const imageInsertIdRef = useRef(0);
 
   titleRef.current = title;
   contentRef.current = content;
@@ -237,6 +264,49 @@ export default function EditorWorkspace() {
       setHistoryLoading(false);
     }
   }, []);
+
+  const loadImagePool = useCallback(async (options?: { cursor?: string; append?: boolean }) => {
+    setImagePoolLoading(true);
+    setImagePoolError("");
+
+    try {
+      const params = new URLSearchParams();
+      if (options?.cursor) {
+        params.set("cursor", options.cursor);
+      }
+      const response = await fetch(`/api/editor/assets${params.size > 0 ? `?${params.toString()}` : ""}`, {
+        cache: "no-store",
+      });
+      const data = await response.json() as EditorImagePoolResponse;
+      if (!response.ok) {
+        throw new Error(data.error || "加载图片池失败");
+      }
+
+      const assets = Array.isArray(data.assets) ? data.assets : [];
+      setImagePoolAssets((current) => {
+        if (!options?.append) {
+          return assets;
+        }
+
+        const known = new Set(current.map((asset) => asset.id));
+        return [...current, ...assets.filter((asset) => !known.has(asset.id))];
+      });
+      setImagePoolNextCursor(data.nextCursor ?? null);
+      setImagePoolUsedBytes(data.usedBytes ?? 0);
+      setImagePoolMaxBytes(data.maxBytes ?? 1024 * 1024 * 1024);
+      setImagePoolLoaded(true);
+    } catch (error) {
+      setImagePoolError(error instanceof Error ? error.message : "加载图片池失败");
+    } finally {
+      setImagePoolLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSidebarTab === "assets" && !imagePoolLoaded) {
+      void loadImagePool();
+    }
+  }, [activeSidebarTab, imagePoolLoaded, loadImagePool]);
 
   const loadDraft = useCallback(async (id: string) => {
     setDraftLoading(true);
@@ -761,6 +831,53 @@ export default function EditorWorkspace() {
     setSelectedAttachments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
   }, []);
 
+  const handleImagePoolUpload = useCallback((files: File[]) => {
+    void (async () => {
+      setActiveSidebarTab("assets");
+      setImagePoolUploading(true);
+      setImagePoolError("");
+
+      try {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await fetch("/api/editor/assets", { method: "POST", body: formData });
+          const data = await response.json() as EditorImageUploadResponse;
+          if (!response.ok || !data.asset) {
+            throw new Error(data.error || "上传图片失败");
+          }
+
+          setImagePoolAssets((current) => [data.asset as EditorImageAsset, ...current]);
+          setImagePoolUsedBytes(data.usedBytes ?? 0);
+          setImagePoolMaxBytes(data.maxBytes ?? 1024 * 1024 * 1024);
+          setImagePoolLoaded(true);
+        }
+      } catch (error) {
+        setImagePoolError(error instanceof Error ? error.message : "上传图片失败");
+      } finally {
+        setImagePoolUploading(false);
+      }
+    })();
+  }, []);
+
+  const handleImagePoolDelete = useCallback(async (asset: EditorImageAsset) => {
+    setImagePoolError("");
+    const response = await fetch(`/api/editor/assets/${asset.id}`, { method: "DELETE" });
+    const data = await response.json() as { usedBytes?: number; error?: string };
+    if (!response.ok) {
+      throw new Error(data.error || "删除图片失败");
+    }
+
+    setImagePoolAssets((current) => current.filter((item) => item.id !== asset.id));
+    setImagePoolUsedBytes(data.usedBytes ?? 0);
+  }, []);
+
+  const handleImagePoolInsert = useCallback((asset: EditorImageAsset) => {
+    imageInsertIdRef.current += 1;
+    setActiveDocumentTab("content");
+    setImageInsertRequest({ id: imageInsertIdRef.current, url: asset.url });
+  }, []);
+
   const handleOpenStyleEditor = useCallback(async () => {
     if (!draftIdRef.current) {
       try {
@@ -949,6 +1066,13 @@ export default function EditorWorkspace() {
           isUploadingAssets={isUploadingAssets}
           uploadStatus={uploadStatus}
           uploadProgress={uploadProgress}
+          imagePoolAssets={imagePoolAssets}
+          imagePoolUsedBytes={imagePoolUsedBytes}
+          imagePoolMaxBytes={imagePoolMaxBytes}
+          imagePoolLoading={imagePoolLoading}
+          imagePoolUploading={imagePoolUploading}
+          imagePoolError={imagePoolError}
+          imagePoolHasMore={Boolean(imagePoolNextCursor)}
           onCreateNew={handleCreateNew}
           onTabChange={setActiveSidebarTab}
           onSelectDraft={handleSelectDraft}
@@ -959,6 +1083,14 @@ export default function EditorWorkspace() {
           onRemoveImage={removeImage}
           onRemoveAttachment={removeAttachment}
           onOpenStyleEditor={handleOpenStyleEditor}
+          onImagePoolUpload={handleImagePoolUpload}
+          onImagePoolLoadMore={() => {
+            if (imagePoolNextCursor) {
+              void loadImagePool({ cursor: imagePoolNextCursor, append: true });
+            }
+          }}
+          onImagePoolInsert={handleImagePoolInsert}
+          onImagePoolDelete={handleImagePoolDelete}
         />
 
         <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
@@ -982,6 +1114,8 @@ export default function EditorWorkspace() {
                 setActiveLineNumber={setActiveLineNumber}
                 externalJumpLine={jumpLineNumber}
                 onExternalJumpHandled={() => setJumpLineNumber(null)}
+                imageInsertRequest={imageInsertRequest}
+                onImageInsertHandled={() => setImageInsertRequest(null)}
               />
             ) : (
               <StyleCodeEditor
