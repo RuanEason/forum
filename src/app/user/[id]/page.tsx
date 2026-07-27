@@ -204,6 +204,7 @@ export default async function UserProfile({ params }: UserProfileProps) {
       isCurrentUser={isCurrentUser}
       stats={stats}
       isFollowing={isFollowing}
+      currentUserId={currentUserId}
     />
   );
 }

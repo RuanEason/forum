@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { enqueueNotificationPush } from "@/lib/push";
+import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { getTrimmedParam } from "@/app/api/app/_shared/user";
 
@@ -101,16 +101,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const notification = await prisma.notification.create({
-      data: {
-        type: "FOLLOW_USER",
-        senderId: sessionUser.id,
-        receiverId: targetUserId,
-      },
-      select: { id: true },
+    await createUserNotificationIfEnabled({
+      type: "FOLLOW_USER",
+      senderId: sessionUser.id,
+      receiverId: targetUserId,
     });
-
-    enqueueNotificationPush(notification.id);
 
     return NextResponse.json({
       success: true,
@@ -162,4 +157,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

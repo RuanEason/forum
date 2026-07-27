@@ -3,7 +3,13 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
-import { enqueueNotificationPush } from "@/lib/push";
+import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
+
+type SessionShape = {
+  user?: {
+    id?: string;
+  };
+} | null;
 
 /**
  * 处理点赞和取消点赞
@@ -35,7 +41,7 @@ import { enqueueNotificationPush } from "@/lib/push";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -94,16 +100,12 @@ export async function POST(request: NextRequest) {
 
           if (!existingNotif) {
             // Create notification only if doesn't exist
-            const notification = await prisma.notification.create({
-              data: {
-                type: "LIKE_POST",
-                senderId: userId,
-                receiverId: post.authorId,
-                postId: targetId,
-              }
+            await createUserNotificationIfEnabled({
+              type: "LIKE_POST",
+              senderId: userId,
+              receiverId: post.authorId,
+              postId: targetId,
             });
-
-            enqueueNotificationPush(notification.id);
           }
         }
 
@@ -159,17 +161,13 @@ export async function POST(request: NextRequest) {
           });
 
           if (!existingNotif) {
-            const notification = await prisma.notification.create({
-              data: {
-                type: "LIKE_COMMENT",
-                senderId: userId,
-                receiverId: comment.authorId,
-                postId: comment.postId,
-                commentId: targetId,
-              }
+            await createUserNotificationIfEnabled({
+              type: "LIKE_COMMENT",
+              senderId: userId,
+              receiverId: comment.authorId,
+              postId: comment.postId,
+              commentId: targetId,
             });
-
-            enqueueNotificationPush(notification.id);
           }
         }
 

@@ -31,6 +31,9 @@ model User {
   bio          String?
   postViewMode String        @default("both") // title, content, both
   coverImage   String?
+  notifyReplies Boolean      @default(true)
+  notifyLikes   Boolean      @default(true)
+  notifyFollows Boolean      @default(true)
   showUserData Boolean       @default(true) // 是否展示用户数据（帖子数、评论数、粉丝数等）
   experience   Int           @default(0)
   lastLoginRewardAt DateTime?

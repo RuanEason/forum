@@ -35,9 +35,11 @@ interface PostProps {
 export default function TopicPostList({
   topicId,
   onPostDeleted,
+  currentUserId,
 }: {
   topicId: string;
   onPostDeleted?: () => void;
+  currentUserId?: string;
 }) {
   const [posts, setPosts] = useState<PostProps[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +78,7 @@ export default function TopicPostList({
           initialPosts={posts}
           hideCreateButton={true}
           onPostDeleted={onPostDeleted}
+          currentUserId={currentUserId}
           showAuthorLevel
           embedded
         />

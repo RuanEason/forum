@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { enqueueNotificationPush } from "@/lib/push";
+import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
+
+type SessionShape = {
+  user?: {
+    id?: string;
+  };
+} | null;
 
 /**
  * POST /api/follow
@@ -16,9 +22,9 @@ import { enqueueNotificationPush } from "@/lib/push";
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "请先登录" },
         { status: 401 }
@@ -91,15 +97,11 @@ export async function POST(request: Request) {
       });
 
       // 创建关注通知
-      const notification = await prisma.notification.create({
-        data: {
-          type: "FOLLOW_USER",
-          senderId: followerId,
-          receiverId: followingId,
-        },
+      await createUserNotificationIfEnabled({
+        type: "FOLLOW_USER",
+        senderId: followerId,
+        receiverId: followingId,
       });
-
-      enqueueNotificationPush(notification.id);
 
       return NextResponse.json({
         success: true,
@@ -155,9 +157,9 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as SessionShape;
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "请先登录" },
         { status: 401 }

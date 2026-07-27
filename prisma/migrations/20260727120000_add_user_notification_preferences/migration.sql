@@ -1,0 +1,4 @@
+ALTER TABLE `User`
+  ADD COLUMN `notifyReplies` BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN `notifyLikes` BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN `notifyFollows` BOOLEAN NOT NULL DEFAULT true;

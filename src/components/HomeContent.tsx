@@ -10,12 +10,13 @@ import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
-import PinButton from "@/components/PinButton";
+import PostListMoreMenu from "@/components/PostListMoreMenu";
 import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import HomeTopicSidebar from "@/components/HomeTopicSidebar";
 import Badge from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import type { HomeTopic } from "@/types/topic";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
@@ -110,6 +111,7 @@ export default function HomeContent({
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const toast = useToast();
   const { startTask } = usePageLoadProgress();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [mounted, setMounted] = useState(false);
@@ -223,14 +225,12 @@ export default function HomeContent({
    * 发送删除请求到 API，成功后从列表中移除帖子并触发回调
    *
    * @param {string} postId - 要删除的帖子 ID
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>}
    *
    * @example
    * await handleDeletePost("post123");
    */
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm("确定要删除这条帖子吗？")) return;
-
+  const handleDeletePost = async (postId: string): Promise<boolean> => {
     try {
       const response = await fetch("/api/post", {
         method: "DELETE",
@@ -241,17 +241,31 @@ export default function HomeContent({
       });
 
       if (response.ok) {
-        setPosts(posts.filter((post) => post.id !== postId));
+        setPosts((currentPosts) =>
+          currentPosts.filter((post) => post.id !== postId)
+        );
         if (onPostDeleted) {
           onPostDeleted();
         }
+        toast.success("帖子已删除");
+        return true;
       } else {
         const data = await response.json();
-        alert(data.error || "删除失败");
+        toast.error(data.error || "删除失败");
       }
     } catch {
-      alert("网络错误，删除失败");
+      toast.error("网络错误，删除失败");
     }
+
+    return false;
+  };
+
+  const handlePinnedChange = (postId: string, pinned: boolean) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === postId ? { ...post, pinned } : post
+      )
+    );
   };
 
   const markdownComponents: Components = {
@@ -363,11 +377,21 @@ export default function HomeContent({
                               </Link>
                             )}
                           </div>
-                          <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                            {mounted
-                              ? new Date(post.createdAt).toLocaleString()
-                              : ""}
-                          </span>
+                          <div className="ml-2 flex items-center gap-1">
+                            <span className="whitespace-nowrap text-xs text-gray-400">
+                              {mounted
+                                ? new Date(post.createdAt).toLocaleString()
+                                : ""}
+                            </span>
+                            <PostListMoreMenu
+                              postId={post.id}
+                              pinned={post.pinned || false}
+                              canDelete={session?.user?.id === post.author.id}
+                              canPin={session?.user?.role === "admin"}
+                              onDelete={handleDeletePost}
+                              onPinnedChange={handlePinnedChange}
+                            />
+                          </div>
                         </div>
                         <div className="mt-2 text-sm text-gray-800">
                           {/* 置顶标识 */}
@@ -498,24 +522,6 @@ export default function HomeContent({
                               createdAt={post.createdAt}
                             />
                           </div>
-                          {/* 置顶按钮 - 仅管理员可见 */}
-                          {session?.user?.role === "admin" && (
-                            <div className="flex items-center">
-                              <PinButton postId={post.id} isPinned={post.pinned || false} />
-                            </div>
-                          )}
-                          {/* 删除按钮 */}
-                          {session?.user?.id &&
-                            session.user.id === post.author.id && (
-                              <button
-                                onClick={() => handleDeletePost(post.id)}
-                                className="text-red-500 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                                  <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
-                                </svg>
-                              </button>
-                            )}
                         </div>
                       </div>
                     </div>

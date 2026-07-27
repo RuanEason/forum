@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import TopicContent from "./TopicContent";
 
 async function getTopic(id: string) {
@@ -32,7 +35,10 @@ export default async function TopicDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const topic = await getTopic(id);
+  const [topic, session] = await Promise.all([
+    getTopic(id),
+    getServerSession(authOptions) as Promise<Session | null>,
+  ]);
 
   if (!topic) {
     notFound();
@@ -49,7 +55,7 @@ export default async function TopicDetailPage({
       <div className="container mx-auto max-w-6xl px-4 -mt-20 relative">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Main Content Area */}
-          <TopicContent topic={topic} />
+          <TopicContent topic={topic} currentUserId={session?.user?.id} />
 
           {/* Sidebar */}
           <div className="hidden md:block md:col-span-1 space-y-6">

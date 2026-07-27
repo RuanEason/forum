@@ -16,6 +16,9 @@ type UpdateSettingsBody = {
   postViewMode?: unknown;
   coverImage?: unknown;
   showUserData?: unknown;
+  notifyReplies?: unknown;
+  notifyLikes?: unknown;
+  notifyFollows?: unknown;
 };
 
 function normalizeOptionalString(value: unknown): string | null | undefined {
@@ -51,6 +54,9 @@ export async function GET() {
         coverImage: true,
         postViewMode: true,
         showUserData: true,
+        notifyReplies: true,
+        notifyLikes: true,
+        notifyFollows: true,
         experience: true,
       },
     });
@@ -84,6 +90,9 @@ export async function PATCH(request: NextRequest) {
       postViewMode?: string;
       coverImage?: string | null;
       showUserData?: boolean;
+      notifyReplies?: boolean;
+      notifyLikes?: boolean;
+      notifyFollows?: boolean;
     } = {};
 
     if (body.name !== undefined) {
@@ -170,6 +179,15 @@ export async function PATCH(request: NextRequest) {
       data.showUserData = body.showUserData;
     }
 
+    for (const key of ["notifyReplies", "notifyLikes", "notifyFollows"] as const) {
+      const value = body[key];
+      if (value === undefined) continue;
+      if (typeof value !== "boolean") {
+        return NextResponse.json({ error: `${key} must be a boolean` }, { status: 400 });
+      }
+      data[key] = value;
+    }
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
@@ -186,6 +204,9 @@ export async function PATCH(request: NextRequest) {
         coverImage: true,
         postViewMode: true,
         showUserData: true,
+        notifyReplies: true,
+        notifyLikes: true,
+        notifyFollows: true,
         experience: true,
       },
     });
@@ -202,4 +223,3 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

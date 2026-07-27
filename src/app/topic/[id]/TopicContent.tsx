@@ -21,7 +21,13 @@ interface Topic {
   } | null;
 }
 
-export default function TopicContent({ topic }: { topic: Topic }) {
+export default function TopicContent({
+  topic,
+  currentUserId,
+}: {
+  topic: Topic;
+  currentUserId?: string;
+}) {
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -84,6 +90,7 @@ export default function TopicContent({ topic }: { topic: Topic }) {
           key={refreshKey}
           topicId={topic.id}
           onPostDeleted={handlePostDeleted}
+          currentUserId={currentUserId}
         />
       </div>
     </div>

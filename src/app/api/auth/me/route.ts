@@ -4,8 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserLevel } from "@/lib/experience";
 
+type SessionShape = {
+  user?: {
+    id?: string;
+  };
+} | null;
+
 export async function GET() {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as SessionShape;
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -23,6 +29,9 @@ export async function GET() {
         postViewMode: true,
         coverImage: true,
         showUserData: true,
+        notifyReplies: true,
+        notifyLikes: true,
+        notifyFollows: true,
         experience: true,
       },
     });

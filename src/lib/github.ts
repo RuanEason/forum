@@ -6,9 +6,11 @@ import { getSiteOriginOrThrow, resolveSiteOrigin } from "@/lib/site-url";
 const GITHUB_STATE_COOKIE = "github-oauth-state";
 export const GITHUB_REDIRECT_COOKIE = "github-login-redirect";
 export const GITHUB_PENDING_COOKIE = "github-pending-login";
+export const GITHUB_CONNECT_COOKIE = "github-connect-intent";
 const STATE_MAX_AGE_SECONDS = 60 * 15;
 const PENDING_MAX_AGE_SECONDS = 60 * 15;
 const PENDING_TOKEN_SALT = "github-pending-login";
+const CONNECT_TOKEN_SALT = "github-connect-intent";
 
 const GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
 const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
@@ -39,6 +41,11 @@ export type GitHubIdentity = {
 };
 
 export type PendingGitHubLogin = GitHubIdentity & {
+  redirectPath: string;
+};
+
+export type GitHubConnectIntent = {
+  userId: string;
   redirectPath: string;
 };
 
@@ -320,6 +327,51 @@ export async function readPendingGitHubLogin() {
 
   try {
     return await decodePendingGitHubLogin(token);
+  } catch {
+    return null;
+  }
+}
+
+export async function encodeGitHubConnectIntent(payload: GitHubConnectIntent) {
+  return encode({
+    secret: getJwtSecret(),
+    salt: CONNECT_TOKEN_SALT,
+    token: payload,
+    maxAge: STATE_MAX_AGE_SECONDS,
+  });
+}
+
+export async function decodeGitHubConnectIntent(token: string) {
+  const decoded = await decode({
+    secret: getJwtSecret(),
+    salt: CONNECT_TOKEN_SALT,
+    token,
+  });
+
+  if (!decoded) {
+    return null;
+  }
+
+  const userId = typeof decoded.userId === "string" ? decoded.userId : null;
+  const redirectPath = typeof decoded.redirectPath === "string" ? decoded.redirectPath : null;
+
+  if (!userId || !redirectPath) {
+    return null;
+  }
+
+  return { userId, redirectPath } satisfies GitHubConnectIntent;
+}
+
+export async function readGitHubConnectIntent() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(GITHUB_CONNECT_COOKIE)?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    return await decodeGitHubConnectIntent(token);
   } catch {
     return null;
   }

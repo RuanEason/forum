@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
-import { enqueueNotificationPush } from "@/lib/push";
+import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 
 const MAX_COMMENT_LENGTH = 5000;
@@ -259,37 +259,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (normalizedParentId && replyReceiverId && replyReceiverId !== sessionUser.id) {
-      const notification = await prisma.notification.create({
-        data: {
-          type: "REPLY_COMMENT",
-          senderId: sessionUser.id,
-          receiverId: replyReceiverId,
-          postId,
-          commentId: comment.id,
-        },
-        select: {
-          id: true,
-        },
+      await createUserNotificationIfEnabled({
+        type: "REPLY_COMMENT",
+        senderId: sessionUser.id,
+        receiverId: replyReceiverId,
+        postId,
+        commentId: comment.id,
       });
-
-      enqueueNotificationPush(notification.id);
     }
 
     if (!normalizedParentId && post.authorId !== sessionUser.id) {
-      const notification = await prisma.notification.create({
-        data: {
-          type: "REPLY_POST",
-          senderId: sessionUser.id,
-          receiverId: post.authorId,
-          postId,
-          commentId: comment.id,
-        },
-        select: {
-          id: true,
-        },
+      await createUserNotificationIfEnabled({
+        type: "REPLY_POST",
+        senderId: sessionUser.id,
+        receiverId: post.authorId,
+        postId,
+        commentId: comment.id,
       });
-
-      enqueueNotificationPush(notification.id);
     }
 
     return NextResponse.json(

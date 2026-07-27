@@ -11,8 +11,9 @@ import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
-import PinButton from "@/components/PinButton";
+import PostListMoreMenu from "@/components/PostListMoreMenu";
 import PostImages from "@/components/PostImages";
+import { useToast } from "@/components/ui/Toast";
 import { Eye, Lock } from "lucide-react";
 
 interface PostProps {
@@ -38,11 +39,15 @@ interface PostProps {
 
 export default function UserPostList({
   initialPosts,
+  currentUserId,
 }: {
   initialPosts: PostProps[];
+  currentUserId?: string;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const toast = useToast();
+  const activeUserId = currentUserId ?? session?.user?.id;
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [mounted, setMounted] = useState(false);
 
@@ -51,14 +56,9 @@ export default function UserPostList({
     setMounted(true);
   }, []);
 
-  const viewMode = (session?.user as any)?.postViewMode || "both"; // title, content, both
-  useEffect(() => {
-    console.log("组件挂载 - 视图模式:", viewMode);
-  }, []);
+  const viewMode = session?.user?.postViewMode || "both"; // title, content, both
 
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm("确定要删除这条帖子吗？")) return;
-
+  const handleDeletePost = async (postId: string): Promise<boolean> => {
     try {
       const response = await fetch("/api/post", {
         method: "DELETE",
@@ -69,14 +69,28 @@ export default function UserPostList({
       });
 
       if (response.ok) {
-        setPosts(posts.filter((post) => post.id !== postId));
+        setPosts((currentPosts) =>
+          currentPosts.filter((post) => post.id !== postId)
+        );
+        toast.success("帖子已删除");
+        return true;
       } else {
         const data = await response.json();
-        alert(data.error || "删除失败");
+        toast.error(data.error || "删除失败");
       }
     } catch {
-      alert("网络错误，删除失败");
+      toast.error("网络错误，删除失败");
     }
+
+    return false;
+  };
+
+  const handlePinnedChange = (postId: string, pinned: boolean) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === postId ? { ...post, pinned } : post
+      )
+    );
   };
 
   const markdownComponents: Components = {
@@ -108,9 +122,9 @@ export default function UserPostList({
       {posts.map((post) => (
         <div
           key={post.id}
-          className="relative bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-100 hover:shadow-md transition-shadow duration-200"
+          className="relative overflow-hidden border-b border-gray-100 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md sm:rounded-lg sm:border-0 lg:rounded-lg"
         >
-          <div className="p-4 sm:p-6">
+          <div className="p-4 sm:p-6 lg:p-5">
             <div className="flex items-start">
               <div className="flex-shrink-0 mr-3">
                 <Avatar
@@ -141,11 +155,21 @@ export default function UserPostList({
                       </Link>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                    {mounted
-                      ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")
-                      : ""}
-                  </span>
+                  <div className="ml-2 flex items-center gap-1">
+                    <span className="whitespace-nowrap text-xs text-gray-400">
+                      {mounted
+                        ? format(new Date(post.createdAt), "yyyy年MM月dd日 HH:mm")
+                        : ""}
+                    </span>
+                    <PostListMoreMenu
+                      postId={post.id}
+                      pinned={post.pinned || false}
+                      canDelete={activeUserId === post.author.id}
+                      canPin={session?.user?.role === "admin"}
+                      onDelete={handleDeletePost}
+                      onPinnedChange={handlePinnedChange}
+                    />
+                  </div>
                 </div>
                 {/* 置顶标识 */}
                 {post.pinned && (
@@ -213,9 +237,9 @@ export default function UserPostList({
                     targetId={post.id}
                     initialLikesCount={post.likes.length}
                     initialLikedByUser={
-                      (session?.user as any)?.id
+                      activeUserId
                         ? post.likes.some(
-                            (like) => like.userId === (session?.user as any)?.id
+                            (like) => like.userId === activeUserId
                           )
                         : false
                     }
@@ -249,18 +273,6 @@ export default function UserPostList({
                     content={post.content}
                     createdAt={post.createdAt}
                   />
-                  {/* 置顶按钮 - 仅管理员可见 */}
-                  {(session?.user as any)?.role === "admin" && (
-                    <PinButton postId={post.id} isPinned={post.pinned || false} />
-                  )}
-                  {(session?.user as any)?.id && (session?.user as any).id === post.author.id && (
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      className="text-red-500 hover:text-red-700 text-sm p-2 rounded-full hover:bg-red-50 transition-colors"
-                    >
-                      删除
-                    </button>
-                  )}
                 </div>
               </div>
             </div>

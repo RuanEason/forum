@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { rewardActionExperience } from "@/lib/experience";
-import { enqueueNotificationPush } from "@/lib/push";
+import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 
 type SessionShape = {
   user?: {
@@ -183,17 +183,13 @@ export async function POST(request: NextRequest) {
 
     if (normalizedParentId) {
       if (replyReceiverId && replyReceiverId !== authorId) {
-        const notification = await prisma.notification.create({
-          data: {
-            type: "REPLY_COMMENT",
-            senderId: authorId,
-            receiverId: replyReceiverId,
-            postId: postId,
-            commentId: comment.id,
-          }
+        await createUserNotificationIfEnabled({
+          type: "REPLY_COMMENT",
+          senderId: authorId,
+          receiverId: replyReceiverId,
+          postId,
+          commentId: comment.id,
         });
-
-        enqueueNotificationPush(notification.id);
       }
     } else {
       const post = await prisma.post.findUnique({
@@ -202,17 +198,13 @@ export async function POST(request: NextRequest) {
       });
       
       if (post && post.authorId !== authorId) {
-        const notification = await prisma.notification.create({
-          data: {
-            type: "REPLY_POST",
-            senderId: authorId,
-            receiverId: post.authorId,
-            postId: postId,
-            commentId: comment.id,
-          }
+        await createUserNotificationIfEnabled({
+          type: "REPLY_POST",
+          senderId: authorId,
+          receiverId: post.authorId,
+          postId,
+          commentId: comment.id,
         });
-
-        enqueueNotificationPush(notification.id);
       }
     }
 
