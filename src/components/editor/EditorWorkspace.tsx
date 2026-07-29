@@ -115,6 +115,7 @@ export default function EditorWorkspace() {
   const [didMountEditor, setDidMountEditor] = useState(false);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveDraftRef = useRef<(() => Promise<string | null>) | null>(null);
   const markdownImportInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingRef = useRef(false);
   const hasHydratedRef = useRef(false);
@@ -453,6 +454,18 @@ export default function EditorWorkspace() {
       return draftIdRef.current;
     }
 
+    // Keep a stable payload so an older response cannot replace newer editor input.
+    const saveSnapshot = {
+      title: titleRef.current,
+      content: contentRef.current,
+      styleCss: styleCssRef.current,
+      visibility: visibilityRef.current,
+      topicId: selectedTopicIdRef.current,
+      imageSignature: JSON.stringify(selectedImagesRef.current),
+      attachmentSignature: JSON.stringify(selectedAttachmentsRef.current),
+    };
+    const draftAssets = buildDraftAssets();
+
     isSavingRef.current = true;
     setSaveState("saving");
     setErrorMessage("");
@@ -466,14 +479,14 @@ export default function EditorWorkspace() {
         },
         body: JSON.stringify({
           postType: "TEXT",
-          title: titleRef.current.trim() || null,
-          content: contentRef.current,
+          title: saveSnapshot.title.trim() || null,
+          content: saveSnapshot.content,
           styleConfig: null,
-          styleCss: styleCssRef.current || null,
-          visibility: visibilityRef.current,
-          topicId: selectedTopicIdRef.current,
+          styleCss: saveSnapshot.styleCss || null,
+          visibility: saveSnapshot.visibility,
+          topicId: saveSnapshot.topicId,
           persistMode: "SAVED",
-          assets: buildDraftAssets().map((asset) => ({
+          assets: draftAssets.map((asset) => ({
             type: asset.type,
             status: asset.status,
             progress: asset.progress,
@@ -492,10 +505,39 @@ export default function EditorWorkspace() {
         throw new Error(data.error || "保存草稿失败");
       }
 
-      hydrateDraft(data.draft, {
-        activeDocumentTab: activeDocumentTabRef.current,
-      });
       await loadHistory();
+
+      const hasChangedSinceSaveStarted = (
+        titleRef.current !== saveSnapshot.title
+        || contentRef.current !== saveSnapshot.content
+        || styleCssRef.current !== saveSnapshot.styleCss
+        || visibilityRef.current !== saveSnapshot.visibility
+        || selectedTopicIdRef.current !== saveSnapshot.topicId
+        || JSON.stringify(selectedImagesRef.current) !== saveSnapshot.imageSignature
+        || JSON.stringify(selectedAttachmentsRef.current) !== saveSnapshot.attachmentSignature
+      );
+
+      // A save acknowledgement must not rehydrate the controlled editor or reset its selection.
+      setDraftId(data.draft.id);
+      draftIdRef.current = data.draft.id;
+      setDraftStatus(data.draft.status);
+      setLastSavedAt(data.draft.updatedAt);
+      setSaveState(hasChangedSinceSaveStarted ? "idle" : "saved");
+      persistedSnapshotRef.current = {
+        draftId: data.draft.id,
+        ...saveSnapshot,
+      };
+      dirtyRef.current = hasChangedSinceSaveStarted;
+
+      if (hasChangedSinceSaveStarted) {
+        if (autoSaveTimerRef.current) {
+          clearTimeout(autoSaveTimerRef.current);
+        }
+        autoSaveTimerRef.current = setTimeout(() => {
+          void saveDraftRef.current?.();
+        }, 3000);
+      }
+
       return data.draft.id;
     } catch (error) {
       const message = error instanceof Error ? error.message : "保存草稿失败";
@@ -505,7 +547,9 @@ export default function EditorWorkspace() {
     } finally {
       isSavingRef.current = false;
     }
-  }, [buildDraftAssets, createDraftIfNeeded, hydrateDraft, loadHistory]);
+  }, [buildDraftAssets, createDraftIfNeeded, loadHistory]);
+
+  saveDraftRef.current = saveDraft;
 
   const handleManualSave = useCallback(() => {
     if (
