@@ -582,20 +582,19 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
     .map((asset) => asset.id)
     .filter((id): id is string => Boolean(id));
 
-  const removedAssets = existingAssets.filter((asset) => !keepIds.includes(asset.id));
+  // An upload can be created after an auto-save payload was assembled. Keep
+  // that in-flight asset until its upload client commits or explicitly cancels it.
+  const removedAssets = existingAssets.filter(
+    (asset) => !keepIds.includes(asset.id) && asset.status !== "UPLOADING",
+  );
+  const removedAssetIds = removedAssets.map((asset) => asset.id);
 
-  if (keepIds.length > 0) {
+  if (removedAssetIds.length > 0) {
     await prisma.draftAsset.deleteMany({
       where: {
         draftId,
-        id: {
-          notIn: keepIds,
-        },
+        id: { in: removedAssetIds },
       },
-    });
-  } else {
-    await prisma.draftAsset.deleteMany({
-      where: { draftId },
     });
   }
 

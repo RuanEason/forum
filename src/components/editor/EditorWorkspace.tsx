@@ -873,7 +873,9 @@ export default function EditorWorkspace() {
             setUploadProgress(Math.round(overallProgress));
             setUploadStatus(`第 ${index + 1}/${files.length} 个附件: ${label}`);
           }) as UploadedAttachment;
-          setSelectedAttachments((prev) => [...prev, result].slice(0, 5));
+          const nextAttachments = [...selectedAttachmentsRef.current, result].slice(0, 5);
+          selectedAttachmentsRef.current = nextAttachments;
+          setSelectedAttachments(nextAttachments);
         }
 
         setUploadStatus("附件上传完成");

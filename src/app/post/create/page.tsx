@@ -257,9 +257,11 @@ function CreatePostPageContent() {
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
   const [autoSaveAt, setAutoSaveAt] = useState<string>("");
+  const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSavingRef = useRef(false);
   const hasAnyContentRef = useRef(false);
+  selectedAttachmentsRef.current = selectedAttachments;
   const stopVideoPolling = useCallback(() => {
     if (videoPollTimerRef.current) {
       clearInterval(videoPollTimerRef.current);
@@ -897,7 +899,9 @@ function CreatePostPageContent() {
           bindDraftId,
         ) as UploadedAttachment;
 
-        setSelectedAttachments((prev) => [...prev, result].slice(0, MAX_TEXT_ATTACHMENTS));
+        const nextAttachments = [...selectedAttachmentsRef.current, result].slice(0, MAX_TEXT_ATTACHMENTS);
+        selectedAttachmentsRef.current = nextAttachments;
+        setSelectedAttachments(nextAttachments);
       }
 
       setUploadStatus("上传完成！");
