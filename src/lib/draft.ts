@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { cleanupAttachmentObject } from "@/lib/attachment";
 import { Prisma } from "@/generated";
 import {
   normalizePostStyleConfig,
@@ -25,6 +26,7 @@ export type DraftAssetInput = {
   status: DraftAssetStatus;
   progress?: number;
   url?: string | null;
+  objectKey?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
   mimeType?: string | null;
@@ -98,6 +100,7 @@ const draftArgs = Prisma.validator<Prisma.PostDraftDefaultArgs>()({
         status: true,
         progress: true,
         url: true,
+        objectKey: true,
         fileName: true,
         fileSize: true,
         mimeType: true,
@@ -356,6 +359,7 @@ async function setDraftComputedStatus(draftId: string) {
           status: true,
           progress: true,
           url: true,
+          objectKey: true,
           fileName: true,
           fileSize: true,
           mimeType: true,
@@ -406,6 +410,10 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
   const persistMode = normalizePersistMode(input.persistMode);
   const assets = Array.isArray(input.assets) ? input.assets : [];
 
+  if (assets.some((asset) => asset.type === "ATTACHMENT")) {
+    throw new Error("Attachment assets must be created by the upload service");
+  }
+
   validateDraftPayload(postType, assets, content, title);
 
   const created = await prisma.postDraft.create({
@@ -426,6 +434,7 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
           status: normalizeAssetStatus(asset.status),
           progress: clampProgress(asset.progress),
           url: normalizeText(asset.url ?? null),
+          objectKey: normalizeText(asset.objectKey ?? null),
           fileName: normalizeText(asset.fileName ?? null),
           fileSize: typeof asset.fileSize === "number" ? Math.max(0, Math.trunc(asset.fileSize)) : null,
           mimeType: normalizeText(asset.mimeType ?? null),
@@ -500,12 +509,23 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
     where: { draftId },
     select: {
       id: true,
+      type: true,
+      status: true,
+      progress: true,
+      url: true,
+      objectKey: true,
+      fileName: true,
+      fileSize: true,
+      mimeType: true,
+      videoAssetId: true,
+      errorMessage: true,
+      sortOrder: true,
     },
   });
-  const existingAssetIdSet = new Set(existingAssets.map((asset) => asset.id));
+  const existingAssetById = new Map(existingAssets.map((asset) => [asset.id, asset]));
 
   const normalizedAssets = assets.map((asset, index) => {
-    const payload = {
+    const clientPayload = {
       type: normalizeAssetType(asset.type),
       status: normalizeAssetStatus(asset.status),
       progress: clampProgress(asset.progress),
@@ -519,17 +539,41 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
     };
 
     const id = normalizeText(asset.id ?? null);
-    if (id && existingAssetIdSet.has(id)) {
+    const existing = id ? existingAssetById.get(id) : undefined;
+    if (clientPayload.type === "ATTACHMENT") {
+      if (!id || !existing || existing.type !== "ATTACHMENT") {
+        throw new Error("Attachment asset must be created by the upload service");
+      }
+
       return {
         id,
-        data: payload,
+        data: {
+          ...clientPayload,
+          status: existing.status as DraftAssetStatus,
+          progress: existing.progress,
+          url: existing.url,
+          objectKey: existing.objectKey,
+          fileName: existing.fileName,
+          fileSize: existing.fileSize,
+          mimeType: existing.mimeType,
+          videoAssetId: existing.videoAssetId,
+          errorMessage: existing.errorMessage,
+        },
+        create: false,
+      };
+    }
+
+    if (id && existing) {
+      return {
+        id,
+        data: clientPayload,
         create: false,
       };
     }
 
     return {
       id: null,
-      data: payload,
+      data: clientPayload,
       create: true,
     };
   });
@@ -537,6 +581,8 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
   const keepIds = normalizedAssets
     .map((asset) => asset.id)
     .filter((id): id is string => Boolean(id));
+
+  const removedAssets = existingAssets.filter((asset) => !keepIds.includes(asset.id));
 
   if (keepIds.length > 0) {
     await prisma.draftAsset.deleteMany({
@@ -552,6 +598,12 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
       where: { draftId },
     });
   }
+
+  await Promise.all(
+    removedAssets
+      .filter((asset) => asset.type === "ATTACHMENT" && asset.objectKey)
+      .map((asset) => cleanupAttachmentObject(asset.objectKey)),
+  );
 
   for (const asset of normalizedAssets) {
     if (asset.create) {
@@ -597,6 +649,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
           status: true,
           progress: true,
           url: true,
+          objectKey: true,
           fileName: true,
           fileSize: true,
           mimeType: true,
@@ -637,6 +690,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
         status: asset.status as DraftAssetStatus,
         progress: asset.progress,
         url: asset.url,
+        objectKey: asset.objectKey,
         fileName: asset.fileName,
         fileSize: asset.fileSize,
         mimeType: asset.mimeType,
@@ -679,6 +733,9 @@ export async function deleteDraft(authorId: string, draftId: string) {
     select: {
       id: true,
       publishedPostId: true,
+      assets: {
+        select: { type: true, objectKey: true },
+      },
     },
   });
 
@@ -695,6 +752,12 @@ export async function deleteDraft(authorId: string, draftId: string) {
       id: draftId,
     },
   });
+
+  await Promise.all(
+    existing.assets
+      .filter((asset) => asset.type === "ATTACHMENT" && asset.objectKey)
+      .map((asset) => cleanupAttachmentObject(asset.objectKey)),
+  );
 
   return true;
 }

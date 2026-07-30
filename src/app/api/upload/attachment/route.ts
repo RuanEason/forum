@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToCOS } from "@/lib/cos";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/app/api/app/_shared/auth";
+
+// Legacy proxy upload retained for older clients. New editor clients use STS + COS multipart upload.
 
 const MAX_FILE_SIZE = 1024 * 1024 * 1024; // 1GB
 
@@ -21,9 +22,9 @@ const BLOCKED_MIME_TYPES = [
 ];
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getSessionUser();
 
-  if (!session) {
+  if (!session?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     const draft = await prisma.postDraft.findFirst({
       where: {
         id: draftId,
-        authorId: session.user.id,
+        authorId: session.id,
       },
       select: {
         id: true,
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
 
   try {
     const cdnUrl = await uploadToCOS(buffer, filename);
+    let draftAssetId: string | undefined;
     if (linkedDraftId) {
       const sortOrder = await prisma.draftAsset.count({
         where: {
@@ -104,23 +106,28 @@ export async function POST(request: Request) {
           type: "ATTACHMENT",
         },
       });
-      await prisma.draftAsset.create({
+      const draftAsset = await prisma.draftAsset.create({
         data: {
           draftId: linkedDraftId,
           type: "ATTACHMENT",
           status: "READY",
           progress: 100,
           url: cdnUrl,
+          objectKey: filename,
           fileName: file.name,
           fileSize: file.size,
           mimeType: file.type,
           sortOrder,
         },
+        select: { id: true },
       });
+      draftAssetId = draftAsset.id;
     }
 
     return NextResponse.json({
+      id: draftAssetId,
       url: cdnUrl,
+      objectKey: filename,
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type,

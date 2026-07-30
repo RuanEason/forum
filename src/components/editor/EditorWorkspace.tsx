@@ -32,6 +32,7 @@ import type {
   SaveState,
   UploadedAttachment,
 } from "@/components/editor/types";
+import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
 
 type DraftListResponse = {
   drafts?: EditorDraftSummary[];
@@ -139,6 +140,7 @@ export default function EditorWorkspace() {
   const selectedTopicIdRef = useRef<string | null>(selectedTopicId);
   const selectedImagesRef = useRef<string[]>(selectedImages);
   const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
+  const attachmentUploadTaskRef = useRef<AttachmentUploadTask | null>(null);
   const activeDocumentTabRef = useRef<EditorDocumentTab>(activeDocumentTab);
   const imageInsertIdRef = useRef(0);
 
@@ -202,7 +204,9 @@ export default function EditorWorkspace() {
       )
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((asset) => ({
+        id: asset.id,
         url: asset.url as string,
+        objectKey: asset.objectKey,
         fileName: asset.fileName as string,
         fileSize: asset.fileSize as number,
         mimeType: asset.mimeType as string,
@@ -424,6 +428,7 @@ export default function EditorWorkspace() {
       status: "READY" as const,
       progress: 100,
       url,
+      objectKey: null,
       fileName: null,
       fileSize: null,
       mimeType: null,
@@ -433,11 +438,12 @@ export default function EditorWorkspace() {
     }));
 
     const attachmentAssets = selectedAttachmentsRef.current.map((attachment, index) => ({
-      id: "",
+      id: attachment.id ?? "",
       type: "ATTACHMENT" as const,
       status: "READY" as const,
       progress: 100,
       url: attachment.url,
+      objectKey: attachment.objectKey ?? null,
       fileName: attachment.fileName,
       fileSize: attachment.fileSize,
       mimeType: attachment.mimeType,
@@ -487,10 +493,12 @@ export default function EditorWorkspace() {
           topicId: saveSnapshot.topicId,
           persistMode: "SAVED",
           assets: draftAssets.map((asset) => ({
+            id: asset.id || undefined,
             type: asset.type,
             status: asset.status,
             progress: asset.progress,
             url: asset.url,
+            objectKey: asset.objectKey,
             fileName: asset.fileName,
             fileSize: asset.fileSize,
             mimeType: asset.mimeType,
@@ -744,6 +752,19 @@ export default function EditorWorkspace() {
     endpoint: string,
     onProgress: (percent: number, statusLabel: string) => void,
   ) => {
+    if (endpoint === "/api/upload/attachment") {
+      const currentDraftId = await createDraftIfNeeded();
+      const task = startAttachmentUpload(file, currentDraftId, (percent) => {
+        onProgress(percent, `Attachment upload ${percent}%`);
+      });
+      attachmentUploadTaskRef.current = task;
+      try {
+        return await task.promise;
+      } finally {
+        attachmentUploadTaskRef.current = null;
+      }
+    }
+
     const currentDraftId = await createDraftIfNeeded();
     const formData = new FormData();
     formData.append("file", file);
@@ -842,8 +863,7 @@ export default function EditorWorkspace() {
       setUploadStatus("");
 
       try {
-        const files = Array.from(input.files);
-        const uploadedFiles: UploadedAttachment[] = [];
+        const files = Array.from(input.files).slice(0, Math.max(0, 5 - selectedAttachmentsRef.current.length));
 
         for (let index = 0; index < files.length; index += 1) {
           const file = files[index];
@@ -853,10 +873,9 @@ export default function EditorWorkspace() {
             setUploadProgress(Math.round(overallProgress));
             setUploadStatus(`第 ${index + 1}/${files.length} 个附件: ${label}`);
           }) as UploadedAttachment;
-          uploadedFiles.push(result);
+          setSelectedAttachments((prev) => [...prev, result].slice(0, 5));
         }
 
-        setSelectedAttachments((prev) => [...prev, ...uploadedFiles]);
         setUploadStatus("附件上传完成");
       } catch (error) {
         setUploadError(error instanceof Error ? error.message : "附件上传失败");
@@ -872,7 +891,20 @@ export default function EditorWorkspace() {
   }, []);
 
   const removeAttachment = useCallback((index: number) => {
+    const attachment = selectedAttachmentsRef.current[index];
     setSelectedAttachments((prev) => prev.filter((_, currentIndex) => currentIndex !== index));
+    if (attachment?.id) {
+      void fetch("/api/upload/attachment/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attachmentAssetId: attachment.id }),
+      });
+    }
+  }, []);
+
+  const cancelAttachmentUpload = useCallback(() => {
+    attachmentUploadTaskRef.current?.cancel();
+    attachmentUploadTaskRef.current = null;
   }, []);
 
   const handleImagePoolUpload = useCallback((files: File[]) => {
@@ -1046,6 +1078,7 @@ export default function EditorWorkspace() {
   const canPublish = Boolean(
     (content.trim() || selectedImages.length > 0 || selectedAttachments.length > 0)
     && !isPublishing
+    && !isUploadingAssets
     && !draftLoading
     && !historyLoading,
   );
@@ -1126,6 +1159,7 @@ export default function EditorWorkspace() {
           onAttachmentUpload={handleAttachmentUpload}
           onRemoveImage={removeImage}
           onRemoveAttachment={removeAttachment}
+          onCancelUpload={cancelAttachmentUpload}
           onOpenStyleEditor={handleOpenStyleEditor}
           onImagePoolUpload={handleImagePoolUpload}
           onImagePoolLoadMore={() => {

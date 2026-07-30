@@ -7,6 +7,7 @@ import Image from "next/image";
 import COS from "cos-js-sdk-v5";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
+import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
 import {
   X,
   Loader2,
@@ -26,7 +27,9 @@ type PostVisibility = "PUBLIC" | "UNLISTED";
 type VideoWorkflowStatus = "IDLE" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
 
 type UploadedAttachment = {
+  id?: string;
   url: string;
+  objectKey?: string | null;
   fileName: string;
   fileSize: number;
   mimeType: string;
@@ -80,6 +83,7 @@ type DraftAsset = {
   status: DraftAssetStatus;
   progress: number;
   url: string | null;
+  objectKey: string | null;
   fileName: string | null;
   fileSize: number | null;
   mimeType: string | null;
@@ -227,6 +231,7 @@ function CreatePostPageContent() {
   const [cancelRequested, setCancelRequested] = useState(false);
   const [error, setError] = useState("");
   const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const attachmentUploadTaskRef = useRef<AttachmentUploadTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -310,6 +315,8 @@ function CreatePostPageContent() {
       )
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((asset) => ({
+        id: asset.id,
+        objectKey: asset.objectKey,
         url: asset.url as string,
         fileName: asset.fileName as string,
         fileSize: asset.fileSize as number,
@@ -420,10 +427,12 @@ function CreatePostPageContent() {
 
   const buildDraftAssets = useCallback(() => {
     const assets: Array<{
+      id?: string;
       type: DraftAssetType;
       status: DraftAssetStatus;
       progress?: number;
       url?: string | null;
+      objectKey?: string | null;
       fileName?: string | null;
       fileSize?: number | null;
       mimeType?: string | null;
@@ -444,10 +453,12 @@ function CreatePostPageContent() {
 
       selectedAttachments.forEach((attachment, index) => {
         assets.push({
+          id: attachment.id,
           type: "ATTACHMENT",
           status: "READY",
           progress: 100,
           url: attachment.url,
+          objectKey: attachment.objectKey ?? null,
           fileName: attachment.fileName,
           fileSize: attachment.fileSize,
           mimeType: attachment.mimeType,
@@ -489,10 +500,12 @@ function CreatePostPageContent() {
 
     videoAttachments.forEach((attachment, index) => {
       assets.push({
+        id: attachment.id,
         type: "ATTACHMENT",
         status: "READY",
         progress: 100,
         url: attachment.url,
+        objectKey: attachment.objectKey ?? null,
         fileName: attachment.fileName,
         fileSize: attachment.fileSize,
         mimeType: attachment.mimeType,
@@ -695,6 +708,19 @@ function CreatePostPageContent() {
     onProgress: (percent: number, status: string) => void,
     bindDraftId?: string,
   ) => {
+    if (endpoint === "/api/upload/attachment") {
+      const directDraftId = bindDraftId || await ensureDraftId("EPHEMERAL");
+      const task = startAttachmentUpload(file, directDraftId, (percent) => {
+        onProgress(percent, `Attachment upload ${percent}%`);
+      });
+      attachmentUploadTaskRef.current = task;
+      try {
+        return await task.promise;
+      } finally {
+        attachmentUploadTaskRef.current = null;
+      }
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     if (bindDraftId) {
@@ -848,9 +874,8 @@ function CreatePostPageContent() {
     setError("");
 
     try {
-      const files = Array.from(e.target.files);
+      const files = Array.from(e.target.files).slice(0, Math.max(0, MAX_TEXT_ATTACHMENTS - selectedAttachments.length));
       const bindDraftId = await ensureDraftId("EPHEMERAL");
-      const uploadedFiles: UploadedAttachment[] = [];
       const totalFiles = files.length;
 
       for (let i = 0; i < totalFiles; i++) {
@@ -872,10 +897,9 @@ function CreatePostPageContent() {
           bindDraftId,
         ) as UploadedAttachment;
 
-        uploadedFiles.push(result);
+        setSelectedAttachments((prev) => [...prev, result].slice(0, MAX_TEXT_ATTACHMENTS));
       }
 
-      setSelectedAttachments((prev) => [...prev, ...uploadedFiles]);
       setUploadStatus("上传完成！");
     } catch (err) {
       if (err instanceof Error) {
@@ -922,15 +946,31 @@ function CreatePostPageContent() {
   };
 
   const removeAttachment = (indexToRemove: number) => {
+    const attachment = selectedAttachments[indexToRemove];
     setSelectedAttachments((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
+    if (attachment?.id) {
+      void fetch("/api/upload/attachment/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attachmentAssetId: attachment.id }),
+      });
+    }
   };
 
   const removeVideoAttachment = (indexToRemove: number) => {
+    const attachment = videoAttachments[indexToRemove];
     setVideoAttachments((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
+    if (attachment?.id) {
+      void fetch("/api/upload/attachment/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attachmentAssetId: attachment.id }),
+      });
+    }
   };
 
   const openEditorWorkspace = useCallback(async () => {
@@ -980,10 +1020,23 @@ function CreatePostPageContent() {
       xhrRef.current.abort();
       xhrRef.current = null;
     }
+    attachmentUploadTaskRef.current?.cancel();
+    attachmentUploadTaskRef.current = null;
   };
 
   const uploadVideoAttachment = async (file: File): Promise<UploadedAttachment> => {
     const bindDraftId = await ensureDraftId("EPHEMERAL");
+    const task = startAttachmentUpload(file, bindDraftId, (percent) => {
+      setVideoUploadError(`Attachment upload ${percent}%`);
+    });
+    attachmentUploadTaskRef.current = task;
+    try {
+      return await task.promise;
+    } finally {
+      attachmentUploadTaskRef.current = null;
+    }
+
+    /* Legacy proxy implementation retained in the compatibility API. */
     const formData = new FormData();
     formData.append("file", file);
     if (bindDraftId) {
@@ -1006,6 +1059,7 @@ function CreatePostPageContent() {
       fileSize: data.fileSize,
       mimeType: data.mimeType,
     };
+    */
   };
 
   const uploadVideoCover = async (file: File): Promise<string> => {
@@ -1315,8 +1369,10 @@ function CreatePostPageContent() {
       const remain = MAX_VIDEO_ATTACHMENTS - videoAttachments.length;
       const currentBatch = files.slice(0, remain);
 
-      const uploaded = await Promise.all(currentBatch.map((file) => uploadVideoAttachment(file)));
-      setVideoAttachments((prev) => [...prev, ...uploaded]);
+      for (const file of currentBatch) {
+        const uploaded = await uploadVideoAttachment(file);
+        setVideoAttachments((prev) => [...prev, uploaded].slice(0, MAX_VIDEO_ATTACHMENTS));
+      }
     } catch (uploadError) {
       console.error("Video attachment upload error:", uploadError);
       setVideoUploadError(

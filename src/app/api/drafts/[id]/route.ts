@@ -60,6 +60,7 @@ export async function PATCH(
         status: "PENDING" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
         progress?: number;
         url?: string | null;
+        objectKey?: string | null;
         fileName?: string | null;
         fileSize?: number | null;
         mimeType?: string | null;

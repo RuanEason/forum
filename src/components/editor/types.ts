@@ -67,7 +67,9 @@ export interface EditorDraftDetail extends EditorDraftSummary {
 }
 
 export interface UploadedAttachment {
+  id?: string;
   url: string;
+  objectKey?: string | null;
   fileName: string;
   fileSize: number;
   mimeType: string;
@@ -79,6 +81,7 @@ export interface EditorDraftAsset {
   status: "PENDING" | "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
   progress: number;
   url: string | null;
+  objectKey?: string | null;
   fileName: string | null;
   fileSize: number | null;
   mimeType: string | null;

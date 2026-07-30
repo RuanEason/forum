@@ -259,6 +259,7 @@ model DraftAsset {
   status       DraftAssetStatus @default(PENDING)
   progress     Int              @default(0)
   url          String?
+  objectKey    String?
   fileName     String?
   fileSize     Int?
   mimeType     String?

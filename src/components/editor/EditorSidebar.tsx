@@ -63,6 +63,7 @@ interface EditorSidebarProps {
   onAttachmentUpload: () => void;
   onRemoveImage: (index: number) => void;
   onRemoveAttachment: (index: number) => void;
+  onCancelUpload: () => void;
   onOpenStyleEditor: () => void;
   onImagePoolUpload: (files: File[]) => void;
   onImagePoolLoadMore: () => void;
@@ -100,6 +101,7 @@ export default function EditorSidebar({
   onAttachmentUpload,
   onRemoveImage,
   onRemoveAttachment,
+  onCancelUpload,
   onOpenStyleEditor,
   onImagePoolUpload,
   onImagePoolLoadMore,
@@ -393,9 +395,18 @@ export default function EditorSidebar({
                   <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex items-center justify-between text-sm font-medium text-slate-800">
                       <span>上传状态</span>
-                      {isUploadingAssets ? (
+                    {isUploadingAssets ? (
+                      <div className="flex items-center gap-2">
                         <span className="text-xs text-blue-600">{uploadProgress}%</span>
-                      ) : null}
+                        <button
+                          type="button"
+                          onClick={onCancelUpload}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : null}
                     </div>
                     {uploadStatus ? (
                       <div className="text-sm text-slate-600">{uploadStatus}</div>
