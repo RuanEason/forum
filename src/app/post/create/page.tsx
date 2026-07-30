@@ -1036,7 +1036,6 @@ function CreatePostPageContent() {
       attachmentUploadTaskRef.current = null;
     }
 
-    /* Legacy proxy implementation retained in the compatibility API. */
     const formData = new FormData();
     formData.append("file", file);
     if (bindDraftId) {
@@ -1059,7 +1058,6 @@ function CreatePostPageContent() {
       fileSize: data.fileSize,
       mimeType: data.mimeType,
     };
-    */
   };
 
   const uploadVideoCover = async (file: File): Promise<string> => {
