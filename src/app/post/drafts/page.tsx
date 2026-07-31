@@ -20,6 +20,7 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
+import { useToast } from "@/components/ui/Toast";
 
 type DraftStatus = "EDITING" | "UPLOADING" | "PROCESSING" | "FAILED" | "READY" | "PUBLISHED";
 type PostType = "TEXT" | "VIDEO";
@@ -116,10 +117,10 @@ function computeDistance(x1: number, y1: number, x2: number, y2: number) {
 
 export default function DraftsPage() {
   const router = useRouter();
+  const toast = useToast();
   const [drafts, setDrafts] = useState<DraftItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dragging, setDragging] = useState<DraggingState | null>(null);
   const [trashHot, setTrashHot] = useState(false);
@@ -187,7 +188,6 @@ export default function DraftsPage() {
     }
 
     setDeletingId(draftId);
-    setNotice("");
     setError("");
 
     try {
@@ -200,13 +200,13 @@ export default function DraftsPage() {
       }
 
       setDrafts((prev) => prev.filter((item) => item.id !== draftId));
-      setNotice("草稿已删除");
+      toast.success("草稿已删除");
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "删除草稿失败");
     } finally {
       setDeletingId(null);
     }
-  }, [deletingId]);
+  }, [deletingId, toast]);
 
   const rows = useMemo<DraftRow[]>(() => drafts.map((draft) => {
     const titleText = draft.title?.trim() || (draft.postType === "VIDEO" ? "未命名视频草稿" : "未命名文本草稿");
@@ -233,7 +233,6 @@ export default function DraftsPage() {
     }
 
     suppressNextClickRef.current = false;
-    setNotice("");
     setError("");
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -380,13 +379,6 @@ export default function DraftsPage() {
           新建发布
         </button>
       </div>
-
-      {notice && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4" />
-          {notice}
-        </div>
-      )}
 
       {error && (
         <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm flex items-center gap-2">

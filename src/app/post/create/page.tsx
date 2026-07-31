@@ -7,6 +7,7 @@ import Image from "next/image";
 import COS from "cos-js-sdk-v5";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
 import TopicSelector from "@/components/TopicSelector";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
 import {
   X,
@@ -213,6 +214,7 @@ function CreatePostPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startTask } = usePageLoadProgress();
   const draftIdFromUrl = searchParams.get("draftId");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
@@ -222,6 +224,8 @@ function CreatePostPageContent() {
   const videoPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoCosRef = useRef<unknown>(null);
   const videoTaskIdRef = useRef<string | null>(null);
+  const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
+  const navigationTaskTimeoutRef = useRef<number | null>(null);
   const [postMode, setPostMode] = useState<PostMode>("TEXT");
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [content, setContent] = useState("");
@@ -264,6 +268,39 @@ function CreatePostPageContent() {
   const autoSavingRef = useRef(false);
   const hasAnyContentRef = useRef(false);
   selectedAttachmentsRef.current = selectedAttachments;
+
+  const finishPendingNavigationTask = useCallback(() => {
+    if (navigationTaskTimeoutRef.current !== null) {
+      window.clearTimeout(navigationTaskTimeoutRef.current);
+      navigationTaskTimeoutRef.current = null;
+    }
+
+    if (pendingNavigationTaskRef.current) {
+      const finishTask = pendingNavigationTaskRef.current;
+      pendingNavigationTaskRef.current = null;
+      finishTask();
+    }
+  }, []);
+
+  const navigateToDrafts = useCallback(() => {
+    finishPendingNavigationTask();
+    pendingNavigationTaskRef.current = startTask("navigation");
+    navigationTaskTimeoutRef.current = window.setTimeout(() => {
+      finishPendingNavigationTask();
+    }, 10000);
+    router.push("/post/drafts");
+  }, [finishPendingNavigationTask, router, startTask]);
+
+  useEffect(() => {
+    finishPendingNavigationTask();
+  }, [finishPendingNavigationTask, pathname]);
+
+  useEffect(() => {
+    return () => {
+      finishPendingNavigationTask();
+    };
+  }, [finishPendingNavigationTask]);
+
   const stopVideoPolling = useCallback(() => {
     if (videoPollTimerRef.current) {
       clearInterval(videoPollTimerRef.current);
@@ -1666,7 +1703,7 @@ function CreatePostPageContent() {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/post/drafts")}
+              onClick={navigateToDrafts}
               className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
               title="打开草稿箱"
               aria-label="打开草稿箱"
