@@ -13,8 +13,10 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Archive,
   Settings,
   Paperclip,
+  Save,
   UploadCloud,
   Video,
   RefreshCw,
@@ -1559,6 +1561,7 @@ function CreatePostPageContent() {
   const handleSaveDraftClick = async () => {
     try {
       const savedDraftId = await saveDraft("SAVED");
+      setAutoSaveAt(new Date().toLocaleTimeString("zh-CN", { hour12: false }));
       setError("");
       setVideoUploadError("");
       router.replace(savedDraftId ? `/post/create?draftId=${savedDraftId}` : "/post/create");
@@ -1612,6 +1615,13 @@ function CreatePostPageContent() {
   const statusMeta = getVideoStatusMeta(videoStatus);
   const shouldShowVideoCoverUploader = Boolean(videoAssetId) && !videoUploading;
   const effectiveVideoCoverUrl = videoCoverUrl || videoMeta?.coverUrl || null;
+  const draftStatus = draftSaving
+    ? { label: "保存中", className: "text-amber-500" }
+    : unsavedChanges && autoSaveAt
+      ? { label: `已保存 ${autoSaveAt}`, className: "text-emerald-500" }
+      : unsavedChanges
+        ? { label: "未保存", className: "text-orange-500" }
+        : null;
 
   if (status === "loading") {
     return (
@@ -1639,12 +1649,29 @@ function CreatePostPageContent() {
           </button>
           <h1 className="text-lg font-semibold text-gray-900">发布动态</h1>
           <div className="flex items-center gap-2">
+            {draftStatus && (
+              <span className={`inline-flex items-center text-xs font-medium ${draftStatus.className}`}>
+                {draftStatus.label}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleSaveDraftClick}
+              disabled={loading || draftSaving}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              title="保存草稿"
+              aria-label="保存草稿"
+            >
+              <Save className="h-[18px] w-[18px]" strokeWidth={1.8} />
+            </button>
             <button
               type="button"
               onClick={() => router.push("/post/drafts")}
-              className="px-3 py-1.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-full hover:bg-gray-100 transition-colors"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+              title="打开草稿箱"
+              aria-label="打开草稿箱"
             >
-              草稿箱
+              <Archive className="h-[18px] w-[18px]" strokeWidth={1.8} />
             </button>
             <button
               type="button"
@@ -1655,22 +1682,6 @@ function CreatePostPageContent() {
               {loading ? "发布中..." : "发布"}
             </button>
           </div>
-        </div>
-
-        <div className="mb-4 flex items-center justify-between text-xs text-gray-500">
-          <div>
-            {draftId ? `草稿 ID: ${draftId}` : "未保存草稿"}
-            {draftLoading ? " | 草稿加载中" : ""}
-            {autoSaveAt ? ` | 已自动保存于 ${autoSaveAt}` : ""}
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveDraftClick}
-            disabled={loading || draftSaving}
-            className="px-3 py-1 rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {draftSaving ? "保存中..." : "保存草稿"}
-          </button>
         </div>
 
         <div className="mb-4 bg-white rounded-2xl shadow-sm p-1 border border-gray-100">
