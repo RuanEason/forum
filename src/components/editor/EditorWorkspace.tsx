@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
 import EditorDocumentTabs from "@/components/editor/EditorDocumentTabs";
 import EditorOutline from "@/components/editor/EditorOutline";
+import EditorResizeHandle from "@/components/editor/EditorResizeHandle";
 import EditorSidebar, { type SidebarTab } from "@/components/editor/EditorSidebar";
 import EditorStatusbar from "@/components/editor/EditorStatusbar";
 import EditorTopbar from "@/components/editor/EditorTopbar";
@@ -67,6 +68,28 @@ type EditorImageUploadResponse = {
   error?: string;
 };
 
+const EDITOR_LEFT_WIDTH_KEY = "forum:editor:left-width";
+const EDITOR_RIGHT_WIDTH_KEY = "forum:editor:right-width";
+const DEFAULT_LEFT_WIDTH = 360;
+const DEFAULT_RIGHT_WIDTH = 300;
+const MIN_LEFT_WIDTH = 240;
+const MAX_LEFT_WIDTH = 520;
+const MIN_RIGHT_WIDTH = 220;
+const MAX_RIGHT_WIDTH = 480;
+
+function clampWidth(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function readStoredWidth(key: string, fallback: number, min: number, max: number) {
+  try {
+    const stored = Number(window.localStorage.getItem(key));
+    return Number.isFinite(stored) ? clampWidth(stored, min, max) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function EditorWorkspace() {
   const { status } = useSession();
   const router = useRouter();
@@ -114,6 +137,8 @@ export default function EditorWorkspace() {
   const [activeLineNumber, setActiveLineNumber] = useState(1);
   const [jumpLineNumber, setJumpLineNumber] = useState<number | null>(null);
   const [didMountEditor, setDidMountEditor] = useState(false);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(DEFAULT_LEFT_WIDTH);
+  const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_WIDTH);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveDraftRef = useRef<(() => Promise<string | null>) | null>(null);
@@ -143,6 +168,8 @@ export default function EditorWorkspace() {
   const attachmentUploadTaskRef = useRef<AttachmentUploadTask | null>(null);
   const activeDocumentTabRef = useRef<EditorDocumentTab>(activeDocumentTab);
   const imageInsertIdRef = useRef(0);
+  const leftPanelWidthRef = useRef(DEFAULT_LEFT_WIDTH);
+  const rightPanelWidthRef = useRef(DEFAULT_RIGHT_WIDTH);
 
   titleRef.current = title;
   contentRef.current = content;
@@ -153,6 +180,55 @@ export default function EditorWorkspace() {
   selectedImagesRef.current = selectedImages;
   selectedAttachmentsRef.current = selectedAttachments;
   activeDocumentTabRef.current = activeDocumentTab;
+  leftPanelWidthRef.current = leftPanelWidth;
+  rightPanelWidthRef.current = rightPanelWidth;
+
+  useEffect(() => {
+    setLeftPanelWidth(readStoredWidth(
+      EDITOR_LEFT_WIDTH_KEY,
+      DEFAULT_LEFT_WIDTH,
+      MIN_LEFT_WIDTH,
+      MAX_LEFT_WIDTH,
+    ));
+    setRightPanelWidth(readStoredWidth(
+      EDITOR_RIGHT_WIDTH_KEY,
+      DEFAULT_RIGHT_WIDTH,
+      MIN_RIGHT_WIDTH,
+      MAX_RIGHT_WIDTH,
+    ));
+  }, []);
+
+  const resizeLeftPanel = useCallback((deltaX: number) => {
+    setLeftPanelWidth(clampWidth(
+      leftPanelWidthRef.current + deltaX,
+      MIN_LEFT_WIDTH,
+      MAX_LEFT_WIDTH,
+    ));
+  }, []);
+
+  const resizeRightPanel = useCallback((deltaX: number) => {
+    setRightPanelWidth(clampWidth(
+      rightPanelWidthRef.current - deltaX,
+      MIN_RIGHT_WIDTH,
+      MAX_RIGHT_WIDTH,
+    ));
+  }, []);
+
+  const persistLeftPanelWidth = useCallback(() => {
+    try {
+      window.localStorage.setItem(EDITOR_LEFT_WIDTH_KEY, String(leftPanelWidthRef.current));
+    } catch {
+      // Ignore storage failures so resizing remains usable.
+    }
+  }, []);
+
+  const persistRightPanelWidth = useCallback(() => {
+    try {
+      window.localStorage.setItem(EDITOR_RIGHT_WIDTH_KEY, String(rightPanelWidthRef.current));
+    } catch {
+      // Ignore storage failures so resizing remains usable.
+    }
+  }, []);
 
   const historyGroups = useMemo(() => groupDraftsByDate(drafts), [drafts]);
   const outlineItems = useMemo(() => buildOutlineItems(content), [content]);
@@ -1132,6 +1208,7 @@ export default function EditorWorkspace() {
 
       <div className="min-h-0 flex flex-1">
         <EditorSidebar
+          style={{ width: leftPanelWidth }}
           activeTab={activeSidebarTab}
           groups={historyGroups}
           activeDraftId={draftId}
@@ -1173,6 +1250,12 @@ export default function EditorWorkspace() {
           onImagePoolDelete={handleImagePoolDelete}
         />
 
+        <EditorResizeHandle
+          direction="left"
+          onResize={resizeLeftPanel}
+          onResizeEnd={persistLeftPanelWidth}
+        />
+
         <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden">
           <EditorDocumentTabs
             activeTab={activeDocumentTab}
@@ -1212,12 +1295,25 @@ export default function EditorWorkspace() {
 
         {activeDocumentTab === "content" ? (
           <EditorOutline
+            width={rightPanelWidth}
             items={outlineItems}
             activeLineNumber={activeLineNumber}
             onSelectLine={(lineNumber) => setJumpLineNumber(lineNumber)}
+            onResize={resizeRightPanel}
+            onResizeEnd={persistRightPanelWidth}
           />
         ) : (
-          <aside className="hidden w-[280px] border-l border-slate-200 bg-white/80 xl:flex xl:flex-col">
+          <>
+          <EditorResizeHandle
+            direction="right"
+            className="hidden xl:block"
+            onResize={resizeRightPanel}
+            onResizeEnd={persistRightPanelWidth}
+          />
+          <aside
+            className="hidden shrink-0 border-l border-slate-200 bg-white/80 xl:flex xl:flex-col"
+            style={{ width: rightPanelWidth }}
+          >
             <div className="border-b border-slate-200 px-5 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               样式说明
             </div>
@@ -1227,6 +1323,7 @@ export default function EditorWorkspace() {
               <p>这里写的 CSS 只作用于当前帖子正文，不会影响站点其他页面。</p>
             </div>
           </aside>
+          </>
         )}
       </div>
 

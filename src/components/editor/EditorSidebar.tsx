@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import {
   Code2,
   EyeOff,
@@ -34,6 +35,7 @@ import {
 export type SidebarTab = "history" | "properties" | "assets";
 
 interface EditorSidebarProps {
+  style?: CSSProperties;
   activeTab: SidebarTab;
   groups: DraftHistoryGroup[];
   activeDraftId: string | null;
@@ -72,6 +74,7 @@ interface EditorSidebarProps {
 }
 
 export default function EditorSidebar({
+  style,
   activeTab,
   groups,
   activeDraftId,
@@ -109,7 +112,7 @@ export default function EditorSidebar({
   onImagePoolDelete,
 }: EditorSidebarProps) {
   return (
-    <aside className="flex h-full w-[360px] border-r border-slate-200 bg-[#f7f7f5]">
+    <aside style={style} className="flex h-full shrink-0 border-r border-slate-200 bg-[#f7f7f5]">
       <div className="flex w-14 flex-shrink-0 flex-col items-center border-r border-slate-200 bg-[#f1f1ee]">
         <SidebarRailButton
           icon={<History className="h-5 w-5" />}

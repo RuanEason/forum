@@ -3,21 +3,27 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, ListTree } from "lucide-react";
 import { cn } from "@/lib/utils";
+import EditorResizeHandle from "@/components/editor/EditorResizeHandle";
 import type { EditorOutlineItem } from "@/components/editor/types";
 
 interface EditorOutlineProps {
+  width: number;
   items: EditorOutlineItem[];
   activeLineNumber: number;
   onSelectLine: (lineNumber: number) => void;
+  onResize: (deltaX: number) => void;
+  onResizeEnd: () => void;
 }
 
 export default function EditorOutline({
+  width,
   items,
   activeLineNumber,
   onSelectLine,
+  onResize,
+  onResizeEnd,
 }: EditorOutlineProps) {
   const [expanded, setExpanded] = useState(true);
-  const panelWidth = 300;
   const collapsedWidth = 44;
   const activeItem = items.reduce<EditorOutlineItem | null>((current, item) => {
     if (item.lineNumber > activeLineNumber) {
@@ -34,14 +40,23 @@ export default function EditorOutline({
   return (
     <div
       className="relative h-full shrink-0 overflow-hidden border-l border-slate-200 bg-[#fbfdff] transition-[width] duration-300 ease-out"
-      style={{ width: expanded ? panelWidth : collapsedWidth }}
+      style={{ width: expanded ? width : collapsedWidth }}
     >
+      {expanded ? (
+        <EditorResizeHandle
+          direction="right"
+          className="!absolute !left-0 !top-0"
+          onResize={onResize}
+          onResizeEnd={onResizeEnd}
+        />
+      ) : null}
       <aside
-        className="absolute inset-y-0 right-0 flex w-[300px] flex-row bg-[#fbfdff] transition-transform duration-300 ease-out"
+        className="absolute inset-y-0 right-0 flex h-full flex-row bg-[#fbfdff] transition-transform duration-300 ease-out"
         style={{
+          width,
           transform: expanded
             ? "translateX(0)"
-            : `translateX(${panelWidth - collapsedWidth}px)`,
+            : `translateX(${width - collapsedWidth}px)`,
         }}
       >
         <button
