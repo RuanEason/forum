@@ -10,10 +10,22 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ImagePlus, Loader2, SendHorizontal, X } from "lucide-react";
+import {
+  Ellipsis,
+  ImagePlus,
+  Loader2,
+  MessageCircle,
+  Pin,
+  PinOff,
+  SendHorizontal,
+  Trash2,
+  X,
+} from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
 import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
+import Modal from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 
 interface AuthorProps {
   id: string;
@@ -52,20 +64,30 @@ interface PostCommentsProps {
 
 export default function PostComments({ comments, postId, postAuthorId }: PostCommentsProps) {
   const { data: session } = useSession();
+  const toast = useToast();
   const router = useRouter();
   const currentUserId = (session as Session | null)?.user?.id || null;
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [deleteConfirmCommentId, setDeleteConfirmCommentId] = useState<string | null>(null);
   const [pinningCommentId, setPinningCommentId] = useState<string | null>(null);
 
   const refreshComments = () => {
     router.refresh();
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (deletingCommentId || pinningCommentId) {
+  const requestDeleteComment = (commentId: string) => {
+    if (deletingCommentId || deleteConfirmCommentId || pinningCommentId) {
       return;
     }
-    if (!confirm("确定要删除这条评论吗？")) return;
+
+    setDeleteConfirmCommentId(commentId);
+  };
+
+  const handleDeleteComment = async () => {
+    const commentId = deleteConfirmCommentId;
+    if (!commentId || deletingCommentId || pinningCommentId) {
+      return;
+    }
 
     setDeletingCommentId(commentId);
     try {
@@ -78,20 +100,22 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
       });
 
       if (response.ok) {
+        toast.success("评论删除成功");
         refreshComments();
       } else {
         const data = await response.json();
-        alert(data.error || "删除失败");
+        toast.error(data.error || "删除失败");
       }
     } catch {
-      alert("网络错误，删除失败");
+      toast.error("网络错误，删除失败");
     } finally {
       setDeletingCommentId(null);
+      setDeleteConfirmCommentId(null);
     }
   };
 
   const handlePinComment = async (commentId: string, pinned: boolean) => {
-    if (deletingCommentId || pinningCommentId) {
+    if (deletingCommentId || deleteConfirmCommentId || pinningCommentId) {
       return;
     }
 
@@ -109,10 +133,10 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
         refreshComments();
       } else {
         const data = await response.json();
-        alert(data.error || (pinned ? "置顶失败" : "取消置顶失败"));
+        toast.error(data.error || (pinned ? "置顶失败" : "取消置顶失败"));
       }
     } catch {
-      alert("网络错误，操作失败");
+      toast.error("网络错误，操作失败");
     } finally {
       setPinningCommentId(null);
     }
@@ -127,40 +151,85 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
+  const activeDeleteCommentId = deletingCommentId ?? deleteConfirmCommentId;
+
   return (
-    <div
-      id="comments-section"
-      className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t border-gray-100"
-    >
-      <div className="p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-          评论 ({comments.length})
-        </h2>
-        {/* Comment Form */}
-        <CommentForm postId={postId} onCommentPosted={refreshComments} />
-        {comments.length === 0 ? (
-          <p className="text-gray-500 text-sm sm:text-base">
-            还没有评论，快来发表第一条评论吧！
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {sortedComments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                currentUserId={currentUserId}
-                postAuthorId={postAuthorId}
-                onCommentPosted={refreshComments}
-                onDeleteComment={handleDeleteComment}
-                onPinComment={handlePinComment}
-                deletingCommentId={deletingCommentId}
-                pinningCommentId={pinningCommentId}
-              />
-            ))}
-          </div>
-        )}
+    <>
+      <div
+        id="comments-section"
+        className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t border-gray-100"
+      >
+        <div className="p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
+            评论 ({comments.length})
+          </h2>
+          {/* Comment Form */}
+          <CommentForm postId={postId} onCommentPosted={refreshComments} />
+          {comments.length === 0 ? (
+            <p className="text-gray-500 text-sm sm:text-base">
+              还没有评论，快来发表第一条评论吧！
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {sortedComments.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUserId={currentUserId}
+                  postAuthorId={postAuthorId}
+                  onCommentPosted={refreshComments}
+                  onDeleteComment={requestDeleteComment}
+                  onPinComment={handlePinComment}
+                  deletingCommentId={activeDeleteCommentId}
+                  pinningCommentId={pinningCommentId}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Modal
+        isOpen={deleteConfirmCommentId !== null}
+        onClose={() => {
+          if (!deletingCommentId) {
+            setDeleteConfirmCommentId(null);
+          }
+        }}
+        title="删除评论"
+        showCloseButton={!deletingCommentId}
+        className="max-w-sm"
+      >
+        <div className="space-y-5">
+          <p className="text-sm leading-6 text-gray-600">
+            确定要删除这条评论吗？此操作无法撤销。
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmCommentId(null)}
+              disabled={Boolean(deletingCommentId)}
+              className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDeleteComment()}
+              disabled={!deleteConfirmCommentId || Boolean(deletingCommentId)}
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deletingCommentId ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              )}
+              删除评论
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 
@@ -455,6 +524,131 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
   );
 }
 
+interface CommentMoreMenuProps {
+  canDelete: boolean;
+  canPin: boolean;
+  pinned: boolean;
+  disabled: boolean;
+  isDeleting: boolean;
+  isPinning: boolean;
+  onDelete?: () => void | Promise<void>;
+  onPin?: () => void | Promise<void>;
+}
+
+function CommentMoreMenu({
+  canDelete,
+  canPin,
+  pinned,
+  disabled,
+  isDeleting,
+  isPinning,
+  onDelete,
+  onPin,
+}: CommentMoreMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  if (!canDelete && !canPin) {
+    return null;
+  }
+
+  const menuDisabled = disabled || isDeleting || isPinning;
+
+  const runAction = async (action?: () => void | Promise<void>) => {
+    if (!action || menuDisabled) return;
+
+    await action();
+    setOpen(false);
+  };
+
+  return (
+    <div ref={menuRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        disabled={disabled}
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+          open
+            ? "bg-gray-100 text-gray-700"
+            : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+        }`}
+        aria-label="更多操作"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="更多操作"
+      >
+        <Ellipsis className="h-4 w-4" aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute bottom-full right-0 z-50 mb-1 w-36 overflow-hidden rounded-lg border border-gray-100 bg-white p-1 shadow-[0_8px_24px_rgba(15,23,42,0.14)]"
+        >
+          {canPin && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void runAction(onPin)}
+              disabled={menuDisabled}
+              className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isPinning ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : pinned ? (
+                <PinOff className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Pin className="h-4 w-4" aria-hidden="true" />
+              )}
+              {pinned ? "取消置顶" : "设置置顶"}
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void runAction(onDelete)}
+              disabled={menuDisabled}
+              className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              )}
+              删除评论
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReplyItem({
   reply,
   mounted,
@@ -473,7 +667,7 @@ function ReplyItem({
   onReply: (target: { id: string; name: string | null }) => void;
   onJumpToReply: (replyId: string) => void;
   isHighlighted: boolean;
-  onDeleteComment: (id: string) => void;
+  onDeleteComment: (id: string) => void | Promise<void>;
   onOpenImagePreview: (url: string, alt?: string) => void;
   deletingCommentId: string | null;
   pinningCommentId: string | null;
@@ -532,79 +726,80 @@ function ReplyItem({
   return (
     <div
       id={`comment-${reply.id}`}
-      className={`border-t border-gray-100 pt-3 transition-colors duration-300 ${
+      className={`border-t border-gray-100 pt-3 first:border-t-0 transition-colors duration-300 ${
         isHighlighted ? "rounded bg-blue-50 ring-2 ring-blue-200" : ""
       }`}
     >
-      <div className="flex items-center">
+      <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3">
         <Avatar
           src={reply.author.avatar}
           name={reply.author.name}
-          size="sm"
+          size="md"
         />
-        <div className="ml-3">
-          <Link
-            href={`/user/${reply.author.id}`}
-            className="text-sm font-medium text-gray-900 hover:underline"
-          >
-            {reply.author.name || "匿名用户"}
-          </Link>
-          <div className="text-xs text-gray-500">
-            {mounted ? format(new Date(reply.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
+
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-5">
+            <Link
+              href={`/user/${reply.author.id}`}
+              className="text-sm font-medium text-gray-900 hover:underline"
+            >
+              {reply.author.name || "匿名用户"}
+            </Link>
+            <span className="text-xs text-gray-400">
+              {mounted ? format(new Date(reply.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
+            </span>
+          </div>
+
+          <div className="mt-2 min-w-0 text-gray-700 prose prose-sm prose-p:my-0 max-w-none break-words">
+            {showReplyToPrefix && (
+              <button
+                type="button"
+                onClick={() => onJumpToReply(reply.replyToId!)}
+                className="mb-1 block text-left text-xs text-gray-500 not-prose hover:text-blue-500 hover:underline"
+                title="跳转到被回复的评论"
+              >
+                对{reply.replyTo?.author.name || "匿名用户"}用户的回复：
+              </button>
+            )}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {reply.content}
+            </ReactMarkdown>
+          </div>
+
+          <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <LikeButton
+                targetType="comment"
+                targetId={reply.id}
+                initialLikesCount={reply.likes.length}
+                initialLikedByUser={
+                  currentUserId
+                    ? reply.likes.some((like) => like.userId === currentUserId)
+                    : false
+                }
+              />
+              <button
+                type="button"
+                onClick={() => onReply({ id: reply.id, name: reply.author.name })}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-500"
+                title="回复"
+                aria-label="回复"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+
+            <CommentMoreMenu
+              canDelete={currentUserId === reply.author.id}
+              canPin={false}
+              pinned={false}
+              disabled={isMutating}
+              isDeleting={isDeleting}
+              isPinning={false}
+              onDelete={() => onDeleteComment(reply.id)}
+            />
           </div>
         </div>
-      </div>
-
-      <div className="mt-2 text-sm text-gray-700 p-1 prose prose-sm max-w-none break-words">
-        {showReplyToPrefix && (
-          <button
-            type="button"
-            onClick={() => onJumpToReply(reply.replyToId!)}
-            className="mb-1 block text-left text-xs text-gray-500 not-prose hover:text-blue-500 hover:underline"
-            title="跳转到被回复的评论"
-          >
-            对{reply.replyTo?.author.name || "匿名用户"}用户的回复：
-          </button>
-        )}
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {reply.content}
-        </ReactMarkdown>
-      </div>
-
-      <div className="flex items-center space-x-4 mt-2">
-        <LikeButton
-          targetType="comment"
-          targetId={reply.id}
-          initialLikesCount={reply.likes.length}
-          initialLikedByUser={
-            currentUserId
-              ? reply.likes.some((like) => like.userId === currentUserId)
-              : false
-          }
-        />
-        <button
-          onClick={() => onReply({ id: reply.id, name: reply.author.name })}
-          className="text-xs text-gray-500 hover:text-blue-500"
-          title="回复"
-        >
-          回复
-        </button>
-        {currentUserId === reply.author.id && (
-          <button
-            disabled={isMutating}
-            onClick={() => onDeleteComment(reply.id)}
-            className="inline-flex items-center justify-center text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="删除评论"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
-              </svg>
-            )}
-          </button>
-        )}
       </div>
     </div>
   );
@@ -624,8 +819,8 @@ function CommentItem({
   currentUserId: string | null;
   postAuthorId: string;
   onCommentPosted: () => void;
-  onDeleteComment: (id: string) => void;
-  onPinComment: (id: string, pinned: boolean) => void;
+  onDeleteComment: (id: string) => void | Promise<void>;
+  onPinComment: (id: string, pinned: boolean) => void | Promise<void>;
   deletingCommentId: string | null;
   pinningCommentId: string | null;
 }) {
@@ -763,106 +958,86 @@ function CommentItem({
   };
 
   return (
-    <div id={`comment-${comment.id}`} className="border-t border-gray-200 pt-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Avatar
-            src={comment.author.avatar}
-            name={comment.author.name}
-            size="sm"
-          />
-          <div className="ml-3">
+    <div id={`comment-${comment.id}`} className="border-t border-gray-200 pt-4 first:border-t-0">
+      <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] gap-x-3">
+        <Avatar
+          src={comment.author.avatar}
+          name={comment.author.name}
+          size="md"
+        />
+
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-5">
             <Link
               href={`/user/${comment.author.id}`}
               className="text-sm font-medium text-gray-900 hover:underline"
             >
               {comment.author.name || "匿名用户"}
             </Link>
-            <div className="text-xs text-gray-500">
+            <span className="text-xs text-gray-400">
               {mounted
                 ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")
                 : ""}
+            </span>
+            {comment.pinned && (
+              <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                置顶
+              </span>
+            )}
+          </div>
+
+          <div
+            className="mt-2 min-w-0 cursor-pointer text-gray-700 prose prose-sm prose-p:my-0 max-w-none break-words hover:bg-gray-50"
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest("img, a, button")) {
+                return;
+              }
+              toggleRootReplyForm();
+            }}
+            title="点击回复"
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {comment.content}
+            </ReactMarkdown>
+          </div>
+
+          <div className="mt-2 flex min-w-0 items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <LikeButton
+                targetType="comment"
+                targetId={comment.id}
+                initialLikesCount={comment.likes.length}
+                initialLikedByUser={
+                  currentUserId
+                    ? comment.likes.some((like) => like.userId === currentUserId)
+                    : false
+                }
+              />
+              <button
+                type="button"
+                onClick={toggleRootReplyForm}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-500"
+                title={showReplyForm ? "取消回复" : "回复"}
+                aria-label={showReplyForm ? "取消回复" : "回复"}
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
+
+            <CommentMoreMenu
+              canDelete={currentUserId === comment.author.id}
+              canPin={isPostAuthor}
+              pinned={Boolean(comment.pinned)}
+              disabled={isMutating}
+              isDeleting={isDeleting}
+              isPinning={isPinning}
+              onDelete={() => onDeleteComment(comment.id)}
+              onPin={() => onPinComment(comment.id, !comment.pinned)}
+            />
           </div>
         </div>
-        {comment.pinned && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1">
-              <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
-            </svg>
-            置顶
-          </span>
-        )}
-      </div>
-
-      <div
-        className="mt-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded prose prose-sm max-w-none break-words"
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest("img, a, button")) {
-            return;
-          }
-          toggleRootReplyForm();
-        }}
-        title="点击回复"
-      >
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {comment.content}
-        </ReactMarkdown>
-      </div>
-
-      <div className="flex items-center space-x-4 mt-2">
-        <LikeButton
-          targetType="comment"
-          targetId={comment.id}
-          initialLikesCount={comment.likes.length}
-          initialLikedByUser={
-            currentUserId
-              ? comment.likes.some((like) => like.userId === currentUserId)
-              : false
-          }
-        />
-        <button
-          onClick={toggleRootReplyForm}
-          className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm group"
-          title={showReplyForm ? "取消回复" : "回复"}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </button>
-        {isPostAuthor && (
-          <button
-            disabled={isMutating}
-            onClick={() => onPinComment(comment.id, !comment.pinned)}
-            className={`inline-flex items-center justify-center p-1 rounded-full hover:bg-yellow-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${comment.pinned ? "text-yellow-600" : "text-gray-500 hover:text-yellow-600"}`}
-            title={comment.pinned ? "取消置顶" : "置顶评论"}
-          >
-            {isPinning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 20v-2h10v2zm4-4V7.825L8.4 10.4L7 9l5-5l5 5l-1.4 1.4L13 7.825V16z"/>
-              </svg>
-            )}
-          </button>
-        )}
-        {currentUserId === comment.author.id && (
-          <button
-            disabled={isMutating}
-            onClick={() => onDeleteComment(comment.id)}
-            className="inline-flex items-center justify-center text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="删除评论"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 21q-.825 0-1.412-.587T5 19V6q-.425 0-.712-.288T4 5t.288-.712T5 4h4q0-.425.288-.712T10 3h4q.425 0 .713.288T15 4h4q.425 0 .713.288T20 5t-.288.713T19 6v13q0 .825-.587 1.413T17 21zm3-4q.425 0 .713-.288T11 16V9q0-.425-.288-.712T10 8t-.712.288T9 9v7q0 .425.288.713T10 17m4 0q.425 0 .713-.288T15 16V9q0-.425-.288-.712T14 8t-.712.288T13 9v7q0 .425.288.713T14 17"/>
-              </svg>
-            )}
-          </button>
-        )}
       </div>
 
       {showReplyForm && (
