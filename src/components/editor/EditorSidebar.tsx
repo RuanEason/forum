@@ -6,11 +6,8 @@ import {
   Code2,
   EyeOff,
   FileImage,
-  FilePlus2,
-  History,
   Images,
   Image as ImageIcon,
-  Loader2,
   Paperclip,
   Settings2,
   Tag,
@@ -20,27 +17,16 @@ import TopicSelector from "@/components/TopicSelector";
 import EditorImagePool from "@/components/editor/EditorImagePool";
 import { cn } from "@/lib/utils";
 import type {
-  DraftHistoryGroup,
-  EditorDraftSummary,
   EditorImageAsset,
   PostVisibility,
   UploadedAttachment,
 } from "@/components/editor/types";
-import {
-  formatEditorDateTime,
-  getDraftDisplayTitle,
-  getDraftSummaryText,
-} from "@/components/editor/editor-utils";
 
-export type SidebarTab = "history" | "properties" | "assets";
+export type SidebarTab = "properties" | "assets";
 
 interface EditorSidebarProps {
   style?: CSSProperties;
   activeTab: SidebarTab;
-  groups: DraftHistoryGroup[];
-  activeDraftId: string | null;
-  loading: boolean;
-  switchingId: string | null;
   visibility: PostVisibility;
   selectedTopicId: string | null;
   selectedImages: string[];
@@ -56,9 +42,7 @@ interface EditorSidebarProps {
   imagePoolUploading: boolean;
   imagePoolError: string;
   imagePoolHasMore: boolean;
-  onCreateNew: () => void;
   onTabChange: (tab: SidebarTab) => void;
-  onSelectDraft: (draft: EditorDraftSummary) => void;
   onVisibilityChange: (value: PostVisibility) => void;
   onTopicChange: (topicId: string | null) => void;
   onImageUpload: () => void;
@@ -76,10 +60,6 @@ interface EditorSidebarProps {
 export default function EditorSidebar({
   style,
   activeTab,
-  groups,
-  activeDraftId,
-  loading,
-  switchingId,
   visibility,
   selectedTopicId,
   selectedImages,
@@ -95,9 +75,7 @@ export default function EditorSidebar({
   imagePoolUploading,
   imagePoolError,
   imagePoolHasMore,
-  onCreateNew,
   onTabChange,
-  onSelectDraft,
   onVisibilityChange,
   onTopicChange,
   onImageUpload,
@@ -115,12 +93,6 @@ export default function EditorSidebar({
     <aside style={style} className="flex h-full shrink-0 border-r border-slate-200 bg-[#f7f7f5]">
       <div className="flex w-14 flex-shrink-0 flex-col items-center border-r border-slate-200 bg-[#f1f1ee]">
         <SidebarRailButton
-          icon={<History className="h-5 w-5" />}
-          label="历史"
-          active={activeTab === "history"}
-          onClick={() => onTabChange("history")}
-        />
-        <SidebarRailButton
           icon={<Images className="h-5 w-5" />}
           label="图片池"
           active={activeTab === "assets"}
@@ -135,85 +107,7 @@ export default function EditorSidebar({
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {activeTab === "history" ? (
-          <>
-            <div className="border-b border-slate-200 px-4 py-4">
-              <button
-                type="button"
-                onClick={onCreateNew}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
-              >
-                <FilePlus2 className="h-4 w-4" />
-                新建文档
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              <History className="h-4 w-4" />
-              最近编辑
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-              {loading ? (
-                <div className="flex items-center gap-2 border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  正在加载历史草稿...
-                </div>
-              ) : groups.length === 0 ? (
-                <div className="border border-dashed border-slate-300 bg-white px-4 py-6 text-sm leading-6 text-slate-500">
-                  还没有已保存草稿。可以先新建一篇文档开始写作。
-                </div>
-              ) : (
-                <div className="space-y-5">
-                  {groups.map((group) => (
-                    <section key={group.label}>
-                      <h2 className="px-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {group.label}
-                      </h2>
-                      <div className="mt-2 space-y-2">
-                        {group.items.map((draft) => {
-                          const active = draft.id === activeDraftId;
-                          const loadingThis = switchingId === draft.id;
-
-                          return (
-                            <button
-                              key={draft.id}
-                              type="button"
-                              onClick={() => onSelectDraft(draft)}
-                              className={cn(
-                                "w-full border px-3 py-3 text-left transition-all",
-                                active
-                                  ? "border-blue-200 bg-blue-50 shadow-sm"
-                                  : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50",
-                              )}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="truncate text-sm font-medium text-slate-900">
-                                    {getDraftDisplayTitle(draft)}
-                                  </div>
-                                  <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                                    {getDraftSummaryText(draft.content)}
-                                  </div>
-                                </div>
-                                {loadingThis ? (
-                                  <Loader2 className="mt-0.5 h-4 w-4 flex-shrink-0 animate-spin text-slate-400" />
-                                ) : null}
-                              </div>
-                              <div className="mt-3 text-[11px] text-slate-400">
-                                {formatEditorDateTime(draft.updatedAt)}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : activeTab === "assets" ? (
+        {activeTab === "assets" ? (
           <EditorImagePool
             assets={imagePoolAssets}
             usedBytes={imagePoolUsedBytes}

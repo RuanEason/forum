@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
 import EditorDocumentTabs from "@/components/editor/EditorDocumentTabs";
+import EditorHistoryPanel from "@/components/editor/EditorHistoryPanel";
 import EditorOutline from "@/components/editor/EditorOutline";
 import EditorResizeHandle from "@/components/editor/EditorResizeHandle";
 import EditorSidebar, { type SidebarTab } from "@/components/editor/EditorSidebar";
@@ -90,6 +91,17 @@ function readStoredWidth(key: string, fallback: number, min: number, max: number
   }
 }
 
+function buildMarkdownFileName(title: string) {
+  const safeTitle = title
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 100)
+    .replace(/[. ]+$/g, "");
+
+  return `${safeTitle || "未命名文档"}.md`;
+}
+
 export default function EditorWorkspace() {
   const { status } = useSession();
   const router = useRouter();
@@ -113,7 +125,8 @@ export default function EditorWorkspace() {
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedAttachments, setSelectedAttachments] = useState<UploadedAttachment[]>([]);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("history");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("properties");
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [activeDocumentTab, setActiveDocumentTab] = useState<EditorDocumentTab>("content");
   const [isUploadingAssets, setIsUploadingAssets] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -648,6 +661,25 @@ export default function EditorWorkspace() {
     void saveDraft();
   }, [saveDraft]);
 
+  const handleExportMarkdown = useCallback(() => {
+    if (!contentRef.current.trim()) {
+      return;
+    }
+
+    const blob = new Blob([contentRef.current], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = buildMarkdownFileName(getDraftDisplayTitle({
+      title: titleRef.current,
+      content: contentRef.current,
+    }));
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }, []);
+
   const handleOpenMarkdownImport = useCallback(() => {
     const input = markdownImportInputRef.current;
     if (!input || isImporting) {
@@ -777,6 +809,14 @@ export default function EditorWorkspace() {
     router.replace(`/editor?${params.toString()}`);
     await loadDraft(draft.id);
   }, [loadDraft, router, saveDraft, searchParams, switchingId]);
+
+  const handleOpenHistory = useCallback(() => {
+    setIsHistoryPanelOpen(true);
+  }, []);
+
+  const handleCloseHistory = useCallback(() => {
+    setIsHistoryPanelOpen(false);
+  }, []);
 
   const handleCreateNew = useCallback(async () => {
     if (dirtyRef.current) {
@@ -1179,11 +1219,30 @@ export default function EditorWorkspace() {
         saveStateLabel={saveStateLabel}
         savedAtLabel={formatEditorTime(lastSavedAt)}
         canPublish={canPublish}
+        canExport={Boolean(content.trim())}
         isPublishing={isPublishing}
         isImporting={isImporting}
+        historyLoading={historyLoading}
+        switchingId={switchingId}
+        activeDraftId={draftId}
+        recentDrafts={drafts}
         onImport={handleOpenMarkdownImport}
+        onExport={handleExportMarkdown}
+        onCreateNew={handleCreateNew}
         onSave={handleManualSave}
+        onOpenHistory={handleOpenHistory}
+        onSelectDraft={handleSelectDraft}
         onPublish={handlePublish}
+      />
+
+      <EditorHistoryPanel
+        open={isHistoryPanelOpen}
+        groups={historyGroups}
+        activeDraftId={draftId}
+        loading={historyLoading}
+        switchingId={switchingId}
+        onClose={handleCloseHistory}
+        onSelectDraft={handleSelectDraft}
       />
 
       <input
@@ -1210,10 +1269,6 @@ export default function EditorWorkspace() {
         <EditorSidebar
           style={{ width: leftPanelWidth }}
           activeTab={activeSidebarTab}
-          groups={historyGroups}
-          activeDraftId={draftId}
-          loading={historyLoading}
-          switchingId={switchingId}
           visibility={visibility}
           selectedTopicId={selectedTopicId}
           selectedImages={selectedImages}
@@ -1229,9 +1284,7 @@ export default function EditorWorkspace() {
           imagePoolUploading={imagePoolUploading}
           imagePoolError={imagePoolError}
           imagePoolHasMore={Boolean(imagePoolNextCursor)}
-          onCreateNew={handleCreateNew}
           onTabChange={setActiveSidebarTab}
-          onSelectDraft={handleSelectDraft}
           onVisibilityChange={setVisibility}
           onTopicChange={setSelectedTopicId}
           onImageUpload={handleImageUpload}

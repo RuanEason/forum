@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { Plus } from "lucide-react";
 
 interface Topic {
   id: string;
@@ -15,11 +16,13 @@ interface Topic {
 interface TopicSelectorProps {
   selectedTopicId: string | null;
   onSelect: (topicId: string | null) => void;
+  variant?: "default" | "settings";
 }
 
 export default function TopicSelector({
   selectedTopicId,
   onSelect,
+  variant = "default",
 }: TopicSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,10 +152,12 @@ export default function TopicSelector({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className={`group relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-full transition-all duration-200 ease-in-out ${
+        className={`topic-selector-trigger group relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-full transition-all duration-200 ease-in-out ${
+          variant === "settings" ? "topic-selector-trigger--settings" : ""
+        } ${
           selectedTopicId
-            ? "bg-sky-50 text-sky-600 border-sky-200 hover:bg-sky-100 pr-9" // Added right padding for the 'x' button
-            : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+            ? "topic-selector-trigger--selected bg-sky-50 text-sky-600 border-sky-200 hover:bg-sky-100 pr-9" // Added right padding for the 'x' button
+            : "topic-selector-trigger--empty bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
         }`}
       >
         <span className="flex items-center">
@@ -163,8 +168,14 @@ export default function TopicSelector({
                 </>
             ) : (
                 <>
-                     {/* Search Icon */}
-                    # 选择话题
+                    {variant === "settings" ? (
+                      <>
+                        <Plus className="h-4 w-4" strokeWidth={1.8} />
+                        <span>添加话题</span>
+                      </>
+                    ) : (
+                      <># 选择话题</>
+                    )}
                 </>
             )}
         </span>

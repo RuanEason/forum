@@ -9,6 +9,9 @@ interface SimpleMarkdownEditorProps {
   placeholder?: string;
   minHeight?: number;
   showToolbarToggle?: boolean;
+  variant?: "default" | "composer";
+  contentSlot?: React.ReactNode;
+  footerRight?: React.ReactNode;
   onImageClick?: () => void;
   imageCount?: number;
   maxImages?: number;
@@ -29,6 +32,9 @@ export default function SimpleMarkdownEditor({
   placeholder = "写点什么...",
   minHeight = 150,
   showToolbarToggle = false,
+  variant = "default",
+  contentSlot,
+  footerRight,
   onImageClick,
   imageCount = 0,
   maxImages = 9,
@@ -99,7 +105,7 @@ export default function SimpleMarkdownEditor({
   };
 
   return (
-    <div className="simple-md-editor w-full">
+    <div className={`simple-md-editor w-full ${variant === "composer" ? "simple-md-editor--composer" : ""}`}>
       {/* Markdown 工具栏已停用，统一引导到 /editor 使用桌面编辑器体验 */}
 
       {/* Textarea */}
@@ -113,11 +119,17 @@ export default function SimpleMarkdownEditor({
         style={{ minHeight: `${minHeight}px` }}
       />
 
+      {contentSlot && (
+        <div className="simple-md-editor-content-slot">
+          {contentSlot}
+        </div>
+      )}
+
       {/* 底部工具栏 - 图片按钮、附件按钮、Markdown切换按钮、话题选择器 */}
       {showToolbarToggle && (
         <>
           <div className="simple-md-editor-footer">
-            <div className="flex items-center justify-between w-full">
+            <div className={`flex items-center justify-between w-full ${variant === "composer" ? "gap-3" : ""}`}>
               {/* 左侧：图片按钮、附件按钮、Markdown切换按钮 */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {/* 图片按钮 */}
@@ -188,6 +200,7 @@ export default function SimpleMarkdownEditor({
                     onClick={onOpenEditor}
                     className="footer-action-btn"
                     title="在编辑器中继续编辑"
+                    aria-label="在编辑器中继续编辑"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -197,10 +210,18 @@ export default function SimpleMarkdownEditor({
                 )}
               </div>
 
-              {/* 右侧：话题选择器 */}
-              {topicSelector && (
-                <div className="pointer-events-auto flex-shrink-0 ml-2">
-                  {topicSelector}
+              {/* 右侧：话题选择器和主要操作 */}
+              {(topicSelector || footerRight) && (
+                <div className={variant === "composer"
+                  ? "simple-md-editor-footer-right pointer-events-auto flex min-w-0 flex-shrink-0 items-center gap-2"
+                  : "pointer-events-auto ml-2 flex-shrink-0"
+                }>
+                  {topicSelector && (
+                    <div className="flex-shrink-0">
+                      {topicSelector}
+                    </div>
+                  )}
+                  {footerRight}
                 </div>
               )}
             </div>

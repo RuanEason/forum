@@ -23,6 +23,8 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
+  Eye,
+  Type,
 } from "lucide-react";
 
 type PostMode = "TEXT" | "VIDEO";
@@ -1673,98 +1675,120 @@ function CreatePostPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-2xl mx-auto py-6 px-4">
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <main className="mx-auto w-full max-w-[880px] px-4 py-6 sm:px-6 sm:py-8">
         {/* 顶部标题栏 */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
           <button
             type="button"
             onClick={handleCancel}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="inline-flex w-fit items-center gap-1.5 rounded-lg px-1 py-1.5 text-sm text-slate-500 transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
           >
+            <X className="h-4 w-4" strokeWidth={1.8} />
             取消
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">发布动态</h1>
-          <div className="flex items-center gap-2">
-            {draftStatus && (
-              <span className={`inline-flex items-center text-xs font-medium ${draftStatus.className}`}>
-                {draftStatus.label}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={handleSaveDraftClick}
-              disabled={loading || draftSaving}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-              title="保存草稿"
-              aria-label="保存草稿"
-            >
-              <Save className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            </button>
-            <button
-              type="button"
-              onClick={navigateToDrafts}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-              title="打开草稿箱"
-              aria-label="打开草稿箱"
-            >
-              <Archive className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={postMode === "TEXT" ? !canPublishText : !canPublishVideo}
-              className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? "发布中..." : "发布"}
-            </button>
-          </div>
+          <h1 className="text-center text-xl font-semibold tracking-normal text-slate-950">发布动态</h1>
+          <div aria-hidden="true" />
         </div>
 
-        <div className="mb-4 bg-white rounded-2xl shadow-sm p-1 border border-gray-100">
-          <div className="grid grid-cols-2 gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setPostMode("TEXT");
-                setError("");
-              }}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                postMode === "TEXT"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              发文本
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPostMode("VIDEO");
-                setError("");
-              }}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                postMode === "VIDEO"
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              发视频
-            </button>
-          </div>
+        <div className="mx-auto mb-6 flex w-full max-w-xs rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
+          <button
+            type="button"
+            onClick={() => {
+              setPostMode("TEXT");
+              setError("");
+            }}
+            className={`min-w-0 flex-1 rounded-[10px] px-4 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
+              postMode === "TEXT"
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            发文本
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPostMode("VIDEO");
+              setError("");
+            }}
+            className={`min-w-0 flex-1 rounded-[10px] px-4 py-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
+              postMode === "VIDEO"
+                ? "bg-white text-slate-950 shadow-sm"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            发视频
+          </button>
         </div>
 
         {postMode === "TEXT" && (
-        <form onSubmit={handleCreateTextPost} className="space-y-4">
-          {/* 主编辑区域 */}
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Markdown 编辑器 */}
+          <form onSubmit={handleCreateTextPost} className="space-y-4">
             <SimpleMarkdownEditor
               value={content}
               onChange={setContent}
               placeholder="分享你的想法..."
-              minHeight={200}
+              minHeight={250}
               showToolbarToggle={true}
+              variant="composer"
+              contentSlot={
+                selectedImages.length > 0 || selectedAttachments.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {selectedImages.map((url, index) => (
+                          <div key={index} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                            <Image
+                              src={url}
+                              alt={`Upload preview ${index + 1}`}
+                              fill
+                              sizes="(max-width: 640px) 28vw, 160px"
+                              className="object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              aria-label={`移除图片 ${index + 1}`}
+                              className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-950/65 text-white opacity-0 transition-opacity hover:bg-slate-950 group-hover:opacity-100"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {selectedAttachments.length > 0 && (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {selectedAttachments.map((attachment, index) => (
+                          <div
+                            key={index}
+                            className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
+                          >
+                            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm ring-1 ring-slate-200">
+                              <Paperclip className="h-4 w-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-slate-800">{attachment.fileName}</p>
+                              <p className="mt-0.5 text-xs text-slate-400">
+                                {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(index)}
+                              aria-label={`移除附件 ${attachment.fileName}`}
+                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null
+              }
               onImageClick={triggerImageUpload}
               imageCount={selectedImages.length}
               maxImages={9}
@@ -1776,15 +1800,19 @@ function CreatePostPageContent() {
               uploadProgress={uploadProgress}
               uploadStatus={uploadStatus}
               onOpenEditor={openEditorWorkspace}
-              topicSelector={
-                <TopicSelector
-                  selectedTopicId={selectedTopicId}
-                  onSelect={setSelectedTopicId}
-                />
+              footerRight={
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={!canPublishText}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {loading ? "发布中..." : "发布"}
+                </button>
               }
             />
 
-            {/* 隐藏的文件输入 */}
             <input
               ref={fileInputRef}
               type="file"
@@ -1795,7 +1823,6 @@ function CreatePostPageContent() {
               disabled={loading || isUploading || selectedImages.length >= 9}
             />
 
-            {/* 隐藏的附件输入 */}
             <input
               ref={attachmentInputRef}
               type="file"
@@ -1805,74 +1832,45 @@ function CreatePostPageContent() {
               disabled={loading || isUploading || selectedAttachments.length >= MAX_TEXT_ATTACHMENTS}
             />
 
-            {/* 图片上传区域 */}
-            {selectedImages.length > 0 && (
-              <div className="px-4 pb-4 border-t border-gray-100">
-                <div className="grid grid-cols-3 gap-3 pt-3">
-                  {selectedImages.map((url, index) => (
-                    <div key={index} className="relative aspect-square group">
-                      <Image
-                        src={url}
-                        alt={`Upload preview ${index + 1}`}
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <button
+                  type="button"
+                  onClick={navigateToDrafts}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                  title="打开草稿箱"
+                >
+                  <Archive className="h-4 w-4" strokeWidth={1.8} />
+                  草稿箱
+                </button>
+                {draftStatus && (
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${draftStatus.className}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {draftStatus.label}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveDraftClick}
+                  disabled={loading || draftSaving}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                  title="保存草稿"
+                  aria-label="保存草稿"
+                >
+                  <Save className="h-4 w-4" strokeWidth={1.8} />
+                  <span className="hidden sm:inline">保存草稿</span>
+                </button>
               </div>
-            )}
 
-            {/* 附件上传区域 */}
-            {selectedAttachments.length > 0 && (
-              <div className="px-4 pb-4 border-t border-gray-100">
-                <div className="space-y-2 pt-3">
-                  {selectedAttachments.map((attachment, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex-shrink-0 text-gray-500">
-                        <Paperclip className="h-5 w-5" />
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {attachment.fileName}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {(attachment.fileSize / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="flex-shrink-0 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 底部工具栏 - 只显示高级选项按钮 */}
-            <div className="flex items-center justify-end px-4 py-3 border-t border-gray-100">
-              {/* 高级选项按钮 */}
               <button
                 type="button"
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-expanded={showAdvanced}
+                aria-controls="text-advanced-options"
+                className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
               >
-                <Settings className="h-4 w-4" />
-                <span className="text-sm">高级选项</span>
+                <Settings className="h-4 w-4" strokeWidth={1.8} />
+                <span>高级选项</span>
                 {showAdvanced ? (
                   <ChevronUp className="h-4 w-4" />
                 ) : (
@@ -1880,79 +1878,90 @@ function CreatePostPageContent() {
                 )}
               </button>
             </div>
-          </div>
 
-          {/* 高级选项面板 */}
-          {showAdvanced && (
-            <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
-              {/* 标题开关和输入 */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={enableTitle}
-                    onChange={(e) => setEnableTitle(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">添加标题</span>
-                </label>
-                {enableTitle && (
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="请输入标题（可选）"
-                    maxLength={200}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                )}
-              </div>
+            {showAdvanced && (
+              <div
+                id="text-advanced-options"
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+              >
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">
+                        <Type className="h-4 w-4" strokeWidth={1.8} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-slate-800">添加标题</span>
+                        <span className="mt-0.5 block text-xs leading-5 text-slate-400">为动态添加一个可选标题</span>
+                      </span>
+                      <span className="relative inline-flex h-6 w-11 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={enableTitle}
+                          onChange={(e) => setEnableTitle(e.target.checked)}
+                          className="peer sr-only"
+                        />
+                        <span className="absolute inset-0 rounded-full bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200" />
+                        <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5" />
+                      </span>
+                    </label>
+                    {enableTitle && (
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="请输入标题（可选）"
+                        maxLength={200}
+                        className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      />
+                    )}
+                  </div>
 
-              {/* 字符统计 */}
-              <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-100">
-                <span>内容: {content.length} / 10000</span>
-                {enableTitle && <span>标题: {title.length} / 200</span>}
-              </div>
+                  <div className="create-post-topic-setting flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                    <span className="text-sm font-semibold text-slate-800">话题</span>
+                    <TopicSelector
+                      selectedTopicId={selectedTopicId}
+                      onSelect={setSelectedTopicId}
+                      variant="settings"
+                    />
+                  </div>
 
-              <div className="space-y-2 pt-2 border-t border-gray-100">
-                <p className="text-sm font-medium text-gray-700">可见性</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setVisibility("PUBLIC")}
-                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                      visibility === "PUBLIC"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <p className="text-sm font-medium">公开</p>
-                    <p className="text-xs text-gray-500 mt-0.5">会出现在首页和搜索结果中</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibility("UNLISTED")}
-                    className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                      visibility === "UNLISTED"
-                        ? "border-amber-500 bg-amber-50 text-amber-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <p className="text-sm font-medium">仅链接可见（半私密）</p>
-                    <p className="text-xs text-gray-500 mt-0.5">不在首页和搜索展示，仅可通过链接访问</p>
-                  </button>
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">
+                      <Eye className="h-4 w-4" strokeWidth={1.8} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <label htmlFor="text-visibility" className="block text-sm font-semibold text-slate-800">可见范围</label>
+                      <span className="mt-0.5 block text-xs leading-5 text-slate-400">
+                        {visibility === "PUBLIC" ? "会出现在首页和搜索结果中" : "不在首页和搜索展示，仅可通过链接访问"}
+                      </span>
+                    </span>
+                    <select
+                      id="text-visibility"
+                      value={visibility}
+                      onChange={(e) => setVisibility(e.target.value as PostVisibility)}
+                      className="max-w-[42%] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-700 outline-none transition-colors focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    >
+                      <option value="PUBLIC">公开可见</option>
+                      <option value="UNLISTED">仅链接可见</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-400">
+                  <span>内容: {content.length} / 10000</span>
+                  {enableTitle && <span>标题: {title.length} / 200</span>}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {error && (
-            <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              {error}
-            </div>
-          )}
-        </form>
+            {error && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                {error}
+              </div>
+            )}
+          </form>
         )}
 
         {postMode === "VIDEO" && (
@@ -2049,7 +2058,7 @@ function CreatePostPageContent() {
                     {videoStatus === "READY" && (
                       <p className="text-xs text-emerald-700 flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4" />
-                        视频处理完成，可以点击右上角“发布”。
+                        视频处理完成，可以点击下方“发布”。
                       </p>
                     )}
 
@@ -2287,6 +2296,47 @@ function CreatePostPageContent() {
                 {error}
               </div>
             )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <button
+                  type="button"
+                  onClick={navigateToDrafts}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                  title="打开草稿箱"
+                >
+                  <Archive className="h-4 w-4" strokeWidth={1.8} />
+                  草稿箱
+                </button>
+                {draftStatus && (
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${draftStatus.className}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                    {draftStatus.label}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleSaveDraftClick}
+                  disabled={loading || draftSaving}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                  title="保存草稿"
+                  aria-label="保存草稿"
+                >
+                  <Save className="h-4 w-4" strokeWidth={1.8} />
+                  <span className="hidden sm:inline">保存草稿</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={!canPublishVideo}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? "发布中..." : "发布"}
+              </button>
+            </div>
           </form>
         )}
       </main>
