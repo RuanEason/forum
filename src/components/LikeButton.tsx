@@ -231,12 +231,12 @@ export default function LikeButton({
         </span>
       </button>
 
-      <style jsx>{`
+      <style>{`
         .like-button-container {
           -webkit-tap-highlight-color: transparent;
         }
 
-        .thumb-icon {
+        .like-button-container .thumb-icon {
           width: 20px;
           height: 20px;
           fill: transparent;
@@ -247,7 +247,7 @@ export default function LikeButton({
           transform-origin: center bottom;
         }
 
-        .particles-wrapper {
+        .like-button-container .particles-wrapper {
           position: absolute;
           top: 50%;
           left: 50%;
@@ -256,7 +256,7 @@ export default function LikeButton({
           pointer-events: none;
         }
 
-        .particle {
+        .like-button-container .particle {
           position: absolute;
           width: 6px;
           height: 6px;
@@ -295,18 +295,18 @@ export default function LikeButton({
           }
         }
 
-        .is-liked .thumb-icon {
+        .like-button-container.is-liked .thumb-icon {
           fill: currentColor;
           stroke: currentColor;
           stroke-width: 0;
         }
 
-        .animate-like .thumb-icon {
+        .like-button-container.animate-like .thumb-icon {
           animation: thumbBurst 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)
             forwards;
         }
 
-        .animate-like .particle {
+        .like-button-container.animate-like .particle {
           animation: shootParticle 0.6s ease-out forwards;
         }
       `}</style>
