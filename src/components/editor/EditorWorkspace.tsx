@@ -117,6 +117,7 @@ export default function EditorWorkspace() {
   const [drafts, setDrafts] = useState<EditorDraftSummary[]>([]);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(initialDraftId);
+  const [editorDocumentKey, setEditorDocumentKey] = useState(initialDraftId ?? "new");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [styleCss, setStyleCss] = useState("");
@@ -302,6 +303,7 @@ export default function EditorWorkspace() {
       }));
 
     setDraftId(draft.id);
+    setEditorDocumentKey(draft.id);
     draftIdRef.current = draft.id;
     setTitle(draft.title ?? "");
     setContent(draft.content ?? "");
@@ -828,6 +830,7 @@ export default function EditorWorkspace() {
     }
 
     setDraftId(null);
+    setEditorDocumentKey("new");
     draftIdRef.current = null;
     setTitle("");
     setContent("");
@@ -1317,7 +1320,7 @@ export default function EditorWorkspace() {
           <div className="flex min-h-0 flex-1 overflow-hidden">
             {activeDocumentTab === "content" ? (
               <MarkdownDocEditor
-                documentKey={draftId ?? "new"}
+                documentKey={editorDocumentKey}
                 title={title}
                 content={content}
                 styleConfig={null}
@@ -1332,6 +1335,7 @@ export default function EditorWorkspace() {
                 onExternalJumpHandled={() => setJumpLineNumber(null)}
                 imageInsertRequest={imageInsertRequest}
                 onImageInsertHandled={() => setImageInsertRequest(null)}
+                onOpenImagePool={() => setActiveSidebarTab("assets")}
               />
             ) : (
               <StyleCodeEditor

@@ -34,6 +34,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# hidden files and directories (keep repository rules and the example env file)
+.*
+!.gitignore
+!.env.example
+
 # vercel
 .vercel
 

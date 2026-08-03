@@ -21,6 +21,7 @@ interface MarkdownDocEditorProps {
   hideTitleInput?: boolean;
   imageInsertRequest: EditorImageInsertRequest | null;
   onImageInsertHandled: () => void;
+  onOpenImagePool: () => void;
 }
 
 export default function MarkdownDocEditor({
@@ -40,6 +41,7 @@ export default function MarkdownDocEditor({
   hideTitleInput = false,
   imageInsertRequest,
   onImageInsertHandled,
+  onOpenImagePool,
 }: MarkdownDocEditorProps) {
   return (
     <UnifiedEditor
@@ -59,6 +61,7 @@ export default function MarkdownDocEditor({
       hideTitleInput={hideTitleInput}
       imageInsertRequest={imageInsertRequest}
       onImageInsertHandled={onImageInsertHandled}
+      onOpenImagePool={onOpenImagePool}
     />
   );
 }

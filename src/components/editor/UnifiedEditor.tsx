@@ -28,6 +28,7 @@ interface UnifiedEditorProps {
   hideTitleInput?: boolean;
   imageInsertRequest: EditorImageInsertRequest | null;
   onImageInsertHandled: () => void;
+  onOpenImagePool: () => void;
 }
 
 export default function UnifiedEditor({
@@ -47,6 +48,7 @@ export default function UnifiedEditor({
   hideTitleInput = false,
   imageInsertRequest,
   onImageInsertHandled,
+  onOpenImagePool,
 }: UnifiedEditorProps) {
   void _styleConfig;
   const [mode, setMode] = useState<UnifiedEditorMode>("markdown");
@@ -131,6 +133,7 @@ export default function UnifiedEditor({
       <div className="min-h-0 flex flex-1 overflow-hidden">
         {mode === "markdown" ? (
           <DualPaneEditor
+            documentKey={documentKey}
             content={content}
             styleCss={styleCss}
             onChange={onContentChange}
@@ -142,6 +145,7 @@ export default function UnifiedEditor({
             onExternalJumpHandled={onExternalJumpHandled}
             imageInsertRequest={imageInsertRequest}
             onImageInsertHandled={onImageInsertHandled}
+            onOpenImagePool={onOpenImagePool}
           />
         ) : (
           <NotionStyleEditor
