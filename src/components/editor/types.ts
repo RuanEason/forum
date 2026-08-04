@@ -1,8 +1,11 @@
+import type { JSONContent } from "@tiptap/core";
+
 export type PostType = "TEXT" | "VIDEO";
 export type PersistMode = "EPHEMERAL" | "SAVED";
 export type DraftStatus = "EDITING" | "UPLOADING" | "PROCESSING" | "FAILED" | "READY" | "PUBLISHED";
 export type SaveState = "idle" | "saving" | "saved" | "error";
 export type PostVisibility = "PUBLIC" | "UNLISTED";
+export type ContentFormat = "RICH_TEXT" | "PLAIN_TEXT";
 export type EditorDocumentTab = "content" | "style";
 export type EditorImageAssetStatus = "PENDING" | "READY";
 
@@ -50,6 +53,9 @@ export interface EditorDraftSummary {
   postType: PostType;
   title: string | null;
   content: string;
+  contentFormat?: ContentFormat;
+  contentJson?: JSONContent | null;
+  contentSummary?: string;
   status: DraftStatus;
   persistMode: PersistMode;
   updatedAt: string;
@@ -99,7 +105,7 @@ export interface EditorOutlineItem {
   id: string;
   depth: number;
   text: string;
-  lineNumber: number;
+  position: number;
 }
 
 export interface EditorImageAsset {
@@ -115,4 +121,5 @@ export interface EditorImageAsset {
 export interface EditorImageInsertRequest {
   id: number;
   url: string;
+  alt?: string;
 }

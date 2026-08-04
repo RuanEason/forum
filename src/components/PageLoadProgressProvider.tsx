@@ -144,6 +144,18 @@ function isSamePath(url: URL): boolean {
   );
 }
 
+function isCreatePostRoute(rawUrl: string | URL | null | undefined): boolean {
+  if (!rawUrl) {
+    return false;
+  }
+
+  try {
+    return new URL(String(rawUrl), window.location.href).pathname === "/post/create";
+  } catch {
+    return false;
+  }
+}
+
 function countFullScreenTasks(tasks: Map<number, string>): number {
   let count = 0;
   for (const label of tasks.values()) {
@@ -250,7 +262,11 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     }, 10000);
   }, [revealFullScreenOverlay, startTask]);
 
-  const scheduleNavigationTaskStart = useCallback(() => {
+  const scheduleNavigationTaskStart = useCallback((rawUrl?: string | URL | null) => {
+    if (isCreatePostRoute(rawUrl)) {
+      return;
+    }
+
     if (navigationTaskRef.current || navigationStartTimerRef.current !== null) {
       return;
     }
@@ -370,7 +386,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
         if (isSamePath(nextUrl)) {
           return;
         }
-        scheduleNavigationTaskStart();
+        scheduleNavigationTaskStart(nextUrl);
       } catch {
         // Ignore malformed URLs.
       }
@@ -406,7 +422,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
         if (url.origin !== window.location.origin || isSamePath(url)) {
           return;
         }
-        scheduleNavigationTaskStart();
+        scheduleNavigationTaskStart(url);
       } catch {
         // Ignore malformed URLs.
       }
@@ -430,7 +446,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       if (nextRouteKey === routeKey) {
         return;
       }
-      scheduleNavigationTaskStart();
+      scheduleNavigationTaskStart(nextRouteKey);
     };
 
     window.history.pushState = wrappedPushState;

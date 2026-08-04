@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
 const TPNS_HOST = process.env.TPNS_API_HOST?.trim() || "api.tpns.tencent.com";
 const TPNS_ENDPOINT = `https://${TPNS_HOST}/v3/push/app`;
@@ -27,6 +28,8 @@ type NotificationRecord = {
     id: string;
     title: string | null;
     content: string;
+    contentJson: unknown;
+    contentFormat: "RICH_TEXT" | "PLAIN_TEXT";
   } | null;
 };
 
@@ -180,6 +183,8 @@ export async function processPendingPushLogs(limit = 50) {
               id: true,
               title: true,
               content: true,
+              contentJson: true,
+              contentFormat: true,
             },
           },
         },
@@ -226,6 +231,8 @@ async function getNotificationForPush(notificationId: string) {
           id: true,
           title: true,
           content: true,
+          contentJson: true,
+          contentFormat: true,
         },
       },
     },
@@ -486,7 +493,9 @@ function formatPostLabel(post: NotificationRecord["post"]) {
     return `《${clipText(title, 22)}》`;
   }
 
-  const excerpt = post.content.replace(/\s+/g, " ").trim();
+  const excerpt = post.contentFormat === "RICH_TEXT"
+    ? getRichTextSummary(parseRichTextDocument(post.contentJson), 80)
+    : post.content.replace(/\s+/g, " ").trim();
   if (!excerpt) {
     return "";
   }

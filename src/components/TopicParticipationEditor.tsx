@@ -3,7 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import {
+    createEmptyRichTextDocument,
+    getRichTextPlainText,
+    hasRichTextContent,
+    parseRichTextDocument,
+    serializeRichTextDocument,
+} from "@/lib/rich-text/content";
 
 // SVG Icons
 const Icons = {
@@ -96,11 +103,13 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
     const { data: session } = useSession();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
-    const [content, setContent] = useState("");
+    const [content, setContent] = useState(() => serializeRichTextDocument(createEmptyRichTextDocument()));
     const [title, setTitle] = useState("");
     const [images, setImages] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInsertIdRef = useRef(0);
+    const [imageInsertRequest, setImageInsertRequest] = useState<{ id: number; url: string; alt?: string } | null>(null);
 
     // Close modal on escape key
     useEffect(() => {
@@ -146,7 +155,9 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
             if (!res.ok) throw new Error("上传失败");
     
             const data = await res.json();
-            setImages([...images, data.url]);
+            setImages((current) => [...current, data.url]);
+            imageInsertIdRef.current += 1;
+            setImageInsertRequest({ id: imageInsertIdRef.current, url: data.url, alt: "图片" });
         } catch (error) {
             console.error("Upload error:", error);
             alert("图片上传失败");
@@ -157,7 +168,8 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
     };
 
     const handleSubmit = async () => {
-        if (!content.trim() && images.length === 0) return;
+        const document = parseRichTextDocument(content);
+        if (!hasRichTextContent(document) && images.length === 0) return;
 
         setIsSubmitting(true);
         try {
@@ -168,15 +180,17 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
                 },
                 body: JSON.stringify({
                     title,
-                    content,
+                    content: "",
+                    contentJson: document ?? createEmptyRichTextDocument(),
+                    contentFormat: "RICH_TEXT",
                     topicId: topic.id,
                     images,
-                    type: images.length > 0 ? "image" : "text",
+                    postType: "TEXT",
                 }),
             });
 
             if (res.ok) {
-                setContent("");
+                setContent(serializeRichTextDocument(createEmptyRichTextDocument()));
                 setTitle("");
                 setImages([]);
                 setIsOpen(false);
@@ -228,13 +242,19 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
                         className="w-full text-lg font-semibold px-4 py-3 bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-gray-400"
                     />
 
-                    {/* Markdown Editor */}
+                    {/* 正文编辑器 */}
                     <div className="w-full border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500 transition-all shadow-sm">
-                        <SimpleMarkdownEditor
-                            value={content}
+                        <RichTextEditor
+                            content={content}
                             onChange={setContent}
-                            placeholder="分享你的想法..."
-                            minHeight={200}
+                            imageInsertRequest={imageInsertRequest}
+                            onImageInsertHandled={() => setImageInsertRequest(null)}
+                            externalJumpPosition={null}
+                            onExternalJumpHandled={() => undefined}
+                            onOutlineChange={() => undefined}
+                            onActivePositionChange={() => undefined}
+                            onSave={() => undefined}
+                            onPublish={() => undefined}
                         />
                     </div>
 
@@ -288,7 +308,7 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
                         <Button 
                             variant="primary"
                             onClick={handleSubmit} 
-                            disabled={isSubmitting || (!content.trim() && images.length === 0)}
+                            disabled={isSubmitting || (!getRichTextPlainText(parseRichTextDocument(content)) && images.length === 0)}
                             className="pl-3 pr-4"
                         >
                             {isSubmitting ? (

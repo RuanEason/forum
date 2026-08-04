@@ -28,7 +28,7 @@ export default function EditorBootScreen() {
             <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            <span className="ml-3">Markdown 编辑器</span>
+            <span className="ml-3">富文本编辑器</span>
           </div>
           <div className="space-y-2 font-mono text-sm leading-6">
             <div className="text-slate-500"># 准备工作台...</div>

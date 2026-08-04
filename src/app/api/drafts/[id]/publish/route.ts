@@ -66,6 +66,10 @@ export async function POST(
         data: {
           title: payload.title,
           content: payload.content,
+          contentJson: payload.contentJson === null
+            ? Prisma.JsonNull
+            : payload.contentJson as Prisma.InputJsonValue,
+          contentFormat: payload.contentFormat,
           styleConfig: payload.styleConfig === null
             ? Prisma.JsonNull
             : (payload.styleConfig as Prisma.InputJsonValue),

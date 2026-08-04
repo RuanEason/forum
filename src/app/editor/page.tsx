@@ -4,8 +4,8 @@ import EditorBootScreen from "@/components/editor/EditorBootScreen";
 import EditorWorkspace from "@/components/editor/EditorWorkspace";
 
 export const metadata: Metadata = {
-  title: "Markdown编辑器",
-  description: "支持 Markdown 与视觉模式切换的论坛发帖工作台",
+  title: "富文本编辑器",
+  description: "支持图文排版的论坛发帖工作台",
 };
 
 export default function EditorPage() {

@@ -5,6 +5,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteFromCOS } from "@/lib/cos";
 import { rewardActionExperience } from "@/lib/experience";
+import type { JSONContent } from "@tiptap/core";
+import {
+  createEmptyRichTextDocument,
+  hasRichTextContent,
+  parseRichTextDocument,
+  serializeRichTextDocument,
+} from "@/lib/rich-text/content";
+import { renderRichTextHtml } from "@/lib/rich-text/server";
 
 /**
  * 甯栧瓙瀛楁鏈€澶ч暱搴﹂檺鍒?
@@ -19,6 +27,7 @@ const MAX_URL_LENGTH = 2048;
 const POST_TYPES = ["TEXT", "VIDEO"] as const;
 const POST_VISIBILITIES = ["PUBLIC", "UNLISTED"] as const;
 type PostVisibility = (typeof POST_VISIBILITIES)[number];
+type ContentFormat = "RICH_TEXT" | "PLAIN_TEXT";
 
 type SessionShape = {
   user?: {
@@ -114,7 +123,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, images, attachments, topicId, postType, visibility, videoAssetId, videoCoverUrl } = await request.json();
+    const {
+      title,
+      content,
+      contentJson,
+      contentFormat,
+      images,
+      attachments,
+      topicId,
+      postType,
+      visibility,
+      videoAssetId,
+      videoCoverUrl,
+    } = await request.json() as {
+      title?: unknown;
+      content?: unknown;
+      contentJson?: unknown;
+      contentFormat?: unknown;
+      images?: unknown;
+      attachments?: unknown;
+      topicId?: unknown;
+      postType?: unknown;
+      visibility?: unknown;
+      videoAssetId?: unknown;
+      videoCoverUrl?: unknown;
+    };
 
     // Validate title (optional)
     if (title !== undefined && title !== null) {
@@ -134,7 +167,7 @@ export async function POST(request: NextRequest) {
       if (typeof content !== 'string') {
         return NextResponse.json({ error: "Content must be a string" }, { status: 400 });
       }
-      if (content.length > MAX_CONTENT_LENGTH) {
+      if (content.length > MAX_CONTENT_LENGTH && contentFormat !== "RICH_TEXT") {
         return NextResponse.json(
           { error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` },
           { status: 400 }
@@ -232,7 +265,33 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    const normalizedContent = typeof content === "string" ? content : "";
+    let normalizedContent = typeof content === "string" ? content : "";
+    let normalizedContentJson: JSONContent | null = null;
+    let normalizedContentFormat: ContentFormat = normalizedPostType === "TEXT" ? "RICH_TEXT" : "PLAIN_TEXT";
+
+    if (normalizedPostType === "TEXT") {
+      if (contentFormat !== undefined && contentFormat !== "RICH_TEXT" && contentFormat !== "PLAIN_TEXT") {
+        return NextResponse.json({ error: "contentFormat must be RICH_TEXT or PLAIN_TEXT" }, { status: 400 });
+      }
+
+      const document = contentJson === undefined || contentJson === null
+        ? createEmptyRichTextDocument()
+        : parseRichTextDocument(contentJson);
+      if (!document) {
+        return NextResponse.json({ error: "Invalid rich text content" }, { status: 400 });
+      }
+      try {
+        serializeRichTextDocument(document);
+        normalizedContent = renderRichTextHtml(document);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : "Invalid rich text content" },
+          { status: 400 },
+        );
+      }
+      normalizedContentJson = document;
+      normalizedContentFormat = "RICH_TEXT";
+    }
     const normalizedImages = Array.isArray(images) ? images : [];
     const normalizedAttachments = Array.isArray(attachments) ? attachments : [];
 
@@ -296,12 +355,18 @@ export async function POST(request: NextRequest) {
         [],
         topicId || null,
         normalizedAttachments,
-        { postType: "VIDEO", visibility: normalizedVisibility, videoId: videoAsset.id },
+        {
+          postType: "VIDEO",
+          visibility: normalizedVisibility,
+          videoId: videoAsset.id,
+          contentFormat: "PLAIN_TEXT",
+          contentJson: null,
+        },
       );
     } else {
       // TEXT 帖子：正文/图片/附件至少一个
       if (
-        normalizedContent.trim() === ''
+        !hasRichTextContent(normalizedContentJson)
         && normalizedImages.length === 0
         && normalizedAttachments.length === 0
       ) {
@@ -318,7 +383,11 @@ export async function POST(request: NextRequest) {
         normalizedImages,
         topicId || null,
         normalizedAttachments,
-        { visibility: normalizedVisibility },
+        {
+          visibility: normalizedVisibility,
+          contentFormat: normalizedContentFormat,
+          contentJson: normalizedContentJson,
+        },
       );
     }
 
@@ -371,6 +440,8 @@ export async function PUT(request: NextRequest) {
       id,
       title,
       content,
+      contentJson,
+      contentFormat,
       images,
       attachments,
       visibility,
@@ -379,6 +450,8 @@ export async function PUT(request: NextRequest) {
       id?: unknown;
       title?: unknown;
       content?: unknown;
+      contentJson?: unknown;
+      contentFormat?: unknown;
       images?: unknown;
       attachments?: unknown;
       visibility?: unknown;
@@ -404,7 +477,7 @@ export async function PUT(request: NextRequest) {
     if (typeof content !== "string") {
       return NextResponse.json({ error: "Content must be a string" }, { status: 400 });
     }
-    if (content.length > MAX_CONTENT_LENGTH) {
+    if (content.length > MAX_CONTENT_LENGTH && contentFormat !== "RICH_TEXT") {
       return NextResponse.json(
         { error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` },
         { status: 400 },
@@ -525,6 +598,35 @@ export async function PUT(request: NextRequest) {
       mimeType: att.mimeType.trim(),
     }));
 
+    let nextContent = content;
+    let nextContentJson: JSONContent | null = null;
+    let nextContentFormat: ContentFormat = existingPost.postType === "TEXT" ? "RICH_TEXT" : "PLAIN_TEXT";
+
+    if (existingPost.postType === "TEXT") {
+      if (contentFormat !== undefined && contentFormat !== "RICH_TEXT" && contentFormat !== "PLAIN_TEXT") {
+        return NextResponse.json({ error: "contentFormat must be RICH_TEXT or PLAIN_TEXT" }, { status: 400 });
+      }
+
+      const richTextValue = contentJson === undefined ? existingPost.contentJson : contentJson;
+      const document = richTextValue === null || richTextValue === undefined
+        ? createEmptyRichTextDocument()
+        : parseRichTextDocument(richTextValue);
+      if (!document) {
+        return NextResponse.json({ error: "Invalid rich text content" }, { status: 400 });
+      }
+      try {
+        serializeRichTextDocument(document);
+        nextContent = renderRichTextHtml(document);
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : "Invalid rich text content" },
+          { status: 400 },
+        );
+      }
+      nextContentJson = document;
+      nextContentFormat = "RICH_TEXT";
+    }
+
     if (existingPost.postType === "VIDEO" && nextImages && nextImages.length > 0) {
       return NextResponse.json(
         { error: "Video posts do not support images" },
@@ -534,7 +636,7 @@ export async function PUT(request: NextRequest) {
 
     if (
       existingPost.postType === "TEXT"
-      && content.trim() === ""
+      && !hasRichTextContent(nextContentJson)
       && (nextImages ?? existingPost.images.map((image) => image.url)).length === 0
       && (nextAttachments ?? existingPost.attachments).length === 0
     ) {
@@ -559,7 +661,9 @@ export async function PUT(request: NextRequest) {
 
     const updatedPost = await updatePost(id, {
       title: typeof title === "string" ? title : null,
-      content,
+      content: nextContent,
+      contentJson: nextContentJson,
+      contentFormat: nextContentFormat,
       visibility: normalizedVisibility,
       images: existingPost.postType === "VIDEO" ? [] : nextImages,
       attachments: nextAttachments,

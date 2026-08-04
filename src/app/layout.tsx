@@ -24,8 +24,10 @@ export const metadata: Metadata = defaultMetadata;
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal?: React.ReactNode;
 }>) {
   return (
     <html lang="zh-CN">
@@ -55,6 +57,7 @@ export default function RootLayout({
                 <Footer />
               </div>
             </div>
+            {modal}
           </PageLoadProgressProvider>
         </Providers>
       </body>

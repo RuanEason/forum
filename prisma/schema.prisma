@@ -72,6 +72,11 @@ enum PostVisibility {
   UNLISTED
 }
 
+enum ContentFormat {
+  RICH_TEXT
+  PLAIN_TEXT
+}
+
 enum VideoStatus {
   INIT
   UPLOADING
@@ -123,7 +128,9 @@ enum DanmakuType {
 model Post {
   id          String           @id @default(cuid())
   title       String?
-  content     String           @db.Text
+  content     String           @db.MediumText
+  contentJson Json?
+  contentFormat ContentFormat  @default(PLAIN_TEXT)
   styleConfig Json?
   styleCss    String?          @db.Text
   postType    PostType         @default(TEXT)
@@ -232,7 +239,9 @@ model PostDraft {
   author          User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   postType        PostType         @default(TEXT)
   title           String?
-  content         String           @db.Text
+  content         String           @db.MediumText
+  contentJson     Json?
+  contentFormat   ContentFormat    @default(PLAIN_TEXT)
   styleConfig     Json?
   styleCss        String?          @db.Text
   visibility      PostVisibility   @default(PUBLIC)

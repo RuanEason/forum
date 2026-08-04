@@ -16,6 +16,15 @@ import {
 } from "lucide-react";
 import PostContentRenderer from "@/components/PostContentRenderer";
 import SimpleMarkdownEditor from "@/components/SimpleMarkdownEditor";
+import RichTextEditor from "@/components/editor/RichTextEditor";
+import type { JSONContent } from "@tiptap/core";
+import {
+  createEmptyRichTextDocument,
+  getRichTextPlainText,
+  hasRichTextContent,
+  parseRichTextDocument,
+  serializeRichTextDocument,
+} from "@/lib/rich-text/content";
 import type { PostStyleConfig } from "@/types/post-style";
 
 type PostType = "TEXT" | "VIDEO";
@@ -35,6 +44,8 @@ export type EditablePost = {
   id: string;
   title: string | null;
   content: string;
+  contentJson?: JSONContent | null;
+  contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   postType: PostType;
   visibility: PostVisibility;
   styleConfig?: PostStyleConfig | null;
@@ -100,6 +111,13 @@ function createSnapshot(
   });
 }
 
+function getEditableContent(post: EditablePost): string {
+  if (post.postType === "TEXT" && post.contentJson) {
+    return serializeRichTextDocument(post.contentJson);
+  }
+  return post.content;
+}
+
 export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDrawerProps) {
   const router = useRouter();
   const drawerRef = useRef<HTMLFormElement>(null);
@@ -115,12 +133,12 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
   const isTextPost = post.postType === "TEXT";
   const [editorMode, setEditorMode] = useState<EditorMode>("edit");
   const [title, setTitle] = useState(post.title ?? "");
-  const [content, setContent] = useState(post.content);
+  const [content, setContent] = useState(() => getEditableContent(post));
   const [visibility, setVisibility] = useState<PostVisibility>(post.visibility);
   const [selectedImages, setSelectedImages] = useState<string[]>(post.images.map((image) => image.url));
   const [selectedAttachments, setSelectedAttachments] = useState<EditableAttachment[]>(post.attachments);
   const [initialSnapshot, setInitialSnapshot] = useState(() =>
-    createSnapshot(post.title ?? "", post.content, post.visibility, post.images.map((image) => image.url), post.attachments),
+    createSnapshot(post.title ?? "", getEditableContent(post), post.visibility, post.images.map((image) => image.url), post.attachments),
   );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -130,6 +148,8 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const imageInsertIdRef = useRef(0);
+  const [imageInsertRequest, setImageInsertRequest] = useState<{ id: number; url: string; alt?: string } | null>(null);
 
   const currentSnapshot = useMemo(
     () => createSnapshot(title, content, visibility, selectedImages, selectedAttachments),
@@ -194,11 +214,11 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
     const nextImages = post.images.map((image) => image.url);
     const nextAttachments = post.attachments;
     setTitle(nextTitle);
-    setContent(post.content);
+    setContent(getEditableContent(post));
     setVisibility(post.visibility);
     setSelectedImages(nextImages);
     setSelectedAttachments(nextAttachments);
-    setInitialSnapshot(createSnapshot(nextTitle, post.content, post.visibility, nextImages, nextAttachments));
+    setInitialSnapshot(createSnapshot(nextTitle, getEditableContent(post), post.visibility, nextImages, nextAttachments));
     setEditorMode("edit");
     setError("");
     setUploadProgress(0);
@@ -400,6 +420,11 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
         uploadedUrls.push(result.url);
       }
       setSelectedImages((current) => [...current, ...uploadedUrls].slice(0, MAX_IMAGES));
+      const lastUploadedUrl = uploadedUrls[uploadedUrls.length - 1];
+      if (lastUploadedUrl) {
+        imageInsertIdRef.current += 1;
+        setImageInsertRequest({ id: imageInsertIdRef.current, url: lastUploadedUrl, alt: "图片" });
+      }
     } catch (uploadError) {
       setError(uploadError instanceof Error && uploadError.message === "Upload cancelled"
         ? "上传已取消"
@@ -454,11 +479,12 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
     event.preventDefault();
     setError("");
 
-    if (content.length > MAX_CONTENT_LENGTH) {
+    const contentDocument = isTextPost ? parseRichTextDocument(content) : null;
+    if (!isTextPost && content.length > MAX_CONTENT_LENGTH) {
       setError(`内容不能超过 ${MAX_CONTENT_LENGTH} 个字符`);
       return;
     }
-    if (isTextPost && !content.trim() && !selectedImages.length && !selectedAttachments.length) {
+    if (isTextPost && !hasRichTextContent(contentDocument) && !selectedImages.length && !selectedAttachments.length) {
       setError("帖子内容、图片或附件不能全部为空");
       return;
     }
@@ -471,7 +497,9 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
         body: JSON.stringify({
           id: post.id,
           title: title.trim() || null,
-          content,
+          content: isTextPost ? "" : content,
+          contentJson: isTextPost ? (contentDocument ?? createEmptyRichTextDocument()) : null,
+          contentFormat: isTextPost ? "RICH_TEXT" : "PLAIN_TEXT",
           visibility,
           images: isTextPost ? selectedImages : [],
           attachments: selectedAttachments.map((attachment) => ({
@@ -576,6 +604,8 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                 postId={post.id}
                 title={title.trim() || null}
                 content={content}
+                contentJson={isTextPost ? parseRichTextDocument(content) : null}
+                contentFormat={isTextPost ? "RICH_TEXT" : "PLAIN_TEXT"}
                 styleConfig={post.styleConfig}
                 styleCss={post.styleCss}
               />
@@ -598,7 +628,8 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
               <section className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500">{isTextPost ? "正文" : "视频简介"}</label>
                 <div className="overflow-hidden border-y border-slate-200">
-                  <SimpleMarkdownEditor
+                  {!isTextPost ? (
+                    <SimpleMarkdownEditor
                     value={content}
                     onChange={setContent}
                     placeholder={isTextPost ? "修改你的帖子内容..." : "修改视频简介..."}
@@ -614,7 +645,16 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                     onCancelUpload={cancelUpload}
                     uploadProgress={uploadProgress}
                     uploadStatus={uploadStatus}
-                  />
+                    />
+                  ) : (
+                    <RichTextEditor
+                      content={content}
+                      onChange={setContent}
+                      imageInsertRequest={imageInsertRequest}
+                      onImageInsertHandled={() => setImageInsertRequest(null)}
+                      minHeight={320}
+                    />
+                  )}
                 </div>
               </section>
 
@@ -695,7 +735,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
 
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
           <div className="min-w-0 text-xs text-slate-500">
-            <span>内容 {content.length}/{MAX_CONTENT_LENGTH}</span>
+            <span>内容 {isTextPost ? getRichTextPlainText(parseRichTextDocument(content)).length : content.length}/{MAX_CONTENT_LENGTH}</span>
             <span className="ml-3">标题 {title.length}/{MAX_TITLE_LENGTH}</span>
           </div>
           <div className="flex shrink-0 items-center gap-2">

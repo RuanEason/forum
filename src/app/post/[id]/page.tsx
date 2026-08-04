@@ -21,8 +21,10 @@ import PostContentRenderer from "@/components/PostContentRenderer";
 import VideoPostDetail from "@/components/VideoPostDetail";
 import { extractMarkdownHeadings } from "@/lib/markdown";
 import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
+import { extractRichTextHeadings, getRichTextPlainText, parseRichTextDocument } from "@/lib/rich-text/content";
 import PostEditHistory from "@/components/PostEditHistory";
 import type { PostStyleConfig } from "@/types/post-style";
+import type { JSONContent } from "@tiptap/core";
 
 interface AuthorProps {
   id: string;
@@ -34,6 +36,8 @@ interface PostDetailProps {
   id: string;
   title: string | null;
   content: string;
+  contentJson?: JSONContent | null;
+  contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   styleConfig?: PostStyleConfig | null;
   styleCss?: string | null;
   postType: "TEXT" | "VIDEO";
@@ -94,8 +98,11 @@ export async function generateMetadata({
   const title = post.title
     ? `${post.title} - ${post.author.name || "匿名用户"}`
     : `${post.author.name || "匿名用户"} 的帖子`;
+  const descriptionText = post.contentFormat === "RICH_TEXT"
+    ? getRichTextPlainText(parseRichTextDocument(post.contentJson))
+    : post.content;
   const description =
-    post.content.slice(0, 150) + (post.content.length > 150 ? "..." : "");
+    descriptionText.slice(0, 150) + (descriptionText.length > 150 ? "..." : "");
   const images = post.images.map((img) => img.url);
   if (post.postType === "VIDEO" && post.video?.coverUrl) {
     images.unshift(post.video.coverUrl);
@@ -151,6 +158,8 @@ export default async function PostDetailPage({
     id: post.id,
     title: post.title,
     content: post.content,
+    contentJson: post.contentJson,
+    contentFormat: post.contentFormat,
     postType: post.postType,
     visibility: post.visibility,
     styleConfig: post.styleConfig,
@@ -163,9 +172,19 @@ export default async function PostDetailPage({
     previewImages.unshift(post.video.coverUrl);
   }
 
-  const markdownHeadings = isVideoPost ? [] : extractMarkdownHeadings(post.content);
-  const showToc = !isVideoPost && markdownHeadings.length > 0;
-  const catalogItems = markdownHeadingsToCatalogItems(markdownHeadings);
+  const richHeadings = isVideoPost
+    ? []
+    : extractRichTextHeadings(parseRichTextDocument(post.contentJson));
+  const markdownHeadings = isVideoPost || richHeadings.length > 0
+    ? []
+    : extractMarkdownHeadings(post.content);
+  const showToc = !isVideoPost && (richHeadings.length > 0 || markdownHeadings.length > 0);
+  const catalogItems = richHeadings.length > 0
+    ? markdownHeadingsToCatalogItems(richHeadings)
+    : markdownHeadingsToCatalogItems(markdownHeadings);
+  const descriptionText = post.contentFormat === "RICH_TEXT"
+    ? getRichTextPlainText(parseRichTextDocument(post.contentJson))
+    : post.content;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -177,7 +196,7 @@ export default async function PostDetailPage({
       name: post.author.name || "匿名用户",
       url: `/user/${post.author.id}`,
     },
-    articleBody: post.content,
+    articleBody: descriptionText,
     image: previewImages,
     interactionStatistic: [
       {
@@ -283,6 +302,8 @@ export default async function PostDetailPage({
                     postId={post.id}
                     title={null}
                     content={post.content}
+                    contentJson={post.contentJson}
+                    contentFormat={post.contentFormat}
                     styleConfig={post.styleConfig ?? null}
                     styleCss={post.styleCss ?? null}
                     withHeadingIds={true}
@@ -327,7 +348,7 @@ export default async function PostDetailPage({
                       postId={post.id}
                       title={post.title}
                       authorName={post.author.name}
-                      content={post.content}
+                      content={descriptionText}
                       createdAt={post.createdAt}
                     />
                     {/* 置顶按钮 - 仅管理员可见 */}

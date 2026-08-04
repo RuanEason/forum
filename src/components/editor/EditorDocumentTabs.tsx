@@ -16,7 +16,7 @@ const TABS: Array<{
 }> = [
   {
     id: "content",
-    label: "正文.md",
+    label: "正文",
     icon: <FileText className="h-4 w-4" />,
   },
   {

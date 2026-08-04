@@ -93,6 +93,7 @@ function getShareTitle(title?: string | null, authorName?: string | null) {
 
 function stripMarkdown(value: string) {
   return value
+    .replace(/<[^>]*>/g, " ")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/!\[[^\]]*]\([^)]*\)/g, "")

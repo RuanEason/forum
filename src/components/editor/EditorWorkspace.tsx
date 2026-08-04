@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import EditorBootScreen from "@/components/editor/EditorBootScreen";
@@ -12,16 +11,15 @@ import EditorResizeHandle from "@/components/editor/EditorResizeHandle";
 import EditorSidebar, { type SidebarTab } from "@/components/editor/EditorSidebar";
 import EditorStatusbar from "@/components/editor/EditorStatusbar";
 import EditorTopbar from "@/components/editor/EditorTopbar";
-import MarkdownDocEditor from "@/components/editor/MarkdownDocEditor";
+import RichTextDocumentEditor from "@/components/editor/RichTextDocumentEditor";
 import MobileEditorRedirect from "@/components/editor/MobileEditorRedirect";
 import StyleCodeEditor, { DEFAULT_STYLE_TEMPLATE } from "@/components/editor/StyleCodeEditor";
-import { parseMarkdownImport } from "@/components/editor/markdown-import";
 import {
   buildOutlineItems,
   formatEditorTime,
-  getDraftDisplayTitle,
   getSaveStateLabel,
   groupDraftsByDate,
+  normalizeDraftTitle,
 } from "@/components/editor/editor-utils";
 import type {
   EditorDraftAsset,
@@ -35,6 +33,14 @@ import type {
   UploadedAttachment,
 } from "@/components/editor/types";
 import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
+import {
+  createEmptyRichTextDocument,
+  getRichTextPlainText,
+  hasRichTextContent,
+  parseRichTextDocument,
+  plainTextToRichTextDocument,
+  serializeRichTextDocument,
+} from "@/lib/rich-text/content";
 
 type DraftListResponse = {
   drafts?: EditorDraftSummary[];
@@ -91,15 +97,10 @@ function readStoredWidth(key: string, fallback: number, min: number, max: number
   }
 }
 
-function buildMarkdownFileName(title: string) {
-  const safeTitle = title
-    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 100)
-    .replace(/[. ]+$/g, "");
+const EMPTY_RICH_TEXT_JSON = serializeRichTextDocument(createEmptyRichTextDocument());
 
-  return `${safeTitle || "未命名文档"}.md`;
+function getRichTextJsonPayload(value: string) {
+  return parseRichTextDocument(value) ?? createEmptyRichTextDocument();
 }
 
 export default function EditorWorkspace() {
@@ -119,7 +120,7 @@ export default function EditorWorkspace() {
   const [draftId, setDraftId] = useState<string | null>(initialDraftId);
   const [editorDocumentKey, setEditorDocumentKey] = useState(initialDraftId ?? "new");
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(EMPTY_RICH_TEXT_JSON);
   const [styleCss, setStyleCss] = useState("");
   const [draftStatus, setDraftStatus] = useState<EditorDraftDetail["status"]>("EDITING");
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
@@ -145,18 +146,15 @@ export default function EditorWorkspace() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [importNotice, setImportNotice] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [activeLineNumber, setActiveLineNumber] = useState(1);
-  const [jumpLineNumber, setJumpLineNumber] = useState<number | null>(null);
+  const [activePosition, setActivePosition] = useState(1);
+  const [jumpPosition, setJumpPosition] = useState<number | null>(null);
   const [didMountEditor, setDidMountEditor] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(DEFAULT_LEFT_WIDTH);
   const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_WIDTH);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveDraftRef = useRef<(() => Promise<string | null>) | null>(null);
-  const markdownImportInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingRef = useRef(false);
   const hasHydratedRef = useRef(false);
   const initialQueryDraftHandledRef = useRef(false);
@@ -164,7 +162,7 @@ export default function EditorWorkspace() {
   const persistedSnapshotRef = useRef({
     draftId: null as string | null,
     title: "",
-    content: "",
+    content: EMPTY_RICH_TEXT_JSON,
     styleCss: "",
     visibility: "PUBLIC" as PostVisibility,
     topicId: null as string | null,
@@ -245,14 +243,15 @@ export default function EditorWorkspace() {
   }, []);
 
   const historyGroups = useMemo(() => groupDraftsByDate(drafts), [drafts]);
+  const contentDocument = useMemo(() => parseRichTextDocument(content), [content]);
+  const contentText = useMemo(() => getRichTextPlainText(contentDocument), [contentDocument]);
   const outlineItems = useMemo(() => buildOutlineItems(content), [content]);
-  const contentLineCount = useMemo(() => Math.max(content.split(/\r?\n/).length, 1), [content]);
   const wordCount = useMemo(
-    () => (activeDocumentTab === "content" ? content.trim().length : styleCss.trim().length),
-    [activeDocumentTab, content, styleCss],
+    () => (activeDocumentTab === "content" ? contentText.length : styleCss.trim().length),
+    [activeDocumentTab, contentText, styleCss],
   );
   const saveStateLabel = getSaveStateLabel(saveState, errorMessage);
-  const currentTitle = title.trim() || getDraftDisplayTitle({ title, content });
+  const currentTitle = normalizeDraftTitle(title) || "文件";
   const imageSignature = useMemo(() => JSON.stringify(selectedImages), [selectedImages]);
   const attachmentSignature = useMemo(() => JSON.stringify(selectedAttachments), [selectedAttachments]);
 
@@ -305,8 +304,17 @@ export default function EditorWorkspace() {
     setDraftId(draft.id);
     setEditorDocumentKey(draft.id);
     draftIdRef.current = draft.id;
-    setTitle(draft.title ?? "");
-    setContent(draft.content ?? "");
+    const normalizedTitle = normalizeDraftTitle(draft.title);
+    setTitle(normalizedTitle);
+    const legacyDocument = draft.contentFormat === "PLAIN_TEXT" && draft.content
+      ? plainTextToRichTextDocument(draft.content)
+      : parseRichTextDocument(draft.content);
+    const nextContent = draft.contentJson
+      ? serializeRichTextDocument(draft.contentJson)
+      : legacyDocument
+        ? serializeRichTextDocument(legacyDocument)
+        : EMPTY_RICH_TEXT_JSON;
+    setContent(nextContent);
     setStyleCss(draft.styleCss ?? "");
     setDraftStatus(draft.status);
     setVisibility((draft.visibility as PostVisibility | undefined) ?? "PUBLIC");
@@ -320,13 +328,13 @@ export default function EditorWorkspace() {
     setUploadStatus("");
     setUploadProgress(0);
     setIsUploadingAssets(false);
-    setActiveLineNumber(1);
+    setActivePosition(1);
     setActiveDocumentTab(options?.activeDocumentTab ?? "content");
     dirtyRef.current = false;
     persistedSnapshotRef.current = {
       draftId: draft.id,
-      title: draft.title ?? "",
-      content: draft.content ?? "",
+      title: normalizedTitle,
+      content: nextContent,
       styleCss: draft.styleCss ?? "",
       visibility: (draft.visibility as PostVisibility | undefined) ?? "PUBLIC",
       topicId: draft.topicId ?? null,
@@ -491,7 +499,9 @@ export default function EditorWorkspace() {
       body: JSON.stringify({
         postType: "TEXT",
         title: titleRef.current.trim() || null,
-        content: contentRef.current,
+        content: "",
+        contentJson: getRichTextJsonPayload(contentRef.current),
+        contentFormat: "RICH_TEXT",
         styleConfig: null,
         styleCss: styleCssRef.current || null,
         visibility: visibilityRef.current,
@@ -577,7 +587,9 @@ export default function EditorWorkspace() {
         body: JSON.stringify({
           postType: "TEXT",
           title: saveSnapshot.title.trim() || null,
-          content: saveSnapshot.content,
+          content: "",
+          contentJson: getRichTextJsonPayload(saveSnapshot.content),
+          contentFormat: "RICH_TEXT",
           styleConfig: null,
           styleCss: saveSnapshot.styleCss || null,
           visibility: saveSnapshot.visibility,
@@ -653,7 +665,8 @@ export default function EditorWorkspace() {
   const handleManualSave = useCallback(() => {
     if (
       !titleRef.current.trim()
-      && !contentRef.current.trim()
+      && !getRichTextPlainText(parseRichTextDocument(contentRef.current))
+      && !hasRichTextContent(parseRichTextDocument(contentRef.current))
       && !styleCssRef.current.trim()
       && !draftIdRef.current
     ) {
@@ -663,102 +676,12 @@ export default function EditorWorkspace() {
     void saveDraft();
   }, [saveDraft]);
 
-  const handleExportMarkdown = useCallback(() => {
-    if (!contentRef.current.trim()) {
-      return;
-    }
-
-    const blob = new Blob([contentRef.current], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = buildMarkdownFileName(getDraftDisplayTitle({
-      title: titleRef.current,
-      content: contentRef.current,
-    }));
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, []);
-
-  const handleOpenMarkdownImport = useCallback(() => {
-    const input = markdownImportInputRef.current;
-    if (!input || isImporting) {
-      return;
-    }
-
-    input.value = "";
-    input.click();
-  }, [isImporting]);
-
-  const handleMarkdownImport = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
-    if (!file || isImporting) {
-      return;
-    }
-
-    setIsImporting(true);
-    setErrorMessage("");
-    setImportNotice("");
-
-    try {
-      const rawContent = await file.text();
-      const imported = parseMarkdownImport(file.name, rawContent);
-
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-        autoSaveTimerRef.current = null;
-      }
-
-      if (dirtyRef.current) {
-        await saveDraft();
-      }
-
-      const response = await fetch("/api/drafts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          postType: "TEXT",
-          title: null,
-          content: imported.content,
-          styleConfig: null,
-          styleCss: null,
-          visibility: "PUBLIC",
-          topicId: null,
-          persistMode: "SAVED",
-        }),
-      });
-      const data = await response.json() as DraftResponse;
-      if (!response.ok || !data.draft) {
-        throw new Error(data.error || "导入 Markdown 失败");
-      }
-
-      hydrateDraft(data.draft);
-      await loadHistory();
-
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("draftId", data.draft.id);
-      router.replace(`/editor?${params.toString()}`);
-
-      if (imported.wasTruncated) {
-        setImportNotice("文件超过 10000 字符，已仅导入前 10000 个字符。");
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "导入 Markdown 失败");
-    } finally {
-      setIsImporting(false);
-    }
-  }, [hydrateDraft, isImporting, loadHistory, router, saveDraft, searchParams]);
-
   const handlePublish = useCallback(async () => {
+    const currentContentDocument = parseRichTextDocument(contentRef.current);
     if (
       !titleRef.current.trim()
-      && !contentRef.current.trim()
+      && !getRichTextPlainText(currentContentDocument)
+      && !hasRichTextContent(currentContentDocument)
       && selectedImagesRef.current.length === 0
       && selectedAttachmentsRef.current.length === 0
     ) {
@@ -807,7 +730,6 @@ export default function EditorWorkspace() {
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("draftId", draft.id);
-    setImportNotice("");
     router.replace(`/editor?${params.toString()}`);
     await loadDraft(draft.id);
   }, [loadDraft, router, saveDraft, searchParams, switchingId]);
@@ -833,7 +755,7 @@ export default function EditorWorkspace() {
     setEditorDocumentKey("new");
     draftIdRef.current = null;
     setTitle("");
-    setContent("");
+    setContent(EMPTY_RICH_TEXT_JSON);
     setStyleCss("");
     setDraftStatus("EDITING");
     setVisibility("PUBLIC");
@@ -843,18 +765,17 @@ export default function EditorWorkspace() {
     setSaveState("idle");
     setLastSavedAt("");
     setErrorMessage("");
-    setImportNotice("");
     setUploadError("");
     setUploadStatus("");
     setUploadProgress(0);
     setIsUploadingAssets(false);
-    setActiveLineNumber(1);
+    setActivePosition(1);
     setActiveDocumentTab("content");
     dirtyRef.current = false;
     persistedSnapshotRef.current = {
       draftId: null,
       title: "",
-      content: "",
+      content: EMPTY_RICH_TEXT_JSON,
       styleCss: "",
       visibility: "PUBLIC",
       topicId: null,
@@ -1125,7 +1046,7 @@ export default function EditorWorkspace() {
 
     if (
       !title.trim()
-      && !content.trim()
+      && !getRichTextPlainText(parseRichTextDocument(content))
       && !styleCss.trim()
       && selectedImages.length === 0
       && selectedAttachments.length === 0
@@ -1197,7 +1118,7 @@ export default function EditorWorkspace() {
   }
 
   const canPublish = Boolean(
-    (content.trim() || selectedImages.length > 0 || selectedAttachments.length > 0)
+    (getRichTextPlainText(contentDocument) || hasRichTextContent(contentDocument) || selectedImages.length > 0 || selectedAttachments.length > 0)
     && !isPublishing
     && !isUploadingAssets
     && !draftLoading
@@ -1222,15 +1143,11 @@ export default function EditorWorkspace() {
         saveStateLabel={saveStateLabel}
         savedAtLabel={formatEditorTime(lastSavedAt)}
         canPublish={canPublish}
-        canExport={Boolean(content.trim())}
         isPublishing={isPublishing}
-        isImporting={isImporting}
         historyLoading={historyLoading}
         switchingId={switchingId}
         activeDraftId={draftId}
         recentDrafts={drafts}
-        onImport={handleOpenMarkdownImport}
-        onExport={handleExportMarkdown}
         onCreateNew={handleCreateNew}
         onSave={handleManualSave}
         onOpenHistory={handleOpenHistory}
@@ -1248,23 +1165,9 @@ export default function EditorWorkspace() {
         onSelectDraft={handleSelectDraft}
       />
 
-      <input
-        ref={markdownImportInputRef}
-        type="file"
-        accept=".md,.markdown,text/markdown"
-        className="sr-only"
-        onChange={handleMarkdownImport}
-      />
-
       {errorMessage ? (
         <div className="border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
           {errorMessage}
-        </div>
-      ) : null}
-
-      {importNotice ? (
-        <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
-          {importNotice}
         </div>
       ) : null}
 
@@ -1319,23 +1222,19 @@ export default function EditorWorkspace() {
           />
           <div className="flex min-h-0 flex-1 overflow-hidden">
             {activeDocumentTab === "content" ? (
-              <MarkdownDocEditor
+              <RichTextDocumentEditor
                 documentKey={editorDocumentKey}
                 title={title}
                 content={content}
-                styleConfig={null}
-                styleCss={styleCss}
                 onTitleChange={setTitle}
                 onContentChange={setContent}
                 onSave={handleManualSave}
                 onPublish={handlePublish}
-                activeLineNumber={activeLineNumber}
-                setActiveLineNumber={setActiveLineNumber}
-                externalJumpLine={jumpLineNumber}
-                onExternalJumpHandled={() => setJumpLineNumber(null)}
+                setActivePosition={setActivePosition}
+                externalJumpPosition={jumpPosition}
+                onExternalJumpHandled={() => setJumpPosition(null)}
                 imageInsertRequest={imageInsertRequest}
                 onImageInsertHandled={() => setImageInsertRequest(null)}
-                onOpenImagePool={() => setActiveSidebarTab("assets")}
               />
             ) : (
               <StyleCodeEditor
@@ -1354,8 +1253,8 @@ export default function EditorWorkspace() {
           <EditorOutline
             width={rightPanelWidth}
             items={outlineItems}
-            activeLineNumber={activeLineNumber}
-            onSelectLine={(lineNumber) => setJumpLineNumber(lineNumber)}
+            activePosition={activePosition}
+            onSelectPosition={(position) => setJumpPosition(position)}
             onResize={resizeRightPanel}
             onResizeEnd={persistRightPanelWidth}
           />
@@ -1388,7 +1287,7 @@ export default function EditorWorkspace() {
         wordCount={wordCount}
         headingCount={activeDocumentTab === "content" ? outlineItems.length : 0}
         saveStateLabel={saveStateLabel}
-        documentLabel={activeDocumentTab === "content" ? "正文.md" : "样式.css"}
+        documentLabel={activeDocumentTab === "content" ? "正文" : "样式.css"}
       />
     </div>
   );

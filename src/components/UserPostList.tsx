@@ -20,6 +20,7 @@ interface PostProps {
   id: string;
   title: string | null;
   content: string;
+  contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   visibility?: "PUBLIC" | "UNLISTED";
   viewCount?: number;
   pinned?: boolean;
@@ -208,14 +209,20 @@ export default function UserPostList({
                     {(viewMode === "content" ||
                       viewMode === "titleAndContent" ||
                       (viewMode === "both" && !post.title)) && (
-                      <div className="prose prose-sm max-w-none line-clamp-4 break-words">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={markdownComponents}
-                        >
+                      post.contentFormat === "RICH_TEXT" ? (
+                        <p className="line-clamp-4 whitespace-pre-wrap break-words">
                           {post.content}
-                        </ReactMarkdown>
-                      </div>
+                        </p>
+                      ) : (
+                        <div className="prose prose-sm max-w-none line-clamp-4 break-words">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={markdownComponents}
+                          >
+                            {post.content}
+                          </ReactMarkdown>
+                        </div>
+                      )
                     )}
                   </div>
                   {/* 图片显示逻辑 */}

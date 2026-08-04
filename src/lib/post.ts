@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated";
+import type { JSONContent } from "@tiptap/core";
 import type { PostStyleConfig } from "@/types/post-style";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
 type PostAttachmentInput = {
   url: string;
@@ -14,6 +16,11 @@ type PostStyleInput = {
   styleCss?: string | null;
 };
 
+type ContentInput = {
+  contentJson?: JSONContent | null;
+  contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
+};
+
 type UpdatePostAttachmentInput = PostAttachmentInput & {
   id?: string | null;
 };
@@ -22,7 +29,7 @@ type CreatePostOptions = {
   postType?: "TEXT" | "VIDEO";
   visibility?: "PUBLIC" | "UNLISTED";
   videoId?: string | null;
-} & PostStyleInput;
+} & PostStyleInput & ContentInput;
 
 type UpdatePostInput = {
   title?: string | null;
@@ -33,7 +40,7 @@ type UpdatePostInput = {
   images?: string[];
   attachments?: UpdatePostAttachmentInput[];
   topicId?: string | null;
-};
+} & ContentInput;
 
 type PostEditActor = {
   id: string;
@@ -116,7 +123,7 @@ function sameAttachments(
 }
 
 export async function getPosts(topicId?: string) {
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: {
       ...(topicId ? { topicId } : {}),
       visibility: "PUBLIC",
@@ -125,6 +132,8 @@ export async function getPosts(topicId?: string) {
       id: true,
       title: true,
       content: true,
+      contentJson: true,
+      contentFormat: true,
       styleConfig: true,
       styleCss: true,
       postType: true,
@@ -195,6 +204,16 @@ export async function getPosts(topicId?: string) {
       { createdAt: 'desc' }, // 非置顶帖子按创建时间降序
     ],
   });
+
+  return posts.map(({ contentJson, contentFormat, ...post }) => ({
+    ...post,
+    contentFormat,
+    content: contentFormat === "RICH_TEXT"
+      ? (parseRichTextDocument(contentJson)
+        ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+        : "")
+      : post.content,
+  }));
 }
 
 export async function createPost(
@@ -210,6 +229,10 @@ export async function createPost(
     data: {
       title: title || null,
       content,
+      contentJson: options.contentJson === undefined || options.contentJson === null
+        ? Prisma.JsonNull
+        : options.contentJson as Prisma.InputJsonValue,
+      contentFormat: options.contentFormat ?? (options.postType === "TEXT" ? "RICH_TEXT" : "PLAIN_TEXT"),
       styleConfig: toNullableJsonInput(options.styleConfig),
       styleCss: options.styleCss ?? null,
       authorId,
@@ -239,6 +262,8 @@ export async function getPostById(id: string) {
       id: true,
       title: true,
       content: true,
+      contentJson: true,
+      contentFormat: true,
       styleConfig: true,
       styleCss: true,
       postType: true,
@@ -410,6 +435,8 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
     const hasAttachmentChanges = nextAttachments !== null && !sameAttachments(existingPost.attachments, nextAttachments);
     const hasPostChanges = (
       existingPost.content !== input.content
+      || (input.contentJson !== undefined && stableJson(existingPost.contentJson) !== stableJson(input.contentJson))
+      || (input.contentFormat !== undefined && existingPost.contentFormat !== input.contentFormat)
       || existingPost.title !== nextTitle
       || (input.styleConfig !== undefined && stableJson(existingPost.styleConfig) !== stableJson(input.styleConfig))
       || (input.styleCss !== undefined && existingPost.styleCss !== input.styleCss)
@@ -432,6 +459,10 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
 
     const postData: Prisma.PostUncheckedUpdateInput = {
       content: input.content,
+      ...(input.contentJson !== undefined
+        ? { contentJson: input.contentJson === null ? Prisma.JsonNull : input.contentJson as Prisma.InputJsonValue }
+        : {}),
+      ...(input.contentFormat !== undefined ? { contentFormat: input.contentFormat } : {}),
       ...(input.styleConfig !== undefined ? { styleConfig: toNullableJsonInput(input.styleConfig) } : {}),
       ...(input.styleCss !== undefined ? { styleCss: input.styleCss } : {}),
       title: nextTitle,

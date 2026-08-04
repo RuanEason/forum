@@ -49,6 +49,8 @@ export async function PATCH(
       postType?: "TEXT" | "VIDEO";
       title?: string | null;
       content?: string;
+      contentJson?: unknown;
+      contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
       styleConfig?: PostStyleConfig | null;
       styleCss?: string | null;
       visibility?: "PUBLIC" | "UNLISTED";

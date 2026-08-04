@@ -31,6 +31,7 @@ type DraftItem = {
   postType: PostType;
   title: string | null;
   content: string;
+  contentSummary?: string;
   status: DraftStatus;
   persistMode: PersistMode;
   updatedAt: string;
@@ -210,7 +211,7 @@ export default function DraftsPage() {
 
   const rows = useMemo<DraftRow[]>(() => drafts.map((draft) => {
     const titleText = draft.title?.trim() || (draft.postType === "VIDEO" ? "未命名视频草稿" : "未命名文本草稿");
-    const summary = draft.content?.trim() || "暂无内容";
+    const summary = draft.contentSummary?.trim() || draft.content?.trim() || "暂无内容";
     const isVideo = draft.postType === "VIDEO";
     const mediaCounters = {
       image: draft.assets.filter((asset) => asset.type === "IMAGE").length,

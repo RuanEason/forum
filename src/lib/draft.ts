@@ -1,11 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { cleanupAttachmentObject } from "@/lib/attachment";
 import { Prisma } from "@/generated";
+import type { JSONContent } from "@tiptap/core";
 import {
   normalizePostStyleConfig,
   normalizePostStyleCss,
 } from "@/lib/post-style";
 import type { PostStyleConfig } from "@/types/post-style";
+import {
+  createEmptyRichTextDocument,
+  getRichTextPlainText,
+  getRichTextSummary,
+  hasRichTextContent,
+  parseRichTextDocument,
+  plainTextToRichTextDocument,
+  serializeRichTextDocument,
+} from "@/lib/rich-text/content";
+import { renderRichTextHtml } from "@/lib/rich-text/server";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
@@ -19,6 +30,7 @@ type DraftStatus = "EDITING" | "UPLOADING" | "PROCESSING" | "FAILED" | "READY" |
 type DraftPersistMode = "EPHEMERAL" | "SAVED";
 type PostType = "TEXT" | "VIDEO";
 type PostVisibility = "PUBLIC" | "UNLISTED";
+type ContentFormat = "RICH_TEXT" | "PLAIN_TEXT";
 
 export type DraftAssetInput = {
   id?: string;
@@ -39,6 +51,8 @@ export type DraftUpsertInput = {
   postType?: PostType;
   title?: string | null;
   content?: string;
+  contentJson?: unknown;
+  contentFormat?: ContentFormat;
   styleConfig?: PostStyleConfig | null;
   styleCss?: string | null;
   visibility?: PostVisibility;
@@ -51,6 +65,8 @@ export type DraftUpsertInput = {
 type DraftPublishPayload = {
   title: string | null;
   content: string;
+  contentJson: JSONContent | null;
+  contentFormat: ContentFormat;
   styleConfig: PostStyleConfig | null;
   styleCss: string | null;
   visibility: PostVisibility;
@@ -73,6 +89,8 @@ const draftArgs = Prisma.validator<Prisma.PostDraftDefaultArgs>()({
     postType: true,
     title: true,
     content: true,
+    contentJson: true,
+    contentFormat: true,
     styleConfig: true,
     styleCss: true,
     visibility: true,
@@ -144,6 +162,70 @@ function normalizeContent(value: string | undefined): string {
     return "";
   }
   return value.slice(0, MAX_CONTENT_LENGTH);
+}
+
+function normalizeContentFormat(value: string | undefined, postType: PostType): ContentFormat {
+  if (postType === "VIDEO") {
+    return "PLAIN_TEXT";
+  }
+
+  if (value === "PLAIN_TEXT") {
+    return "PLAIN_TEXT";
+  }
+  if (value === "RICH_TEXT") {
+    return "RICH_TEXT";
+  }
+  return postType === "TEXT" ? "RICH_TEXT" : "PLAIN_TEXT";
+}
+
+function normalizeRichTextContent(value: unknown, fallbackText?: string) {
+  const document = value === undefined || value === null || value === ""
+    ? (parseRichTextDocument(fallbackText)
+      ?? (fallbackText ? plainTextToRichTextDocument(fallbackText) : createEmptyRichTextDocument()))
+    : parseRichTextDocument(value);
+  if (!document) {
+    throw new Error("Invalid rich text content");
+  }
+  const serialized = serializeRichTextDocument(document);
+
+  return {
+    document,
+    serialized,
+    html: renderRichTextHtml(document),
+    text: getRichTextPlainText(document),
+  };
+}
+
+function getStoredRichTextDocument(contentJson: unknown, content: string) {
+  return parseRichTextDocument(contentJson)
+    ?? parseRichTextDocument(content)
+    ?? (content ? plainTextToRichTextDocument(content) : createEmptyRichTextDocument());
+}
+
+function normalizeStoredContent(
+  postType: PostType,
+  format: ContentFormat,
+  content: string,
+  contentJson: unknown,
+) {
+  if (format !== "RICH_TEXT") {
+    return {
+      format: "PLAIN_TEXT" as const,
+      document: null,
+      serialized: null,
+      html: normalizeContent(content),
+      text: normalizeContent(content),
+    };
+  }
+
+  const richText = normalizeRichTextContent(contentJson, content);
+  return {
+    format: "RICH_TEXT" as const,
+    document: richText.document,
+    serialized: richText.serialized,
+    html: richText.html,
+    text: richText.text,
+  };
 }
 
 function toNullableJsonInput(
@@ -309,12 +391,18 @@ function buildDraftMeta(draft: DraftWithAssets) {
   };
 }
 
-function validateDraftPayload(postType: PostType, assets: DraftAssetInput[], content: string, title: string | null) {
+function validateDraftPayload(
+  postType: PostType,
+  assets: DraftAssetInput[],
+  content: string,
+  title: string | null,
+  contentFormat: ContentFormat,
+) {
   if (title && title.length > MAX_TITLE_LENGTH) {
     throw new Error(`Title must be less than ${MAX_TITLE_LENGTH} characters`);
   }
 
-  if (content.length > MAX_CONTENT_LENGTH) {
+  if (contentFormat === "PLAIN_TEXT" && content.length > MAX_CONTENT_LENGTH) {
     throw new Error(`Content must be less than ${MAX_CONTENT_LENGTH} characters`);
   }
 
@@ -402,7 +490,14 @@ async function setDraftComputedStatus(draftId: string) {
 export async function createDraft(authorId: string, input: DraftUpsertInput = {}) {
   const postType = normalizePostType(input.postType);
   const title = normalizeTitle(input.title);
-  const content = normalizeContent(input.content);
+  const contentFormat = normalizeContentFormat(input.contentFormat, postType);
+  const normalizedContent = normalizeStoredContent(
+    postType,
+    contentFormat,
+    input.content ?? "",
+    input.contentJson,
+  );
+  const content = normalizedContent.html;
   const styleConfig = normalizePostStyleConfig(input.styleConfig ?? null);
   const styleCss = normalizePostStyleCss(input.styleCss ?? null);
   const visibility = normalizeVisibility(input.visibility);
@@ -414,7 +509,7 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
     throw new Error("Attachment assets must be created by the upload service");
   }
 
-  validateDraftPayload(postType, assets, content, title);
+  validateDraftPayload(postType, assets, normalizedContent.text, title, normalizedContent.format);
 
   const created = await prisma.postDraft.create({
     data: {
@@ -422,6 +517,10 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
       postType,
       title,
       content,
+      contentJson: normalizedContent.serialized
+        ? JSON.parse(normalizedContent.serialized) as Prisma.InputJsonValue
+        : Prisma.JsonNull,
+      contentFormat: normalizedContent.format,
       styleConfig: toNullableJsonInput(styleConfig),
       styleCss,
       visibility,
@@ -465,8 +564,14 @@ export async function getDraftById(authorId: string, draftId: string) {
   }
 
   const meta = buildDraftMeta(draft);
+  const contentDocument = draft.contentFormat === "RICH_TEXT"
+    ? getStoredRichTextDocument(draft.contentJson, draft.content)
+    : null;
   return {
     ...draft,
+    contentSummary: contentDocument
+      ? getRichTextSummary(contentDocument)
+      : getRichTextSummary(plainTextToRichTextDocument(draft.content)),
     ...meta,
   };
 }
@@ -497,8 +602,14 @@ export async function listDrafts(authorId: string, options?: { persistMode?: Dra
 
   return drafts.map((draft) => {
     const meta = buildDraftMeta(draft);
+    const contentDocument = draft.contentFormat === "RICH_TEXT"
+      ? getStoredRichTextDocument(draft.contentJson, draft.content)
+      : null;
     return {
       ...draft,
+      contentSummary: contentDocument
+        ? getRichTextSummary(contentDocument)
+        : getRichTextSummary(plainTextToRichTextDocument(draft.content)),
       ...meta,
     };
   });
@@ -635,6 +746,8 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       postType: true,
       title: true,
       content: true,
+      contentJson: true,
+      contentFormat: true,
       styleConfig: true,
       styleCss: true,
       visibility: true,
@@ -666,7 +779,17 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
 
   const nextPostType = input.postType ? normalizePostType(input.postType) : (existing.postType as PostType);
   const nextTitle = input.title !== undefined ? normalizeTitle(input.title) : existing.title;
-  const nextContent = input.content !== undefined ? normalizeContent(input.content) : existing.content;
+  const nextContentFormat = normalizeContentFormat(
+    input.contentFormat ?? (existing.contentFormat as ContentFormat),
+    nextPostType,
+  );
+  const nextNormalizedContent = normalizeStoredContent(
+    nextPostType,
+    nextContentFormat,
+    input.content !== undefined ? input.content : existing.content,
+    input.contentJson !== undefined ? input.contentJson : existing.contentJson,
+  );
+  const nextContent = nextNormalizedContent.html;
   const nextStyleConfig = input.styleConfig !== undefined
     ? normalizePostStyleConfig(input.styleConfig ?? null)
     : normalizePostStyleConfig(existing.styleConfig);
@@ -698,7 +821,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
         sortOrder: asset.sortOrder,
       }));
 
-  validateDraftPayload(nextPostType, nextAssets, nextContent, nextTitle);
+  validateDraftPayload(nextPostType, nextAssets, nextNormalizedContent.text, nextTitle, nextNormalizedContent.format);
 
   await prisma.postDraft.update({
     where: { id: draftId },
@@ -706,6 +829,10 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       postType: nextPostType,
       title: nextTitle,
       content: nextContent,
+      contentJson: nextNormalizedContent.serialized
+        ? JSON.parse(nextNormalizedContent.serialized) as Prisma.InputJsonValue
+        : Prisma.JsonNull,
+      contentFormat: nextNormalizedContent.format,
       styleConfig: toNullableJsonInput(nextStyleConfig),
       styleCss: nextStyleCss,
       visibility: nextVisibility,
@@ -846,19 +973,27 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
   }
 
   const normalizedTitle = normalizeTitle(draft.title);
-  const normalizedContent = normalizeContent(draft.content);
+  const storedContent = normalizeStoredContent(
+    draft.postType as PostType,
+    draft.contentFormat as ContentFormat,
+    draft.content,
+    draft.contentJson,
+  );
+  const normalizedContent = storedContent.html;
   const normalizedStyleConfig = normalizePostStyleConfig(draft.styleConfig);
   const normalizedStyleCss = normalizePostStyleCss(draft.styleCss);
 
   if (draft.postType === "TEXT") {
     const textAssets = pickReadyTextAssets(draft);
-    if (!normalizedContent.trim() && textAssets.imageUrls.length === 0 && textAssets.attachments.length === 0) {
+    if (!hasRichTextContent(storedContent.document) && !storedContent.text.trim() && textAssets.imageUrls.length === 0 && textAssets.attachments.length === 0) {
       throw new Error("Content, images, or attachments are required");
     }
 
     return {
       title: normalizedTitle,
       content: normalizedContent,
+      contentJson: storedContent.document,
+      contentFormat: storedContent.format,
       styleConfig: normalizedStyleConfig,
       styleCss: normalizedStyleCss,
       visibility: draft.visibility as PostVisibility,
@@ -875,6 +1010,8 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
   return {
     title: normalizedTitle,
     content: normalizedContent,
+    contentJson: storedContent.document,
+    contentFormat: storedContent.format,
     styleConfig: normalizedStyleConfig,
     styleCss: normalizedStyleCss,
     visibility: draft.visibility as PostVisibility,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
 /**
  * 获取帖子列表（App 端专用）
@@ -29,6 +30,8 @@ export async function GET(request: NextRequest) {
         id: true,
         title: true,
         content: true,
+        contentJson: true,
+        contentFormat: true,
         postType: true,
         visibility: true,
         viewCount: true,
@@ -107,7 +110,15 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    return NextResponse.json(posts);
+    const summarizedPosts = posts.map(({ contentJson, contentFormat, ...post }) => ({
+      ...post,
+      contentFormat,
+      content: contentFormat === "RICH_TEXT"
+        ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+        : post.content,
+    }));
+
+    return NextResponse.json(summarizedPosts);
   } catch (error) {
     console.error("Get posts error (App):", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

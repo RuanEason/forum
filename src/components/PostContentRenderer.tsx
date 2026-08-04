@@ -5,11 +5,15 @@ import { normalizeMarkdownForDisplay } from "@/lib/markdown";
 import { createMarkdownComponents } from "@/lib/markdown-components";
 import { buildScopedPostStyleSheet } from "@/lib/post-style";
 import type { PostStyleConfig } from "@/types/post-style";
+import { parseRichTextDocument } from "@/lib/rich-text/content";
+import { renderRichTextHtml } from "@/lib/rich-text/server";
 
 interface PostContentRendererProps {
   postId: string;
   title: string | null;
   content: string;
+  contentJson?: unknown;
+  contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   styleConfig?: PostStyleConfig | null;
   styleCss?: string | null;
   withHeadingIds?: boolean;
@@ -20,6 +24,8 @@ export default function PostContentRenderer({
   postId,
   title,
   content,
+  contentJson,
+  contentFormat,
   styleConfig: _styleConfig = null,
   styleCss: _styleCss = null,
   withHeadingIds = false,
@@ -32,6 +38,10 @@ export default function PostContentRenderer({
     headingDataAttributeName,
   });
   const normalizedContent = normalizeMarkdownForDisplay(content);
+  const richTextDocument = contentFormat === "PLAIN_TEXT"
+    ? null
+    : parseRichTextDocument(contentJson ?? content);
+  const richTextHtml = richTextDocument ? renderRichTextHtml(richTextDocument) : null;
   const scopedCss = buildScopedPostStyleSheet({
     scopeId,
     styleConfig: null,
@@ -50,12 +60,16 @@ export default function PostContentRenderer({
           </div>
         ) : null}
         <div className="editor-style-body prose prose-sm sm:prose-base max-w-none break-words">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkBreaks]}
-            components={markdownComponents}
-          >
-            {normalizedContent}
-          </ReactMarkdown>
+          {richTextHtml ? (
+            <div className="rich-text-prose" dangerouslySetInnerHTML={{ __html: richTextHtml }} />
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={markdownComponents}
+            >
+              {normalizedContent}
+            </ReactMarkdown>
+          )}
         </div>
       </div>
     </div>

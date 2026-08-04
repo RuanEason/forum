@@ -9,8 +9,8 @@ import type { EditorOutlineItem } from "@/components/editor/types";
 interface EditorOutlineProps {
   width: number;
   items: EditorOutlineItem[];
-  activeLineNumber: number;
-  onSelectLine: (lineNumber: number) => void;
+  activePosition: number;
+  onSelectPosition: (position: number) => void;
   onResize: (deltaX: number) => void;
   onResizeEnd: () => void;
 }
@@ -18,19 +18,19 @@ interface EditorOutlineProps {
 export default function EditorOutline({
   width,
   items,
-  activeLineNumber,
-  onSelectLine,
+  activePosition,
+  onSelectPosition,
   onResize,
   onResizeEnd,
 }: EditorOutlineProps) {
   const [expanded, setExpanded] = useState(true);
   const collapsedWidth = 44;
   const activeItem = items.reduce<EditorOutlineItem | null>((current, item) => {
-    if (item.lineNumber > activeLineNumber) {
+    if (item.position > activePosition) {
       return current;
     }
 
-    if (!current || item.lineNumber >= current.lineNumber) {
+    if (!current || item.position >= current.position) {
       return item;
     }
 
@@ -97,14 +97,14 @@ export default function EditorOutline({
             ) : (
               <div className="space-y-1">
                 {items.map((item) => {
-                  const isActive = activeItem?.id === item.id && activeItem.lineNumber === item.lineNumber;
+                  const isActive = activeItem?.id === item.id && activeItem.position === item.position;
                   const paddingLeft = 12 + (item.depth - 1) * 12;
 
                   return (
                     <button
-                      key={`${item.id}-${item.lineNumber}`}
+                      key={`${item.id}-${item.position}`}
                       type="button"
-                      onClick={() => onSelectLine(item.lineNumber)}
+                      onClick={() => onSelectPosition(item.position)}
                       className={cn(
                         "block w-full rounded-xl px-3 py-2 text-left text-sm transition-colors",
                         isActive
@@ -114,7 +114,7 @@ export default function EditorOutline({
                       style={{ paddingLeft }}
                     >
                       <div className="truncate">{item.text}</div>
-                      <div className="mt-1 text-[11px] text-slate-400">第 {item.lineNumber} 行</div>
+                      <div className="mt-1 text-[11px] text-slate-400">位置 {item.position}</div>
                     </button>
                   );
                 })}

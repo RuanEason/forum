@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -66,6 +67,8 @@ export async function GET(request: NextRequest) {
         id: true,
         title: true,
         content: true,
+        contentJson: true,
+        contentFormat: true,
         postType: true,
         visibility: true,
         viewCount: true,
@@ -116,9 +119,17 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const summarizedPosts = posts.map(({ contentJson, contentFormat, ...post }) => ({
+      ...post,
+      contentFormat,
+      content: contentFormat === "RICH_TEXT"
+        ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+        : post.content,
+    }));
+
     return NextResponse.json({
       userId,
-      list: posts,
+      list: summarizedPosts,
       pagination: getPaginationMeta(page, pageSize, total),
     });
   } catch (error) {

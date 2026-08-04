@@ -5,9 +5,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  FileDown,
   FilePlus2,
-  FileUp,
   History,
   Loader2,
   Save,
@@ -22,6 +20,7 @@ import type { EditorDraftSummary, SaveState } from "@/components/editor/types";
 
 const MENU_HOVER_DELAY = 700;
 const RECENT_DRAFT_LIMIT = 5;
+const DEFAULT_DOCUMENT_LABEL = "文件";
 
 interface EditorTopbarProps {
   title: string;
@@ -30,15 +29,11 @@ interface EditorTopbarProps {
   saveStateLabel: string;
   savedAtLabel: string;
   canPublish: boolean;
-  canExport?: boolean;
   isPublishing: boolean;
-  isImporting?: boolean;
   historyLoading?: boolean;
   switchingId?: string | null;
   activeDraftId?: string | null;
   recentDrafts?: EditorDraftSummary[];
-  onImport?: () => void;
-  onExport?: () => void;
   onCreateNew?: () => void;
   onSave: () => void;
   onOpenHistory?: () => void;
@@ -53,15 +48,11 @@ export default function EditorTopbar({
   saveStateLabel,
   savedAtLabel,
   canPublish,
-  canExport = false,
   isPublishing,
-  isImporting = false,
   historyLoading = false,
   switchingId = null,
   activeDraftId = null,
   recentDrafts = [],
-  onImport,
-  onExport,
   onCreateNew,
   onSave,
   onOpenHistory,
@@ -167,11 +158,11 @@ export default function EditorTopbar({
               "hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
               isMenuOpen && "bg-slate-100",
             )}
-            aria-label={`${title || "未命名文档"} 菜单`}
+            aria-label={`${title || DEFAULT_DOCUMENT_LABEL} 菜单`}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
           >
-            <span className="truncate">{title || "未命名文档"}</span>
+            <span className="truncate">{title || DEFAULT_DOCUMENT_LABEL}</span>
             <ChevronDown
               className={cn(
                 "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform",
@@ -219,36 +210,6 @@ export default function EditorTopbar({
                   )}
                   <span>保存</span>
                 </button>
-
-                {onImport ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => runMenuAction(onImport)}
-                    disabled={isImporting}
-                    className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isImporting ? (
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <FileUp className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    )}
-                    <span>{isImporting ? "导入中" : "导入 Markdown"}</span>
-                  </button>
-                ) : null}
-
-                {onExport ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => runMenuAction(onExport)}
-                    disabled={!canExport}
-                    className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <FileDown className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>导出 Markdown</span>
-                  </button>
-                ) : null}
 
                 {onOpenHistory && onSelectDraft ? (
                   <>

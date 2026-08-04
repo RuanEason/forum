@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "@uiw/react-md-editor/markdown-editor.css";
-@import "@uiw/react-markdown-preview/markdown.css";
 @plugin "@tailwindcss/typography";
 
 :root {
@@ -192,44 +190,177 @@ body.editor-route [data-site-main="app"] {
   background: #dbe7f3 !important;
 }
 
-.code-scroll,
-.novel-editor .ProseMirror pre {
+.code-scroll {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.18);
 }
 
-.code-scroll::-webkit-scrollbar,
-.novel-editor .ProseMirror pre::-webkit-scrollbar {
+.code-scroll::-webkit-scrollbar {
   height: 8px;
 }
 
-.code-scroll::-webkit-scrollbar-track,
-.novel-editor .ProseMirror pre::-webkit-scrollbar-track {
+.code-scroll::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.18);
   border-radius: 999px;
 }
 
-.code-scroll::-webkit-scrollbar-thumb,
-.novel-editor .ProseMirror pre::-webkit-scrollbar-thumb {
+.code-scroll::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.5);
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.18);
 }
 
-.code-scroll::-webkit-scrollbar-thumb:hover,
-.novel-editor .ProseMirror pre::-webkit-scrollbar-thumb:hover {
+.code-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(203, 213, 225, 0.7);
 }
 
-.novel-editor .ProseMirror p.is-editor-empty:first-child::before {
-  color: #94a3b8;
-  content: attr(data-placeholder);
-  float: left;
-  height: 0;
-  pointer-events: none;
+.rich-text-prose {
+  color: #1e293b;
+  font-size: 1rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
+
+.rich-text-prose:focus {
+  outline: none;
+}
+
+.rich-text-prose p,
+.editor-style-body .rich-text-prose p {
+  margin: 0.8rem 0;
+}
+
+.rich-text-prose p:empty,
+.editor-style-body .rich-text-prose p:empty {
+  min-height: 1.8em;
+  margin: 0;
+}
+
+.rich-text-prose h1,
+.rich-text-prose h2,
+.rich-text-prose h3,
+.rich-text-prose h4,
+.editor-style-body .rich-text-prose h1,
+.editor-style-body .rich-text-prose h2,
+.editor-style-body .rich-text-prose h3,
+.editor-style-body .rich-text-prose h4 {
+  margin: 1.6rem 0 0.7rem;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.3;
+  scroll-margin-top: 6rem;
+}
+
+.rich-text-prose h1,
+.editor-style-body .rich-text-prose h1 { font-size: 1.85rem; }
+.rich-text-prose h2,
+.editor-style-body .rich-text-prose h2 { font-size: 1.5rem; }
+.rich-text-prose h3,
+.editor-style-body .rich-text-prose h3 { font-size: 1.25rem; }
+.rich-text-prose h4,
+.editor-style-body .rich-text-prose h4 { font-size: 1.1rem; }
+
+.rich-text-prose ul,
+.rich-text-prose ol,
+.editor-style-body .rich-text-prose ul,
+.editor-style-body .rich-text-prose ol {
+  margin: 0.8rem 0;
+  padding-left: 1.6rem;
+}
+
+.rich-text-prose ul { list-style: disc; }
+.rich-text-prose ol { list-style: decimal; }
+.rich-text-prose li { margin: 0.2rem 0; }
+
+.rich-text-prose blockquote,
+.editor-style-body .rich-text-prose blockquote {
+  margin: 1rem 0;
+  border-left: 3px solid #94a3b8;
+  background: #f8fafc;
+  padding: 0.65rem 1rem;
+  color: #475569;
+}
+
+.rich-text-prose pre,
+.editor-style-body .rich-text-prose pre {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: 0.4rem;
+  background: #0f172a;
+  padding: 1rem;
+  color: #e2e8f0;
+  white-space: pre;
+}
+
+.rich-text-prose code,
+.editor-style-body .rich-text-prose code {
+  border-radius: 0.25rem;
+  background: #e2e8f0;
+  padding: 0.1rem 0.3rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.rich-text-prose pre code,
+.editor-style-body .rich-text-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.rich-text-prose a,
+.editor-style-body .rich-text-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-text-prose hr,
+.editor-style-body .rich-text-prose hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid #cbd5e1;
+}
+
+.rich-text-prose img,
+.editor-style-body .rich-text-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.4rem;
+}
+
+.editor-style-body img[data-align="left"] { margin-right: auto; margin-left: 0; }
+.editor-style-body img[data-align="center"] { margin-right: auto; margin-left: auto; }
+.editor-style-body img[data-align="right"] { margin-right: 0; margin-left: auto; }
+
+.editor-style-body ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.editor-style-body li[data-type="taskItem"] { display: flex; align-items: flex-start; gap: 0.5rem; list-style: none; }
+.editor-style-body li[data-type="taskItem"] > label { flex: 0 0 auto; margin-top: 0.35rem; }
+.editor-style-body li[data-type="taskItem"] > div { flex: 1; }
+.editor-style-body li[data-type="taskItem"] input { accent-color: #2563eb; }
+
+.rich-image-node[data-image-align="left"] { text-align: left; }
+.rich-image-node[data-image-align="center"] { text-align: center; }
+.rich-image-node[data-image-align="right"] { text-align: right; }
+.rich-image-node.is-selected img { outline: 2px solid #3b82f6; outline-offset: 3px; }
+
+.rich-text-prose li[data-type="taskItem"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  list-style: none;
+  margin-left: -1.6rem;
+}
+
+.rich-text-prose li[data-type="taskItem"] > label { flex: 0 0 auto; margin-top: 0.35rem; }
+.rich-text-prose li[data-type="taskItem"] > div { flex: 1; }
+.rich-text-prose li[data-type="taskItem"] input { accent-color: #2563eb; }
+.rich-text-prose [style*="text-align: center"] { text-align: center; }
+.rich-text-prose [style*="text-align: right"] { text-align: right; }
+.rich-text-prose [style*="text-align: justify"] { text-align: justify; }
 
 /* Custom utilities for better UI */
 @layer utilities {

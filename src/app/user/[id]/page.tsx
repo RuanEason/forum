@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import UserProfileClient from "./UserProfileClient";
 import { getUserLevel } from "@/lib/experience";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
 interface UserProfileProps {
   params: Promise<{ id: string }>;
@@ -127,7 +128,22 @@ async function getUserProfileWithStats(id: string, includeUnlistedPosts: boolean
     level: getUserLevel(user.experience ?? 0),
   };
 
-  return { user, stats };
+  const serializedUser = {
+    ...user,
+    posts: user.posts.map(({ contentJson, contentFormat, ...post }) => {
+      const document = contentFormat === "RICH_TEXT"
+        ? parseRichTextDocument(contentJson)
+        : null;
+
+      return {
+        ...post,
+        contentFormat,
+        content: document ? getRichTextSummary(document, 300) : post.content,
+      };
+    }),
+  };
+
+  return { user: serializedUser, stats };
 }
 
 export async function generateMetadata({

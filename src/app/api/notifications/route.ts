@@ -1,11 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
-export async function GET(request: NextRequest) {
+type NotificationSession = {
+  user?: {
+    id?: string;
+  };
+} | null;
+
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const session = await getServerSession(authOptions) as NotificationSession;
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,6 +40,8 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             content: true,
+            contentJson: true,
+            contentFormat: true,
           }
         },
         // We can't directly include comment because the relation isn't defined in the Notification model strictly with full relation fields
@@ -72,10 +81,25 @@ export async function GET(request: NextRequest) {
       commentsMap = comments.reduce((acc, c) => ({ ...acc, [c.id]: c }), {});
     }
 
-    const enrichedNotifications = notifications.map(n => ({
-      ...n,
-      comment: n.commentId ? commentsMap[n.commentId] : null
-    }));
+    const enrichedNotifications = notifications.map((notification) => {
+      const post = notification.post
+        ? (() => {
+            const { contentJson, contentFormat, ...postData } = notification.post;
+            return {
+              ...postData,
+              content: contentFormat === "RICH_TEXT"
+                ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+                : postData.content,
+            };
+          })()
+        : null;
+
+      return {
+        ...notification,
+        post,
+        comment: notification.commentId ? commentsMap[notification.commentId] : null,
+      };
+    });
 
     return NextResponse.json({ notifications: enrichedNotifications }, { status: 200 });
   } catch (error) {

@@ -10,6 +10,10 @@ import StyleCodeEditor from "@/components/editor/StyleCodeEditor";
 import PostContentRenderer from "@/components/PostContentRenderer";
 import { formatEditorTime, getSaveStateLabel } from "@/components/editor/editor-utils";
 import type { EditorDraftDetail, SaveState } from "@/components/editor/types";
+import {
+  plainTextToRichTextDocument,
+  serializeRichTextDocument,
+} from "@/lib/rich-text/content";
 
 type DraftResponse = {
   draft?: EditorDraftDetail;
@@ -58,7 +62,10 @@ export default function StyleWorkspace() {
       }
 
       setTitle(data.draft.title?.trim() || "未命名文档");
-      setContent(data.draft.content ?? "");
+      const previewDocument = data.draft.contentFormat === "RICH_TEXT" && data.draft.contentJson
+        ? data.draft.contentJson
+        : plainTextToRichTextDocument(data.draft.content ?? "");
+      setContent(serializeRichTextDocument(previewDocument));
       setStyleCss(data.draft.styleCss ?? "");
       lastSavedCssRef.current = data.draft.styleCss ?? "";
       setLastSavedAt(data.draft.updatedAt);

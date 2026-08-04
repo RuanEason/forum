@@ -1,4 +1,8 @@
-import { extractMarkdownHeadings } from "@/lib/markdown";
+import {
+  extractRichTextHeadings,
+  getRichTextPlainText,
+  parseRichTextDocument,
+} from "@/lib/rich-text/content";
 import type {
   DraftHistoryGroup,
   EditorDraftSummary,
@@ -36,13 +40,32 @@ export function formatEditorDateTime(dateText: string | null | undefined): strin
   });
 }
 
-export function getDraftDisplayTitle(draft: Pick<EditorDraftSummary, "title" | "content">): string {
-  const trimmedTitle = draft.title?.trim();
+function looksLikeRichTextDocument(value: string): boolean {
+  return Boolean(
+    parseRichTextDocument(value)
+    || /^\{\s*["']type["']\s*:\s*["']doc["']/.test(value),
+  );
+}
+
+export function normalizeDraftTitle(value: string | null | undefined): string {
+  const trimmed = value?.trim() ?? "";
+  return trimmed && !looksLikeRichTextDocument(trimmed) ? trimmed : "";
+}
+
+export function getDraftDisplayTitle(
+  draft: Pick<EditorDraftSummary, "title" | "content"> & { contentSummary?: string },
+): string {
+  const trimmedTitle = normalizeDraftTitle(draft.title);
   if (trimmedTitle) {
     return trimmedTitle;
   }
 
-  const firstMeaningfulLine = draft.content
+  const contentDocument = parseRichTextDocument(draft.content);
+  const contentText = contentDocument ? getRichTextPlainText(contentDocument) : draft.content;
+  const summary = draft.contentSummary?.trim();
+  const fallbackContent = summary && !looksLikeRichTextDocument(summary) ? summary : contentText;
+  const firstMeaningfulLine = fallbackContent
+    .replace(/<[^>]*>/g, " ")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .find((line) => line.length > 0);
@@ -55,7 +78,9 @@ export function getDraftDisplayTitle(draft: Pick<EditorDraftSummary, "title" | "
 }
 
 export function getDraftSummaryText(content: string): string {
-  const normalized = content.replace(/\s+/g, " ").trim();
+  const document = parseRichTextDocument(content);
+  const source = document ? getRichTextPlainText(document) : content;
+  const normalized = source.replace(/\s+/g, " ").trim();
   return normalized ? normalized.slice(0, 80) : "暂无内容";
 }
 
@@ -108,13 +133,18 @@ export function groupDraftsByDate(drafts: EditorDraftSummary[]): DraftHistoryGro
   ].filter((group) => group.items.length > 0);
 }
 
-export function buildOutlineItems(markdown: string): EditorOutlineItem[] {
-  const headings = extractMarkdownHeadings(markdown);
+export function buildOutlineItems(content: string): EditorOutlineItem[] {
+  const document = parseRichTextDocument(content);
+  if (!document) {
+    return [];
+  }
+
+  const headings = extractRichTextHeadings(document);
 
   return headings.map((heading) => ({
     id: heading.id,
     depth: heading.depth,
     text: heading.text,
-    lineNumber: heading.lineNumber,
+    position: heading.position ?? 1,
   }));
 }

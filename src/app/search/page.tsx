@@ -11,6 +11,7 @@ import type {
 import SearchResultSwitcher from "@/components/SearchResultSwitcher";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -176,12 +177,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   };
 
   // 序列化帖子数据（将 Date 对象转换为字符串）
-  const serializedPosts = posts.map((post: PostWithRelations) => ({
-    ...post,
-    createdAt: post.createdAt.toISOString(),
-    updatedAt: post.updatedAt.toISOString(),
-    pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
-  }));
+  const serializedPosts = posts.map((post: PostWithRelations) => {
+    const document = post.contentFormat === "RICH_TEXT"
+      ? parseRichTextDocument(post.contentJson)
+      : null;
+
+    return {
+      ...post,
+      content: document ? getRichTextSummary(document, 300) : post.content,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
+    };
+  });
 
   const hasUsers = users.length > 0;
   const hasPosts = posts.length > 0;
