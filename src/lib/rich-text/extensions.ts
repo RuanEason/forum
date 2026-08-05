@@ -12,6 +12,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
+import { isAllowedRichTextLineHeight } from "@/lib/rich-text/content";
 
 export const RICH_TEXT_FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"] as const;
 export type RichTextFontSize = (typeof RICH_TEXT_FONT_SIZES)[number];
@@ -38,6 +39,71 @@ export const FontSize = Extension.create({
         },
       },
     ];
+  },
+});
+
+export const LineHeight = Extension.create({
+  name: "lineHeight",
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: {
+          lineHeight: {
+            default: null,
+            parseHTML: (element: HTMLElement) => {
+              const value = Number(
+                element.getAttribute("data-line-height") ?? element.style.lineHeight.trim(),
+              );
+              return isAllowedRichTextLineHeight(value) ? value : null;
+            },
+            renderHTML: (attributes: { lineHeight?: number | null }) => {
+              if (!isAllowedRichTextLineHeight(attributes.lineHeight)) {
+                return {};
+              }
+
+              return {
+                style: `line-height: ${attributes.lineHeight}`,
+                "data-line-height": String(attributes.lineHeight),
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
+
+// Keep block alignment as data as well as style so the server HTML serializer
+// can restore it after its DOM shim drops inline style attributes.
+export const RichTextTextAlign = TextAlign.extend({
+  addGlobalAttributes() {
+    const parentAttributes = this.parent?.() ?? [];
+
+    return parentAttributes.map((group) => {
+      const textAlignAttribute = group.attributes?.textAlign;
+      if (!textAlignAttribute) {
+        return group;
+      }
+
+      return {
+        ...group,
+        attributes: {
+          ...group.attributes,
+          textAlign: {
+            ...textAlignAttribute,
+            renderHTML: (attributes) => {
+              const rendered = textAlignAttribute.renderHTML?.(attributes) ?? {};
+              const alignment = attributes.textAlign;
+              return typeof alignment === "string"
+                ? { ...rendered, "data-text-align": alignment }
+                : rendered;
+            },
+          },
+        },
+      };
+    });
   },
 });
 
@@ -80,6 +146,7 @@ export const RichTextImage = Image.extend({
 export function createRichTextExtensions(options?: {
   placeholder?: string;
   imageExtension?: AnyExtension;
+  disableHistory?: boolean;
 }) {
   const imageExtension = options?.imageExtension ?? RichTextImage;
 
@@ -89,6 +156,7 @@ export function createRichTextExtensions(options?: {
       codeBlock: {
         HTMLAttributes: { class: "rich-text-code-block" },
       },
+      history: options?.disableHistory ? false : {},
     }),
     TextStyle,
     Color,
@@ -103,9 +171,19 @@ export function createRichTextExtensions(options?: {
       autolink: true,
       linkOnPaste: true,
     }),
-    TextAlign.configure({ types: ["heading", "paragraph"] }),
-    TaskList,
-    TaskItem.configure({ nested: true }),
+    RichTextTextAlign.configure({ types: ["heading", "paragraph"] }),
+    LineHeight,
+    TaskList.configure({
+      HTMLAttributes: { class: "rich-task-list" },
+    }),
+    TaskItem.configure({
+      nested: true,
+      HTMLAttributes: {
+        class: "rich-task-item",
+        "data-type": "taskItem",
+        style: "display: grid; grid-template-columns: 1.1rem minmax(0, 1fr); align-items: start; gap: 0.5rem; margin-left: 0",
+      },
+    }),
     imageExtension.configure({
       inline: false,
       allowBase64: false,

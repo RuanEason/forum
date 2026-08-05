@@ -16,6 +16,13 @@ export interface RichTextDocumentPayload {
   document: JSONContent | null;
 }
 
+export const RICH_TEXT_LINE_HEIGHT_MIN = 1;
+export const RICH_TEXT_LINE_HEIGHT_MAX = 3;
+export const RICH_TEXT_LINE_HEIGHT_STEP = 0.05;
+export const RICH_TEXT_LINE_HEIGHT_PRESETS = [1, 1.15, 1.5, 1.75, 2, 2.5, 3] as const;
+
+export type RichTextLineHeight = number;
+
 const ALLOWED_NODE_TYPES = new Set([
   "doc",
   "paragraph",
@@ -48,6 +55,19 @@ const ALLOWED_IMAGE_ALIGNMENTS = new Set(["left", "center", "right"]);
 const ALLOWED_TEXT_ALIGNMENTS = new Set(["left", "center", "right", "justify"]);
 const ALLOWED_FONT_SIZES = new Set(["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"]);
 const SAFE_COLOR_PATTERN = /^(?:#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+(?:\s*,\s*[\d.]+)?\s*\)|[a-z]{1,24})$/i;
+
+export function isAllowedRichTextLineHeight(value: unknown): value is RichTextLineHeight {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return false;
+  }
+
+  if (value < RICH_TEXT_LINE_HEIGHT_MIN || value > RICH_TEXT_LINE_HEIGHT_MAX) {
+    return false;
+  }
+
+  const rounded = Math.round(value * 100);
+  return Math.abs(value * 100 - rounded) < 1e-9;
+}
 
 function getNodeSize(node: JSONContent): number {
   if (node.type === "text") {
@@ -155,6 +175,13 @@ function validateNode(node: JSONContent, depth: number): boolean {
     && node.attrs.textAlign !== null
   ) {
     if (!ALLOWED_TEXT_ALIGNMENTS.has(String(node.attrs.textAlign))) {
+      return false;
+    }
+  }
+
+  if (["paragraph", "heading"].includes(node.type)) {
+    const lineHeight = node.attrs?.lineHeight;
+    if (lineHeight !== undefined && lineHeight !== null && !isAllowedRichTextLineHeight(lineHeight)) {
       return false;
     }
   }

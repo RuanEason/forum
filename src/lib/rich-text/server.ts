@@ -9,6 +9,33 @@ import {
 } from "@/lib/rich-text/content";
 
 const allowedStyleValue = /^[\w#().,%\s'"-]+$/;
+const allowedLineHeightValue = /^(?:[12](?:\.\d{1,2})?|3(?:\.0{1,2})?)$/;
+const allowedTextAlignValue = /^(?:left|center|right|justify)$/;
+
+function restoreBlockStyles(tagName: string, attribs: Record<string, string>) {
+  const {
+    "data-line-height": lineHeight,
+    "data-text-align": textAlign,
+    style: existingStyle,
+    ...rest
+  } = attribs;
+  const styles = existingStyle ? [existingStyle] : [];
+
+  if (lineHeight && allowedLineHeightValue.test(lineHeight)) {
+    styles.push(`line-height: ${lineHeight}`);
+  }
+  if (textAlign && allowedTextAlignValue.test(textAlign)) {
+    styles.push(`text-align: ${textAlign}`);
+  }
+
+  return {
+    tagName,
+    attribs: {
+      ...rest,
+      ...(styles.length > 0 ? { style: styles.join("; ") } : {}),
+    },
+  };
+}
 
 export function renderRichTextHtml(document: JSONContent): string {
   const html = generateHTML(document, createRichTextExtensions());
@@ -17,10 +44,11 @@ export function renderRichTextHtml(document: JSONContent): string {
   const transformHeading = (tagName: string, attribs: Record<string, string>) => {
     const heading = headings[headingIndex];
     headingIndex += 1;
+    const transformed = restoreBlockStyles(tagName, attribs);
     return {
-      tagName,
+      tagName: transformed.tagName,
       attribs: {
-        ...attribs,
+        ...transformed.attribs,
         ...(heading?.id ? { id: heading.id } : {}),
       },
     };
@@ -34,11 +62,11 @@ export function renderRichTextHtml(document: JSONContent): string {
     allowedAttributes: {
       a: ["href", "target", "rel"],
       mark: ["data-color", "style"],
-      p: ["style"],
-      h1: ["id", "style"],
-      h2: ["id", "style"],
-      h3: ["id", "style"],
-      h4: ["id", "style"],
+      p: ["style", "data-line-height", "data-text-align"],
+      h1: ["id", "style", "data-line-height", "data-text-align"],
+      h2: ["id", "style", "data-line-height", "data-text-align"],
+      h3: ["id", "style", "data-line-height", "data-text-align"],
+      h4: ["id", "style", "data-line-height", "data-text-align"],
       img: ["src", "alt", "title", "data-width", "data-align", "style"],
       ul: ["data-type"],
       span: ["style"],
@@ -54,18 +82,23 @@ export function renderRichTextHtml(document: JSONContent): string {
     allowedStyles: {
       p: {
         "text-align": [/^(?:left|center|right|justify)$/],
+        "line-height": [allowedLineHeightValue],
       },
       h1: {
         "text-align": [/^(?:left|center|right|justify)$/],
+        "line-height": [allowedLineHeightValue],
       },
       h2: {
         "text-align": [/^(?:left|center|right|justify)$/],
+        "line-height": [allowedLineHeightValue],
       },
       h3: {
         "text-align": [/^(?:left|center|right|justify)$/],
+        "line-height": [allowedLineHeightValue],
       },
       h4: {
         "text-align": [/^(?:left|center|right|justify)$/],
+        "line-height": [allowedLineHeightValue],
       },
       img: {
         width: [allowedStyleValue],
@@ -89,6 +122,14 @@ export function renderRichTextHtml(document: JSONContent): string {
           ...attribs,
           rel: "nofollow noopener noreferrer",
           target: "_blank",
+        },
+      }),
+      p: (_tagName, attribs) => restoreBlockStyles("p", attribs),
+      input: (_tagName, attribs) => ({
+        tagName: "input",
+        attribs: {
+          ...attribs,
+          disabled: "disabled",
         },
       }),
       h1: transformHeading,

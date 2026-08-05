@@ -97,6 +97,14 @@ function readStoredWidth(key: string, fallback: number, min: number, max: number
   }
 }
 
+function createNewEditorDocumentKey() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `new-${crypto.randomUUID()}`;
+  }
+
+  return `new-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 const EMPTY_RICH_TEXT_JSON = serializeRichTextDocument(createEmptyRichTextDocument());
 
 function getRichTextJsonPayload(value: string) {
@@ -461,6 +469,7 @@ export default function EditorWorkspace() {
       if (targetDraftId) {
         await loadDraft(targetDraftId);
       } else {
+        setEditorDocumentKey(createNewEditorDocumentKey());
         setSaveState("idle");
         hasHydratedRef.current = true;
         setDidMountEditor(true);
@@ -752,7 +761,7 @@ export default function EditorWorkspace() {
     }
 
     setDraftId(null);
-    setEditorDocumentKey("new");
+    setEditorDocumentKey(createNewEditorDocumentKey());
     draftIdRef.current = null;
     setTitle("");
     setContent(EMPTY_RICH_TEXT_JSON);

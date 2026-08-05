@@ -81,6 +81,7 @@ export default function RichTextDocumentEditor({
 
       <RichTextEditor
         content={content}
+        historyKey={documentKey}
         onChange={onContentChange}
         imageInsertRequest={imageInsertRequest}
         onImageInsertHandled={onImageInsertHandled}
