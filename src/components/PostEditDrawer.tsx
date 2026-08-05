@@ -627,7 +627,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
 
               <section className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500">{isTextPost ? "正文" : "视频简介"}</label>
-                <div className="overflow-hidden border-y border-slate-200">
+                <div className={isTextPost ? "overflow-hidden" : "overflow-hidden border-y border-slate-200"}>
                   {!isTextPost ? (
                     <SimpleMarkdownEditor
                     value={content}
@@ -652,7 +652,20 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                       onChange={setContent}
                       imageInsertRequest={imageInsertRequest}
                       onImageInsertHandled={() => setImageInsertRequest(null)}
+                      placeholder="修改你的帖子内容..."
                       minHeight={320}
+                      showToolbarToggle={true}
+                      variant="composer"
+                      onImageClick={() => imageInputRef.current?.click()}
+                      imageCount={selectedImages.length}
+                      maxImages={MAX_IMAGES}
+                      isUploading={isUploading}
+                      onAttachmentClick={() => attachmentInputRef.current?.click()}
+                      attachmentCount={selectedAttachments.length}
+                      maxAttachments={MAX_ATTACHMENTS}
+                      onCancelUpload={cancelUpload}
+                      uploadProgress={uploadProgress}
+                      uploadStatus={uploadStatus}
                     />
                   )}
                 </div>
@@ -679,7 +692,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500">可从正文工具栏添加图片。</p>
+                    <p className="text-sm text-slate-500">使用编辑器下方的图片按钮添加图片。</p>
                   )}
                 </section>
               ) : null}
@@ -705,7 +718,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">可从正文工具栏添加附件。</p>
+                  <p className="text-sm text-slate-500">使用编辑器下方的附件按钮添加附件。</p>
                 )}
               </section>
 
