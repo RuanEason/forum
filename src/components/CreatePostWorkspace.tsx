@@ -260,6 +260,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const videoTaskIdRef = useRef<string | null>(null);
   const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
   const navigationTaskTimeoutRef = useRef<number | null>(null);
+  const pendingPostNavigationRef = useRef<string | null>(null);
   const [postMode, setPostMode] = useState<PostMode>("TEXT");
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [content, setContent] = useState(EMPTY_RICH_TEXT_JSON);
@@ -296,6 +297,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
+  const [sheetCloseRequest, setSheetCloseRequest] = useState(0);
   const [autoSaveAt, setAutoSaveAt] = useState<string>("");
   const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -326,6 +328,19 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     }, 10000);
     router.push("/post/drafts");
   }, [finishPendingNavigationTask, router, startTask]);
+
+  const navigateAfterPublish = useCallback((createdPostId?: string) => {
+    const destination = createdPostId ? `/post/${createdPostId}` : "/";
+
+    if (presentation === "sheet") {
+      pendingPostNavigationRef.current = destination;
+      setSheetCloseRequest((request) => request + 1);
+      return;
+    }
+
+    router.push(destination);
+    router.refresh();
+  }, [presentation, router]);
 
   useEffect(() => {
     finishPendingNavigationTask();
@@ -1521,8 +1536,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           throw new Error(draftPublishData.error || "草稿发布失败");
         }
         const createdPostId = draftPublishData.post?.id;
-        router.push(createdPostId ? `/post/${createdPostId}` : "/");
-        router.refresh();
+        navigateAfterPublish(createdPostId);
         return;
       }
 
@@ -1548,8 +1562,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
 
       if (response.ok) {
         const createdPostId = data.post?.id;
-        router.push(createdPostId ? `/post/${createdPostId}` : "/");
-        router.refresh();
+        navigateAfterPublish(createdPostId);
       } else {
         await saveDraft("SAVED");
         setError(data.error || "发布失败，已为你保存到草稿箱。");
@@ -1608,8 +1621,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           throw new Error(draftPublishData.error || "草稿发布失败");
         }
         const createdPostId = draftPublishData.post?.id;
-        router.push(createdPostId ? `/post/${createdPostId}` : "/");
-        router.refresh();
+        navigateAfterPublish(createdPostId);
         return;
       }
 
@@ -1634,8 +1646,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
 
       if (response.ok) {
         const createdPostId = data.post?.id;
-        router.push(createdPostId ? `/post/${createdPostId}` : "/");
-        router.refresh();
+        navigateAfterPublish(createdPostId);
       } else {
         await saveDraft("SAVED");
         setVideoUploadError(data.error || "视频发布失败，已为你保存到草稿箱。");
@@ -1678,7 +1689,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     void handleCreateTextPost();
   };
 
-  const handleCancel = async () => {
+  const handleCancel = useCallback(async () => {
     if (!unsavedChanges) {
       router.back();
       return;
@@ -1691,7 +1702,19 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     } finally {
       router.back();
     }
-  };
+  }, [router, saveDraft, unsavedChanges]);
+
+  const handleSheetRequestClose = useCallback(async () => {
+    const pendingPostNavigation = pendingPostNavigationRef.current;
+    if (pendingPostNavigation) {
+      pendingPostNavigationRef.current = null;
+      router.push(pendingPostNavigation);
+      router.refresh();
+      return;
+    }
+
+    await handleCancel();
+  }, [handleCancel, router]);
 
   const canPublishText =
     !loading
@@ -1729,7 +1752,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
 
     if (presentation === "sheet") {
       return (
-        <CreatePostSheet onRequestClose={handleCancel}>
+        <CreatePostSheet onRequestClose={handleSheetRequestClose} closeRequest={sheetCloseRequest}>
           {loadingContent}
         </CreatePostSheet>
       );
@@ -2415,7 +2438,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
 
   if (presentation === "sheet") {
     return (
-      <CreatePostSheet onRequestClose={handleCancel}>
+      <CreatePostSheet onRequestClose={handleSheetRequestClose} closeRequest={sheetCloseRequest}>
         {pageContent}
       </CreatePostSheet>
     );

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 type CreatePostSheetProps = {
   children: ReactNode;
   onRequestClose: () => void | Promise<void>;
+  closeRequest?: number;
 };
 
 const focusableSelector = [
@@ -15,12 +16,15 @@ const focusableSelector = [
   "a[href]",
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(",");
+const SHEET_TRANSITION_MS = 300;
 
-export default function CreatePostSheet({ children, onRequestClose }: CreatePostSheetProps) {
+export default function CreatePostSheet({ children, onRequestClose, closeRequest = 0 }: CreatePostSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const closeHandlerRef = useRef(onRequestClose);
   const closeRequestedRef = useRef(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCloseRequestRef = useRef(closeRequest);
   const [visible, setVisible] = useState(false);
 
   const requestClose = useCallback(() => {
@@ -29,12 +33,26 @@ export default function CreatePostSheet({ children, onRequestClose }: CreatePost
     }
 
     closeRequestedRef.current = true;
-    void closeHandlerRef.current();
+    setVisible(false);
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      void closeHandlerRef.current();
+    }, SHEET_TRANSITION_MS);
   }, []);
 
   useEffect(() => {
     closeHandlerRef.current = onRequestClose;
   }, [onRequestClose]);
+
+  useEffect(() => {
+    if (closeRequest <= lastCloseRequestRef.current) {
+      return;
+    }
+
+    lastCloseRequestRef.current = closeRequest;
+    const closeFrame = window.requestAnimationFrame(requestClose);
+    return () => window.cancelAnimationFrame(closeFrame);
+  }, [closeRequest, requestClose]);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement
@@ -53,6 +71,10 @@ export default function CreatePostSheet({ children, onRequestClose }: CreatePost
 
     return () => {
       window.cancelAnimationFrame(firstFrame);
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };

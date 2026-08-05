@@ -129,6 +129,11 @@ function ToolbarDivider() {
   return <span aria-hidden="true" className="mx-1 h-6 w-px shrink-0 bg-slate-200" />;
 }
 
+function scheduleEditorTask(callback: () => void) {
+  const taskId = window.setTimeout(callback, 0);
+  return () => window.clearTimeout(taskId);
+}
+
 function ColorControl({
   label,
   icon,
@@ -467,9 +472,15 @@ export default function RichTextEditor({
     }
 
     const nextDocument = parseRichTextDocument(content) ?? createEmptyRichTextDocument();
-    editor.commands.setContent(nextDocument, false);
-    lastEmittedContentRef.current = content;
-    onOutlineChange(getEditorOutline(editor));
+    return scheduleEditorTask(() => {
+      if (editor.isDestroyed) {
+        return;
+      }
+
+      editor.commands.setContent(nextDocument, false);
+      lastEmittedContentRef.current = content;
+      onOutlineChange(getEditorOutline(editor));
+    });
   }, [content, editor, onOutlineChange]);
 
   useEffect(() => {
@@ -477,17 +488,23 @@ export default function RichTextEditor({
       return;
     }
 
-    editor.chain().focus().insertContent({
-      type: "image",
-      attrs: {
-        src: imageInsertRequest.url,
-        alt: imageInsertRequest.alt ?? "图片",
-        title: null,
-        width: null,
-        align: "center",
-      },
-    }).run();
-    onImageInsertHandled();
+    return scheduleEditorTask(() => {
+      if (editor.isDestroyed) {
+        return;
+      }
+
+      editor.chain().focus().insertContent({
+        type: "image",
+        attrs: {
+          src: imageInsertRequest.url,
+          alt: imageInsertRequest.alt ?? "图片",
+          title: null,
+          width: null,
+          align: "center",
+        },
+      }).run();
+      onImageInsertHandled();
+    });
   }, [editor, imageInsertRequest, onImageInsertHandled]);
 
   useEffect(() => {
@@ -495,12 +512,18 @@ export default function RichTextEditor({
       return;
     }
 
-    const position = Math.max(
-      1,
-      Math.min(externalJumpPosition, editor.state.doc.content.size),
-    );
-    editor.chain().focus(position).scrollIntoView().run();
-    onExternalJumpHandled();
+    return scheduleEditorTask(() => {
+      if (editor.isDestroyed) {
+        return;
+      }
+
+      const position = Math.max(
+        1,
+        Math.min(externalJumpPosition, editor.state.doc.content.size),
+      );
+      editor.chain().focus(position).scrollIntoView().run();
+      onExternalJumpHandled();
+    });
   }, [editor, externalJumpPosition, onExternalJumpHandled]);
 
   if (!editor) {
