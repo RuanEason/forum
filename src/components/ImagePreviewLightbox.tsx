@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import {
@@ -23,6 +30,9 @@ interface ImagePreviewLightboxProps {
   onClose: () => void;
   onIndexChange?: (index: number) => void;
 }
+
+const MAX_BACKGROUND_CLICK_DURATION_MS = 300;
+const MAX_BACKGROUND_CLICK_DISTANCE_PX = 8;
 
 const getDownloadFilename = (src: string, index: number) => {
   let filename = `image-${index + 1}`;
@@ -67,6 +77,8 @@ export default function ImagePreviewLightbox({
   const [mounted, setMounted] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
+  const viewerPointerRef = useRef<{ x: number; y: number; startedAt: number } | null>(null);
+  const suppressViewerClickRef = useRef(false);
 
   const currentImage = images[currentIndex];
   const canGoPrev = currentIndex > 0;
@@ -155,6 +167,38 @@ export default function ImagePreviewLightbox({
     }
   }, [currentImage, currentIndex, isDownloading]);
 
+  const handleViewerPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+
+    viewerPointerRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      startedAt: performance.now(),
+    };
+    suppressViewerClickRef.current = false;
+  };
+
+  const handleViewerPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const pointer = viewerPointerRef.current;
+    if (!pointer) return;
+
+    const distance = Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y);
+    const duration = performance.now() - pointer.startedAt;
+    suppressViewerClickRef.current =
+      distance > MAX_BACKGROUND_CLICK_DISTANCE_PX
+      || duration > MAX_BACKGROUND_CLICK_DURATION_MS;
+  };
+
+  const handleViewerClick = (event: MouseEvent<HTMLDivElement>) => {
+    const shouldSuppress = suppressViewerClickRef.current;
+    suppressViewerClickRef.current = false;
+    viewerPointerRef.current = null;
+
+    if (shouldSuppress || event.target !== event.currentTarget) return;
+
+    onClose();
+  };
+
   if (!mounted || !currentImage) {
     return null;
   }
@@ -165,7 +209,6 @@ export default function ImagePreviewLightbox({
       role="dialog"
       aria-modal="true"
       aria-label="Image preview"
-      onClick={onClose}
     >
       <div
         className="absolute left-1/2 top-4 z-[2147483647] flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 bg-black/55 px-2 py-1.5 shadow-2xl backdrop-blur-xl sm:top-6"
@@ -258,7 +301,16 @@ export default function ImagePreviewLightbox({
           wrapperStyle={{ width: "100vw", height: "100vh" }}
           contentStyle={{ width: "100vw", height: "100vh" }}
         >
-          <div className="flex h-full w-full items-center justify-center p-4 sm:p-8">
+          <div
+            className="flex h-full w-full items-center justify-center p-4 sm:p-8"
+            onPointerDown={handleViewerPointerDown}
+            onPointerUp={handleViewerPointerUp}
+            onPointerCancel={() => {
+              viewerPointerRef.current = null;
+              suppressViewerClickRef.current = true;
+            }}
+            onClick={handleViewerClick}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentImage.src}

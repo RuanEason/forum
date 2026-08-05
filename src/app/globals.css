@@ -332,6 +332,15 @@ body.editor-route [data-site-main="app"] {
   border-radius: 0.4rem;
 }
 
+.post-content-image-preview img {
+  cursor: zoom-in;
+}
+
+.post-content-image-preview img:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
 .editor-style-body img[data-align="left"] { margin-right: auto; margin-left: 0; }
 .editor-style-body img[data-align="center"] { margin-right: auto; margin-left: auto; }
 .editor-style-body img[data-align="right"] { margin-right: 0; margin-left: auto; }

@@ -307,6 +307,7 @@ export default async function PostDetailPage({
                     styleConfig={post.styleConfig ?? null}
                     styleCss={post.styleCss ?? null}
                     withHeadingIds={true}
+                    enableImagePreview={true}
                   />
                   {post.images && post.images.length > 0 && (
                     <PostImages

@@ -7,6 +7,7 @@ import { buildScopedPostStyleSheet } from "@/lib/post-style";
 import type { PostStyleConfig } from "@/types/post-style";
 import { parseRichTextDocument } from "@/lib/rich-text/content";
 import { renderRichTextHtml } from "@/lib/rich-text/server";
+import PostContentImagePreview from "@/components/PostContentImagePreview";
 
 interface PostContentRendererProps {
   postId: string;
@@ -18,6 +19,7 @@ interface PostContentRendererProps {
   styleCss?: string | null;
   withHeadingIds?: boolean;
   headingDataAttributeName?: string;
+  enableImagePreview?: boolean;
 }
 
 export default function PostContentRenderer({
@@ -30,6 +32,7 @@ export default function PostContentRenderer({
   styleCss: _styleCss = null,
   withHeadingIds = false,
   headingDataAttributeName,
+  enableImagePreview = false,
 }: PostContentRendererProps) {
   const scopeId = `post-${postId}`;
   void _styleConfig;
@@ -60,7 +63,20 @@ export default function PostContentRenderer({
           </div>
         ) : null}
         <div className="editor-style-body prose prose-sm sm:prose-base max-w-none break-words">
-          {richTextHtml ? (
+          {enableImagePreview ? (
+            <PostContentImagePreview>
+              {richTextHtml ? (
+                <div className="rich-text-prose" dangerouslySetInnerHTML={{ __html: richTextHtml }} />
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
+                  components={markdownComponents}
+                >
+                  {normalizedContent}
+                </ReactMarkdown>
+              )}
+            </PostContentImagePreview>
+          ) : richTextHtml ? (
             <div className="rich-text-prose" dangerouslySetInnerHTML={{ __html: richTextHtml }} />
           ) : (
             <ReactMarkdown

@@ -13,6 +13,7 @@ import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
 import PostEditHistory from "@/components/PostEditHistory";
 import { createMarkdownComponents } from "@/lib/markdown-components";
+import PostContentImagePreview from "@/components/PostContentImagePreview";
 
 type VideoStatus = "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
 
@@ -177,12 +178,14 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
           {hasDescription && (
             <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
               <div className="prose prose-sm sm:prose-base max-w-none break-words">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={markdownComponents}
-                >
-                  {post.content}
-                </ReactMarkdown>
+                <PostContentImagePreview>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={markdownComponents}
+                  >
+                    {post.content}
+                  </ReactMarkdown>
+                </PostContentImagePreview>
               </div>
             </div>
           )}
