@@ -166,6 +166,7 @@ export default function EditorWorkspace() {
   const isSavingRef = useRef(false);
   const hasHydratedRef = useRef(false);
   const initialQueryDraftHandledRef = useRef(false);
+  const skipNextDraftHydrationRef = useRef<string | null>(null);
   const dirtyRef = useRef(false);
   const persistedSnapshotRef = useRef({
     draftId: null as string | null,
@@ -451,6 +452,12 @@ export default function EditorWorkspace() {
       return;
     }
 
+    if (initialDraftId && skipNextDraftHydrationRef.current === initialDraftId) {
+      skipNextDraftHydrationRef.current = null;
+      initialQueryDraftHandledRef.current = true;
+      return;
+    }
+
     if (!isDesktop) {
       setBooting(false);
       return;
@@ -526,6 +533,8 @@ export default function EditorWorkspace() {
     setDraftId(data.draft.id);
     draftIdRef.current = data.draft.id;
     if (!searchParams.get("draftId")) {
+      skipNextDraftHydrationRef.current = data.draft.id;
+      setEditorDocumentKey(data.draft.id);
       router.replace(`/editor?draftId=${data.draft.id}`);
     }
     return data.draft.id;

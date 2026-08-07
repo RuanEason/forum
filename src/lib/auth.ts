@@ -146,6 +146,18 @@ export const authOptions: any = {
         token.experience = user.experience;
         token.level = user.level;
       }
+
+      if (!user && token.sub) {
+        const existingUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { id: true },
+        });
+
+        if (!existingUser) {
+          throw new Error("Session user no longer exists");
+        }
+      }
+
       if (trigger === "update" && session?.user) {
         token.name = session.user.name;
         token.avatar = session.user.avatar;
