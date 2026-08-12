@@ -291,16 +291,12 @@ export default function HomeContent({
 
   return (
     <div className={embedded ? undefined : "h-full overflow-hidden bg-gray-50"}>
-      <main className={embedded ? undefined : "mx-auto h-full min-h-0 max-w-6xl sm:px-6 lg:px-8 md:py-6"}>
+      <main className={embedded ? undefined : "h-full min-h-0 w-full sm:px-6 lg:px-8 md:py-6"}>
         <div
           className={
             embedded
               ? "px-0 sm:px-0"
-              : `grid h-full min-h-0 items-stretch gap-6 transition-[grid-template-columns,column-gap] duration-300 ease-in-out ${
-                  topicSidebarCollapsed
-                    ? "md:grid-cols-[0px_minmax(0,1fr)] md:gap-x-0"
-                    : "md:grid-cols-[240px_minmax(0,1fr)]"
-                }`
+              : "home-feed-layout relative h-full min-h-0"
           }
         >
           {!embedded && (
@@ -314,7 +310,7 @@ export default function HomeContent({
             />
           )}
 
-          <section className={embedded ? undefined : "flex min-h-0 min-w-0 flex-col"}>
+          <section className={embedded ? undefined : "home-feed-column flex h-full min-h-0 min-w-0 flex-col overflow-hidden"}>
           {session && !hideCreateButton && (
             <div className="mb-6 bg-white p-4 sm:rounded-lg shadow-sm border-b sm:border-0 border-gray-200 flex items-center justify-between">
               <div className="flex items-center space-x-3">

@@ -69,7 +69,7 @@ export default function HomeTopicSidebar({
   return (
     <>
       <div
-        className={`hidden h-full min-w-0 overflow-hidden transition-[opacity,transform] duration-300 ease-out md:block ${
+        className={`home-topic-sidebar-shell absolute inset-y-0 hidden h-full min-w-0 overflow-hidden transition-[opacity,transform] duration-300 ease-out xl:block ${
           collapsed
             ? "pointer-events-none -translate-x-4 opacity-0"
             : "translate-x-0 opacity-100"
@@ -162,7 +162,7 @@ export default function HomeTopicSidebar({
       <button
         type="button"
         onClick={onToggleCollapsed}
-        className={`fixed left-3 top-24 z-30 hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md transition-[opacity,transform] duration-300 ease-out hover:bg-indigo-50 hover:text-indigo-600 md:inline-flex ${
+        className={`home-topic-sidebar-toggle fixed left-3 top-24 z-30 hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md transition-[opacity,transform] duration-300 ease-out xl:inline-flex ${
           collapsed
             ? "translate-x-0 opacity-100"
             : "pointer-events-none -translate-x-2 opacity-0"

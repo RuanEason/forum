@@ -342,6 +342,21 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     router.refresh();
   }, [presentation, router]);
 
+  const navigateAfterSheetClose = useCallback((destination: string) => {
+    // Restore the history entry without the intercepted modal before entering
+    // the destination, otherwise the parallel @modal slot can retain the
+    // already-closed sheet instance across the next soft navigation.
+    const handlePopState = () => {
+      window.setTimeout(() => {
+        router.push(destination);
+        router.refresh();
+      }, 0);
+    };
+
+    window.addEventListener("popstate", handlePopState, { once: true });
+    router.back();
+  }, [router]);
+
   useEffect(() => {
     finishPendingNavigationTask();
   }, [finishPendingNavigationTask, pathname]);
@@ -1708,13 +1723,12 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     const pendingPostNavigation = pendingPostNavigationRef.current;
     if (pendingPostNavigation) {
       pendingPostNavigationRef.current = null;
-      router.push(pendingPostNavigation);
-      router.refresh();
+      navigateAfterSheetClose(pendingPostNavigation);
       return;
     }
 
     await handleCancel();
-  }, [handleCancel, router]);
+  }, [handleCancel, navigateAfterSheetClose]);
 
   const canPublishText =
     !loading

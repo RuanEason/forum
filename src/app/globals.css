@@ -103,6 +103,35 @@ body.home-feed-route [data-site-chrome="footer"] {
   display: none;
 }
 
+/* Keep the post feed centered independently from the optional topic sidebar. */
+.home-feed-column {
+  width: min(100%, 824px);
+  margin-inline: auto;
+}
+
+.home-topic-sidebar-shell {
+  left: max(1rem, calc(50% - 676px));
+  width: 240px;
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .home-feed-column {
+    max-width: 760px;
+  }
+
+  .home-topic-sidebar-shell {
+    left: max(0px, calc(50% - 616px));
+    width: 216px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .home-topic-sidebar-shell,
+  .home-topic-sidebar-toggle {
+    display: none !important;
+  }
+}
+
 html.editor-route,
 body.editor-route {
   background: #eef3f9;
