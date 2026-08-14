@@ -216,7 +216,9 @@ export async function getPosts(topicId?: string) {
     contentFormat,
     content: contentFormat === "RICH_TEXT"
       ? (parseRichTextDocument(contentJson)
-        ? getRichTextSummaryWithMentions(parseRichTextDocument(contentJson), 300)
+        ? getRichTextSummaryWithMentions(parseRichTextDocument(contentJson), 300, {
+          preserveLineBreaks: true,
+        })
         : "")
       : post.content,
   }));

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
@@ -74,6 +75,9 @@ interface PostProps {
   } | null;
   createdAt: string;
 }
+
+const isTitleOnlyPost = (post: Pick<PostProps, "title">, viewMode: string) =>
+  viewMode === "title" || (viewMode === "both" && Boolean(post.title));
 
 /**
  * 首页内容展示组件
@@ -480,7 +484,7 @@ export default function HomeContent({
                               viewMode === "titleAndContent" ||
                               (viewMode === "both" && post.title)) &&
                                (
-                                <h3 className={`text-lg font-bold ${post.title ? "text-gray-900" : "text-gray-400 italic"} mb-2 line-clamp-2`}>
+                                <h3 className={`text-lg font-bold ${post.title ? "text-gray-900" : "text-gray-400 italic"} ${isTitleOnlyPost(post, viewMode) ? "mb-0" : "mb-2"} line-clamp-2`}>
                                   {post.title || "无标题"}
                                 </h3>
                               )}
@@ -492,7 +496,7 @@ export default function HomeContent({
                               post.contentFormat === "RICH_TEXT" ? (
                                 <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                   <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
+                                    remarkPlugins={[remarkGfm, remarkBreaks]}
                                     components={markdownComponents}
                                   >
                                     {post.content}
@@ -501,7 +505,7 @@ export default function HomeContent({
                               ) : (
                                 <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                   <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
+                                    remarkPlugins={[remarkGfm, remarkBreaks]}
                                     components={markdownComponents}
                                   >
                                     {post.content}
@@ -550,7 +554,7 @@ export default function HomeContent({
                           )}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between sm:justify-start sm:space-x-6 pt-2 border-t border-gray-50">
+                        <div className={`${isTitleOnlyPost(post, viewMode) ? "mt-1 pt-0" : "mt-3 pt-2 border-t border-gray-50"} flex items-center justify-between sm:justify-start sm:space-x-6`}>
                           {/* 浏览量 */}
                           <div className="flex items-center text-gray-400 p-1 sm:p-2">
                             <Eye className="w-4 h-4" />

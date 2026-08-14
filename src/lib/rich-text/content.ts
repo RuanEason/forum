@@ -369,6 +369,23 @@ interface RichTextSummaryPart {
   isMention: boolean;
 }
 
+interface RichTextSummaryOptions {
+  preserveLineBreaks?: boolean;
+}
+
+function normalizeSummaryWhitespace(value: string, preserveLineBreaks: boolean): string {
+  const normalizedValue = value.replace(/\r\n?/g, "\n");
+
+  if (!preserveLineBreaks) {
+    return normalizedValue.replace(/\s+/g, " ");
+  }
+
+  return normalizedValue
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 function escapeSummaryMarkdownText(value: string): string {
   return value.replace(/[\\`*_\[\]~]/g, "\\$&");
 }
@@ -428,18 +445,26 @@ function getRichTextSummaryParts(node: JSONContent): RichTextSummaryPart[] {
 export function getRichTextSummaryWithMentions(
   document: JSONContent | null | undefined,
   maxLength = 180,
+  options: RichTextSummaryOptions = {},
 ): string {
   if (!document) {
     return "";
   }
 
+  const preserveLineBreaks = options.preserveLineBreaks === true;
   const parts = getRichTextSummaryParts(document);
-  const fullText = parts.map((part) => part.text).join("").replace(/\s+/g, " ").trim();
+  const fullText = normalizeSummaryWhitespace(
+    parts.map((part) => part.text).join(""),
+    preserveLineBreaks,
+  ).trim();
   if (!fullText) {
     return "";
   }
 
-  const fullMarkdown = parts.map((part) => part.markdown).join("").replace(/\s+/g, " ").trim();
+  const fullMarkdown = normalizeSummaryWhitespace(
+    parts.map((part) => part.markdown).join(""),
+    preserveLineBreaks,
+  ).trim();
   if (fullText.length <= maxLength) {
     return fullMarkdown;
   }
@@ -448,9 +473,12 @@ export function getRichTextSummaryWithMentions(
   let visibleLength = 0;
 
   for (const part of parts) {
-    const normalizedText = part.text.replace(/\s+/g, " ");
-    const text = output.length === 0 || output.endsWith(" ")
-      ? normalizedText.replace(/^ +/, "")
+    const normalizedText = normalizeSummaryWhitespace(part.text, preserveLineBreaks);
+    const trimLeadingWhitespace = output.length === 0
+      || output.endsWith(" ")
+      || (preserveLineBreaks && output.endsWith("\n"));
+    const text = trimLeadingWhitespace
+      ? normalizedText.replace(/^[ \t]+/, "")
       : normalizedText;
 
     if (!text) {
