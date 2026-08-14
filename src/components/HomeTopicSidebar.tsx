@@ -82,15 +82,17 @@ export default function HomeTopicSidebar({
                 <h2 className="text-sm font-semibold text-gray-900">漫游</h2>
                 <p className="mt-0.5 text-xs text-gray-400">发现感兴趣的讨论</p>
               </div>
-              <button
-                type="button"
-                onClick={onToggleCollapsed}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                aria-label="收起话题栏"
-                title="收起话题栏"
-              >
-                <PanelLeftClose className="h-4 w-4" />
-              </button>
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={onToggleCollapsed}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                  aria-label="收起话题栏"
+                  title="收起话题栏"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
             <nav className="p-2" aria-label="首页话题导航">
@@ -159,19 +161,17 @@ export default function HomeTopicSidebar({
         </aside>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggleCollapsed}
-        className={`home-topic-sidebar-toggle fixed left-3 top-24 z-30 hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md transition-[opacity,transform] duration-300 ease-out xl:inline-flex ${
-          collapsed
-            ? "translate-x-0 opacity-100"
-            : "pointer-events-none -translate-x-2 opacity-0"
-        }`}
-        aria-label="展开话题栏"
-        title="展开话题栏"
-      >
-        <PanelLeftOpen className="h-5 w-5" />
-      </button>
+      {collapsed && (
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          className="home-topic-sidebar-toggle fixed left-3 top-24 z-30 hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md transition-transform duration-300 ease-out xl:inline-flex"
+          aria-label="展开话题栏"
+          title="展开话题栏"
+        >
+          <PanelLeftOpen className="h-5 w-5" />
+        </button>
+      )}
     </>
   );
 }

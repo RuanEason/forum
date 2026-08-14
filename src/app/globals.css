@@ -103,31 +103,92 @@ body.home-feed-route [data-site-chrome="footer"] {
   display: none;
 }
 
-/* Keep the post feed centered independently from the optional topic sidebar. */
+/* Balance the post feed between the optional sidebars on wide screens. */
+.home-feed-layout {
+  --home-topic-sidebar-width: 280px;
+  --home-announcement-sidebar-width: 360px;
+}
+
 .home-feed-column {
-  width: min(100%, 824px);
+  width: min(100%, 1040px);
   margin-inline: auto;
 }
 
 .home-topic-sidebar-shell {
-  left: max(1rem, calc(50% - 676px));
-  width: 240px;
+  left: 0;
+  width: var(--home-topic-sidebar-width);
+}
+
+.home-announcement-sidebar-shell {
+  right: 0;
+  width: var(--home-announcement-sidebar-width);
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .home-feed-column {
-    max-width: 760px;
+  .home-feed-layout {
+    --home-topic-sidebar-width: 216px;
   }
 
-  .home-topic-sidebar-shell {
-    left: max(0px, calc(50% - 616px));
-    width: 216px;
+  .home-feed-column {
+    max-width: 832px;
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1535px) {
+  .home-feed-layout {
+    --home-topic-sidebar-width: 216px;
+  }
+
+  .home-feed-column {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .home-feed-layout {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+}
+
+@media (min-width: 1536px) and (max-width: 1727px) {
+  .home-feed-layout {
+    --home-topic-sidebar-width: 240px;
+  }
+
+  .home-feed-column {
+    position: relative;
+    left: 24px;
+  }
+}
+
+@media (min-width: 1728px) {
+  .home-feed-column {
+    position: relative;
+    left: calc(
+      (var(--home-topic-sidebar-width) - var(--home-announcement-sidebar-width)) / 2
+    );
+    width: min(
+      100%,
+      1160px,
+      calc(
+        100vw - var(--home-topic-sidebar-width) -
+          var(--home-announcement-sidebar-width) - 48px
+      )
+    );
   }
 }
 
 @media (max-width: 1279px) {
   .home-topic-sidebar-shell,
   .home-topic-sidebar-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1727px) {
+  .home-announcement-sidebar-shell,
+  .home-announcement-sidebar-toggle {
     display: none !important;
   }
 }

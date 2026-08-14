@@ -15,6 +15,7 @@ import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import HomeTopicSidebar from "@/components/HomeTopicSidebar";
+import HomeAnnouncementSidebar from "@/components/HomeAnnouncementSidebar";
 import Badge from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
@@ -23,6 +24,8 @@ import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
 const HOME_TOPIC_SIDEBAR_COLLAPSED_KEY = "forum:home-topic-sidebar-collapsed";
+const HOME_ANNOUNCEMENT_SIDEBAR_COLLAPSED_KEY =
+  "forum:home-announcement-sidebar-collapsed";
 
 const getUserLevel = (experience: number) =>
   LEVEL_THRESHOLDS.reduce((level, requiredExperience) => {
@@ -119,6 +122,10 @@ export default function HomeContent({
   const [topicSidebarCollapsed, setTopicSidebarCollapsed] = useState(false);
   const [topicSidebarPreferenceReady, setTopicSidebarPreferenceReady] =
     useState(false);
+  const [announcementSidebarCollapsed, setAnnouncementSidebarCollapsed] =
+    useState(false);
+  const [announcementSidebarPreferenceReady, setAnnouncementSidebarPreferenceReady] =
+    useState(false);
   const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
   const navigationTaskTimeoutRef = useRef<number | null>(null);
   const prefetchedPostIdsRef = useRef<Set<string>>(new Set());
@@ -193,6 +200,41 @@ export default function HomeContent({
       // Ignore storage failures so the sidebar remains usable.
     }
   }, [embedded, topicSidebarCollapsed, topicSidebarPreferenceReady]);
+
+  useEffect(() => {
+    if (embedded) return;
+
+    try {
+      const storedValue = window.localStorage.getItem(
+        HOME_ANNOUNCEMENT_SIDEBAR_COLLAPSED_KEY
+      );
+
+      if (storedValue === "true" || storedValue === "false") {
+        setAnnouncementSidebarCollapsed(storedValue === "true");
+      }
+    } catch {
+      // localStorage may be unavailable in private browsing or restricted contexts.
+    } finally {
+      setAnnouncementSidebarPreferenceReady(true);
+    }
+  }, [embedded]);
+
+  useEffect(() => {
+    if (embedded || !announcementSidebarPreferenceReady) return;
+
+    try {
+      window.localStorage.setItem(
+        HOME_ANNOUNCEMENT_SIDEBAR_COLLAPSED_KEY,
+        String(announcementSidebarCollapsed)
+      );
+    } catch {
+      // Ignore storage failures so the sidebar remains usable.
+    }
+  }, [
+    announcementSidebarCollapsed,
+    announcementSidebarPreferenceReady,
+    embedded,
+  ]);
 
   useEffect(() => {
     if (embedded) return;
@@ -306,6 +348,15 @@ export default function HomeContent({
               collapsed={topicSidebarCollapsed}
               onToggleCollapsed={() =>
                 setTopicSidebarCollapsed((current) => !current)
+              }
+            />
+          )}
+
+          {!embedded && (
+            <HomeAnnouncementSidebar
+              collapsed={announcementSidebarCollapsed}
+              onToggleCollapsed={() =>
+                setAnnouncementSidebarCollapsed((current) => !current)
               }
             />
           )}
