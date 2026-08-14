@@ -1,7 +1,7 @@
 import { cloneElement, createElement, isValidElement, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import type { Components } from "react-markdown";
 import MarkdownCodeBlock from "@/components/markdown/MarkdownCodeBlock";
-import { createHeadingIdGenerator } from "@/lib/markdown";
+import { createHeadingIdGenerator, isInternalUserLink } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
 type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
@@ -71,6 +71,14 @@ export function createMarkdownComponents({
       const isAnchorLink = typeof href === "string" && href.startsWith("#");
 
       if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      if (isInternalUserLink(href)) {
         return (
           <a href={href} {...props}>
             {children}

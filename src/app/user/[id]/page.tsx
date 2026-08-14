@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import UserProfileClient from "./UserProfileClient";
 import { getUserLevel } from "@/lib/experience";
-import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
+import { getRichTextSummaryWithMentions, parseRichTextDocument } from "@/lib/rich-text/content";
 
 interface UserProfileProps {
   params: Promise<{ id: string }>;
@@ -138,7 +138,7 @@ async function getUserProfileWithStats(id: string, includeUnlistedPosts: boolean
       return {
         ...post,
         contentFormat,
-        content: document ? getRichTextSummary(document, 300) : post.content,
+        content: document ? getRichTextSummaryWithMentions(document, 300) : post.content,
       };
     }),
   };

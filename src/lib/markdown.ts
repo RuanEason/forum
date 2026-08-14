@@ -9,6 +9,10 @@ export interface MarkdownHeading {
   lineNumber: number;
 }
 
+export function isInternalUserLink(href: string | null | undefined): boolean {
+  return typeof href === "string" && /^\/user\/[^/?#]+(?:[/?#]|$)/.test(href);
+}
+
 const ATX_HEADING_REGEX = /^(#{1,6})[ \t]+(.+?)\s*#*\s*$/;
 
 function stripMarkdownInline(text: string): string {

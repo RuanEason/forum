@@ -13,6 +13,7 @@ import {
   serializeRichTextDocument,
 } from "@/lib/rich-text/content";
 import { renderRichTextHtml } from "@/lib/rich-text/server";
+import { linkMarkdownMentions, linkRichTextMentions } from "@/lib/mentions";
 
 /**
  * 甯栧瓙瀛楁鏈€澶ч暱搴﹂檺鍒?
@@ -301,14 +302,14 @@ export async function POST(request: NextRequest) {
       }
       try {
         serializeRichTextDocument(document);
-        normalizedContent = renderRichTextHtml(document);
+        normalizedContentJson = await linkRichTextMentions(document);
+        normalizedContent = renderRichTextHtml(normalizedContentJson);
       } catch (error) {
         return NextResponse.json(
           { error: error instanceof Error ? error.message : "Invalid rich text content" },
           { status: 400 },
         );
       }
-      normalizedContentJson = document;
       normalizedContentFormat = "RICH_TEXT";
     }
     const normalizedImages = Array.isArray(images) ? images : [];
@@ -369,7 +370,7 @@ export async function POST(request: NextRequest) {
 
       post = await createPost(
         title,
-        normalizedContent,
+        await linkMarkdownMentions(normalizedContent),
         session.user.id,
         [],
         topicId || null,
@@ -657,14 +658,14 @@ export async function PUT(request: NextRequest) {
       }
       try {
         serializeRichTextDocument(document);
-        nextContent = renderRichTextHtml(document);
+        nextContentJson = await linkRichTextMentions(document);
+        nextContent = renderRichTextHtml(nextContentJson);
       } catch (error) {
         return NextResponse.json(
           { error: error instanceof Error ? error.message : "Invalid rich text content" },
           { status: 400 },
         );
       }
-      nextContentJson = document;
       nextContentFormat = "RICH_TEXT";
     }
 
@@ -699,6 +700,10 @@ export async function PUT(request: NextRequest) {
     const removedAttachmentUrls = existingPost.attachments
       .filter((attachment) => !nextAttachmentIdSet.has(attachment.id))
       .map((attachment) => attachment.url);
+
+    if (existingPost.postType === "VIDEO") {
+      nextContent = await linkMarkdownMentions(nextContent);
+    }
 
     const updatedPost = await updatePost(id, {
       title: typeof title === "string" ? title : null,

@@ -2,7 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated";
 import type { JSONContent } from "@tiptap/core";
 import type { PostStyleConfig } from "@/types/post-style";
-import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
+import {
+  getRichTextSummary,
+  getRichTextSummaryWithMentions,
+  parseRichTextDocument,
+} from "@/lib/rich-text/content";
 
 type PostAttachmentInput = {
   url: string;
@@ -212,7 +216,7 @@ export async function getPosts(topicId?: string) {
     contentFormat,
     content: contentFormat === "RICH_TEXT"
       ? (parseRichTextDocument(contentJson)
-        ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+        ? getRichTextSummaryWithMentions(parseRichTextDocument(contentJson), 300)
         : "")
       : post.content,
   }));

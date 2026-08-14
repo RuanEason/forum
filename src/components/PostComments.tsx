@@ -26,6 +26,7 @@ import Avatar from "@/components/Avatar";
 import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { isInternalUserLink } from "@/lib/markdown";
 
 interface AuthorProps {
   id: string;
@@ -684,6 +685,14 @@ function ReplyItem({
         );
       }
 
+      if (isInternalUserLink(href)) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
           {children}
@@ -920,6 +929,14 @@ function CommentItem({
       const isAnchorLink = typeof href === "string" && href.startsWith("#");
 
       if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      if (isInternalUserLink(href)) {
         return (
           <a href={href} {...props}>
             {children}

@@ -17,6 +17,7 @@ import {
   serializeRichTextDocument,
 } from "@/lib/rich-text/content";
 import { renderRichTextHtml } from "@/lib/rich-text/server";
+import { linkMarkdownMentions, linkRichTextMentions } from "@/lib/mentions";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_CONTENT_LENGTH = 10000;
@@ -1007,7 +1008,14 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
     draft.content,
     draft.contentJson,
   );
-  const normalizedContent = storedContent.html;
+  let normalizedContent = storedContent.html;
+  let normalizedContentDocument = storedContent.document;
+  if (normalizedContentDocument) {
+    normalizedContentDocument = await linkRichTextMentions(normalizedContentDocument);
+    normalizedContent = renderRichTextHtml(normalizedContentDocument);
+  } else if (storedContent.format === "PLAIN_TEXT") {
+    normalizedContent = await linkMarkdownMentions(normalizedContent);
+  }
   const normalizedStyleConfig = normalizePostStyleConfig(draft.styleConfig);
   const normalizedStyleCss = normalizePostStyleCss(draft.styleCss);
 
@@ -1020,7 +1028,7 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
     return {
       title: normalizedTitle,
       content: normalizedContent,
-      contentJson: storedContent.document,
+      contentJson: normalizedContentDocument,
       contentFormat: storedContent.format,
       styleConfig: normalizedStyleConfig,
       styleCss: normalizedStyleCss,
@@ -1039,7 +1047,7 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
   return {
     title: normalizedTitle,
     content: normalizedContent,
-    contentJson: storedContent.document,
+    contentJson: normalizedContentDocument,
     contentFormat: storedContent.format,
     styleConfig: normalizedStyleConfig,
     styleCss: normalizedStyleCss,

@@ -363,6 +363,122 @@ export function getRichTextSummary(document: JSONContent | null | undefined, max
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
+interface RichTextSummaryPart {
+  markdown: string;
+  text: string;
+  isMention: boolean;
+}
+
+function escapeSummaryMarkdownText(value: string): string {
+  return value.replace(/[\\`*_\[\]~]/g, "\\$&");
+}
+
+function getRichTextSummaryParts(node: JSONContent): RichTextSummaryPart[] {
+  if (node.type === "text") {
+    const text = node.text ?? "";
+    const mentionLink = node.marks?.find((mark) => (
+      mark.type === "link"
+      && typeof mark.attrs?.href === "string"
+      && /^\/user\/[^/?#]+(?:[/?#]|$)/.test(mark.attrs.href)
+    ));
+
+    if (mentionLink && typeof mentionLink.attrs?.href === "string") {
+      return [{
+        markdown: `[${escapeSummaryMarkdownText(text)}](${mentionLink.attrs.href})`,
+        text,
+        isMention: true,
+      }];
+    }
+
+    return [{
+      markdown: escapeSummaryMarkdownText(text),
+      text,
+      isMention: false,
+    }];
+  }
+
+  if (node.type === "hardBreak") {
+    return [{ markdown: "\n", text: "\n", isMention: false }];
+  }
+
+  if (node.type === "image") {
+    const text = node.attrs?.alt ? `[${String(node.attrs.alt)}]` : "";
+    return [{
+      markdown: escapeSummaryMarkdownText(text),
+      text,
+      isMention: false,
+    }];
+  }
+
+  const parts = (node.content ?? []).flatMap(getRichTextSummaryParts);
+  if ([
+    "paragraph",
+    "heading",
+    "blockquote",
+    "listItem",
+    "taskItem",
+    "codeBlock",
+  ].includes(node.type ?? "")) {
+    parts.push({ markdown: "\n", text: "\n", isMention: false });
+  }
+
+  return parts;
+}
+
+export function getRichTextSummaryWithMentions(
+  document: JSONContent | null | undefined,
+  maxLength = 180,
+): string {
+  if (!document) {
+    return "";
+  }
+
+  const parts = getRichTextSummaryParts(document);
+  const fullText = parts.map((part) => part.text).join("").replace(/\s+/g, " ").trim();
+  if (!fullText) {
+    return "";
+  }
+
+  const fullMarkdown = parts.map((part) => part.markdown).join("").replace(/\s+/g, " ").trim();
+  if (fullText.length <= maxLength) {
+    return fullMarkdown;
+  }
+
+  let output = "";
+  let visibleLength = 0;
+
+  for (const part of parts) {
+    const normalizedText = part.text.replace(/\s+/g, " ");
+    const text = output.length === 0 || output.endsWith(" ")
+      ? normalizedText.replace(/^ +/, "")
+      : normalizedText;
+
+    if (!text) {
+      continue;
+    }
+
+    const remaining = maxLength - visibleLength;
+    if (remaining <= 0) {
+      break;
+    }
+
+    if (text.length <= remaining) {
+      output += part.isMention ? part.markdown : escapeSummaryMarkdownText(text);
+      visibleLength += text.length;
+      continue;
+    }
+
+    if (part.isMention) {
+      output += part.markdown;
+    } else {
+      output += escapeSummaryMarkdownText(text.slice(0, remaining));
+    }
+    break;
+  }
+
+  return `${output.trim()}...`;
+}
+
 export function extractRichTextHeadings(
   document: JSONContent | null | undefined,
   options?: { includeEmpty?: boolean },

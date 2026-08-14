@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
+import { linkMarkdownMentions } from "@/lib/mentions";
 
 type SessionShape = {
   user?: {
@@ -92,10 +93,10 @@ export async function POST(request: NextRequest) {
       replyToId?: string | null;
     } = await request.json();
 
-    const commentContent = buildCommentContent(
+    const commentContent = await linkMarkdownMentions(buildCommentContent(
       typeof content === "string" ? content : "",
       normalizeImageUrls(images),
-    );
+    ));
 
     if (!commentContent || !postId) {
       return NextResponse.json({ error: "Content and postId are required" }, { status: 400 });

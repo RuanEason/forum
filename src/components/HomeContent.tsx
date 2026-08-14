@@ -22,6 +22,7 @@ import Badge from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import type { HomeTopic } from "@/types/topic";
+import { isInternalUserLink } from "@/lib/markdown";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
@@ -327,6 +328,14 @@ export default function HomeContent({
         );
       }
 
+      if (isInternalUserLink(href)) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
           {children}
@@ -481,9 +490,14 @@ export default function HomeContent({
                               viewMode === "titleAndContent" ||
                               (viewMode === "both" && !post.title)) && (
                               post.contentFormat === "RICH_TEXT" ? (
-                                <p className="line-clamp-4 whitespace-pre-wrap break-words">
-                                  {post.content}
-                                </p>
+                                <div className="prose prose-sm max-w-none line-clamp-4 break-words">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={markdownComponents}
+                                  >
+                                    {post.content}
+                                  </ReactMarkdown>
+                                </div>
                               ) : (
                                 <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                                   <ReactMarkdown

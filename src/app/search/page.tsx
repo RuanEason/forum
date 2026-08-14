@@ -11,7 +11,7 @@ import type {
 import SearchResultSwitcher from "@/components/SearchResultSwitcher";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
+import { getRichTextSummaryWithMentions, parseRichTextDocument } from "@/lib/rich-text/content";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
@@ -184,7 +184,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     return {
       ...post,
-      content: document ? getRichTextSummary(document, 300) : post.content,
+      content: document ? getRichTextSummaryWithMentions(document, 300) : post.content,
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
       pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,

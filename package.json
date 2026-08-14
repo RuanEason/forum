@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:mentions": "tsx --test tests/mentions.test.ts",
+    "mentions:backfill": "tsx scripts/backfill-mentions.ts"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
@@ -40,6 +42,8 @@
     "hls.js": "^1.6.15",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.562.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-gfm": "^3.1.0",
     "music-metadata": "^11.12.3",
     "next": "16.0.10",
     "next-auth": "^4.24.13",
@@ -73,6 +77,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

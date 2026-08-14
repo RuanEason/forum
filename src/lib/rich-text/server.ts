@@ -116,14 +116,21 @@ export function renderRichTextHtml(document: JSONContent): string {
       },
     },
     transformTags: {
-      a: (_tagName, attribs) => ({
-        tagName: "a",
-        attribs: {
-          ...attribs,
-          rel: "nofollow noopener noreferrer",
-          target: "_blank",
-        },
-      }),
+      a: (_tagName, attribs) => {
+        const isInternalUserLink = typeof attribs.href === "string"
+          && /^\/user\/[^/?#]+(?:[/?#]|$)/.test(attribs.href);
+        const nextAttribs = { ...attribs };
+
+        if (isInternalUserLink) {
+          delete nextAttribs.rel;
+          delete nextAttribs.target;
+        } else {
+          nextAttribs.rel = "nofollow noopener noreferrer";
+          nextAttribs.target = "_blank";
+        }
+
+        return { tagName: "a", attribs: nextAttribs };
+      },
       p: (_tagName, attribs) => restoreBlockStyles("p", attribs),
       input: (_tagName, attribs) => ({
         tagName: "input",

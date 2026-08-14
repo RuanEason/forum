@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { linkMarkdownMentions } from "@/lib/mentions";
 
 const MAX_COMMENT_LENGTH = 5000;
 const MAX_COMMENT_IMAGES = 9;
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     const replyToId = typeof body.replyToId === "string" ? body.replyToId.trim() : "";
     const rawContent = typeof body.content === "string" ? body.content : "";
     const imageUrls = normalizeImageUrls(body.images);
-    const content = buildMarkdownContent(rawContent, imageUrls);
+    const content = await linkMarkdownMentions(buildMarkdownContent(rawContent, imageUrls));
 
     if (!postId) {
       return NextResponse.json({ error: "postId is required" }, { status: 400 });

@@ -14,6 +14,7 @@ import RepostButton from "@/components/RepostButton";
 import PostListMoreMenu from "@/components/PostListMoreMenu";
 import PostImages from "@/components/PostImages";
 import { useToast } from "@/components/ui/Toast";
+import { isInternalUserLink } from "@/lib/markdown";
 import { Eye, Lock } from "lucide-react";
 
 interface PostProps {
@@ -99,6 +100,14 @@ export default function UserPostList({
       const isAnchorLink = typeof href === "string" && href.startsWith("#");
 
       if (isAnchorLink) {
+        return (
+          <a href={href} {...props}>
+            {children}
+          </a>
+        );
+      }
+
+      if (isInternalUserLink(href)) {
         return (
           <a href={href} {...props}>
             {children}
@@ -210,9 +219,14 @@ export default function UserPostList({
                       viewMode === "titleAndContent" ||
                       (viewMode === "both" && !post.title)) && (
                       post.contentFormat === "RICH_TEXT" ? (
-                        <p className="line-clamp-4 whitespace-pre-wrap break-words">
-                          {post.content}
-                        </p>
+                        <div className="prose prose-sm max-w-none line-clamp-4 break-words">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={markdownComponents}
+                          >
+                            {post.content}
+                          </ReactMarkdown>
+                        </div>
                       ) : (
                         <div className="prose prose-sm max-w-none line-clamp-4 break-words">
                           <ReactMarkdown
