@@ -15,7 +15,9 @@ import Avatar from "@/components/Avatar";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import HomeTopicSidebar from "@/components/HomeTopicSidebar";
-import HomeAnnouncementSidebar from "@/components/HomeAnnouncementSidebar";
+import HomeAnnouncementSidebar, {
+  type HomeAnnouncement,
+} from "@/components/HomeAnnouncementSidebar";
 import Badge from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
@@ -102,6 +104,7 @@ export default function HomeContent({
   embedded = false,
   initialTopics = [],
   initialTopicsHasMore = false,
+  initialAnnouncements = [],
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
@@ -111,6 +114,7 @@ export default function HomeContent({
   embedded?: boolean;
   initialTopics?: HomeTopic[];
   initialTopicsHasMore?: boolean;
+  initialAnnouncements?: HomeAnnouncement[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -354,6 +358,7 @@ export default function HomeContent({
 
           {!embedded && (
             <HomeAnnouncementSidebar
+              announcements={initialAnnouncements}
               collapsed={announcementSidebarCollapsed}
               onToggleCollapsed={() =>
                 setAnnouncementSidebarCollapsed((current) => !current)

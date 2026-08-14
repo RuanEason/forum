@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
@@ -10,6 +11,7 @@ import {
   EyeOff,
   Globe2,
   Loader2,
+  Megaphone,
   Paperclip,
   Save,
   X,
@@ -48,6 +50,7 @@ export type EditablePost = {
   contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   postType: PostType;
   visibility: PostVisibility;
+  isAnnouncement?: boolean;
   styleConfig?: PostStyleConfig | null;
   styleCss?: string | null;
   images: { url: string }[];
@@ -93,6 +96,7 @@ function createSnapshot(
   title: string,
   content: string,
   visibility: PostVisibility,
+  isAnnouncement: boolean,
   images: string[],
   attachments: EditableAttachment[],
 ) {
@@ -100,6 +104,7 @@ function createSnapshot(
     title,
     content,
     visibility,
+    isAnnouncement,
     images,
     attachments: attachments.map((attachment) => ({
       id: attachment.id ?? null,
@@ -119,6 +124,7 @@ function getEditableContent(post: EditablePost): string {
 }
 
 export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDrawerProps) {
+  const { data: session } = useSession();
   const router = useRouter();
   const drawerRef = useRef<HTMLFormElement>(null);
   const discardDialogRef = useRef<HTMLDivElement>(null);
@@ -131,14 +137,16 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
   const cancelRequestedRef = useRef(false);
 
   const isTextPost = post.postType === "TEXT";
+  const isAdmin = session?.user?.role === "admin";
   const [editorMode, setEditorMode] = useState<EditorMode>("edit");
   const [title, setTitle] = useState(post.title ?? "");
   const [content, setContent] = useState(() => getEditableContent(post));
   const [visibility, setVisibility] = useState<PostVisibility>(post.visibility);
+  const [isAnnouncement, setIsAnnouncement] = useState(Boolean(post.isAnnouncement));
   const [selectedImages, setSelectedImages] = useState<string[]>(post.images.map((image) => image.url));
   const [selectedAttachments, setSelectedAttachments] = useState<EditableAttachment[]>(post.attachments);
   const [initialSnapshot, setInitialSnapshot] = useState(() =>
-    createSnapshot(post.title ?? "", getEditableContent(post), post.visibility, post.images.map((image) => image.url), post.attachments),
+    createSnapshot(post.title ?? "", getEditableContent(post), post.visibility, Boolean(post.isAnnouncement), post.images.map((image) => image.url), post.attachments),
   );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -152,8 +160,8 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
   const [imageInsertRequest, setImageInsertRequest] = useState<{ id: number; url: string; alt?: string } | null>(null);
 
   const currentSnapshot = useMemo(
-    () => createSnapshot(title, content, visibility, selectedImages, selectedAttachments),
-    [content, selectedAttachments, selectedImages, title, visibility],
+    () => createSnapshot(title, content, visibility, isAnnouncement, selectedImages, selectedAttachments),
+    [content, isAnnouncement, selectedAttachments, selectedImages, title, visibility],
   );
   const isDirty = currentSnapshot !== initialSnapshot;
   const isBusy = saving || isUploading;
@@ -216,9 +224,10 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
     setTitle(nextTitle);
     setContent(getEditableContent(post));
     setVisibility(post.visibility);
+    setIsAnnouncement(Boolean(post.isAnnouncement));
     setSelectedImages(nextImages);
     setSelectedAttachments(nextAttachments);
-    setInitialSnapshot(createSnapshot(nextTitle, getEditableContent(post), post.visibility, nextImages, nextAttachments));
+    setInitialSnapshot(createSnapshot(nextTitle, getEditableContent(post), post.visibility, Boolean(post.isAnnouncement), nextImages, nextAttachments));
     setEditorMode("edit");
     setError("");
     setUploadProgress(0);
@@ -501,6 +510,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
           contentJson: isTextPost ? (contentDocument ?? createEmptyRichTextDocument()) : null,
           contentFormat: isTextPost ? "RICH_TEXT" : "PLAIN_TEXT",
           visibility,
+          ...(isAdmin && isTextPost ? { isAnnouncement } : {}),
           images: isTextPost ? selectedImages : [],
           attachments: selectedAttachments.map((attachment) => ({
             id: attachment.id ?? null,
@@ -729,12 +739,37 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
                     <span className="flex items-center gap-2 text-sm font-semibold"><Globe2 className="h-4 w-4" />公开</span>
                     <span className="text-xs opacity-75">展示在首页和搜索中</span>
                   </button>
-                  <button type="button" onClick={() => setVisibility("UNLISTED")} disabled={isBusy} className={`flex min-h-20 flex-col items-start justify-center gap-1 border px-3 text-left transition-colors ${visibility === "UNLISTED" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                  <button type="button" onClick={() => { setVisibility("UNLISTED"); setIsAnnouncement(false); }} disabled={isBusy} className={`flex min-h-20 flex-col items-start justify-center gap-1 border px-3 text-left transition-colors ${visibility === "UNLISTED" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
                     <span className="flex items-center gap-2 text-sm font-semibold">{visibility === "UNLISTED" ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}仅链接可见</span>
                     <span className="text-xs opacity-75">只通过链接访问</span>
                   </button>
                 </div>
               </section>
+
+              {isTextPost && isAdmin && (
+                <section className="space-y-3 border-t border-slate-200 pt-6">
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">
+                      <Megaphone className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-slate-900">将此帖设置为论坛公告</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-slate-500">仅公开文字帖会显示在首页右侧公告栏</span>
+                    </span>
+                    <span className="relative inline-flex h-6 w-11 shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={isAnnouncement && visibility === "PUBLIC"}
+                        onChange={(event) => setIsAnnouncement(event.target.checked)}
+                        disabled={isBusy || visibility !== "PUBLIC"}
+                        className="peer sr-only"
+                      />
+                      <span className="absolute inset-0 rounded-full bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200 peer-disabled:opacity-50" />
+                      <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-70" />
+                    </span>
+                  </label>
+                </section>
+              )}
 
               {error ? (
                 <div className="flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">

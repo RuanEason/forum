@@ -154,6 +154,8 @@ model Post {
   viewCount   Int              @default(0)
   pinned      Boolean          @default(false)
   pinnedAt    DateTime?
+  isAnnouncement Boolean       @default(false)
+  announcementAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -162,6 +164,7 @@ model Post {
   @@index([visibility])
   @@index([topicId])
   @@index([pinned, pinnedAt])
+  @@index([isAnnouncement, announcementAt])
 }
 
 model PostEditHistory {
@@ -245,6 +248,7 @@ model PostDraft {
   styleConfig     Json?
   styleCss        String?          @db.Text
   visibility      PostVisibility   @default(PUBLIC)
+  isAnnouncement  Boolean          @default(false)
   topicId         String?
   topic           Topic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
   persistMode     DraftPersistMode @default(EPHEMERAL)

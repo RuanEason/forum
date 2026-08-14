@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
       topicId,
       postType,
       visibility,
+      isAnnouncement,
       videoAssetId,
       videoCoverUrl,
     } = await request.json() as {
@@ -145,6 +146,7 @@ export async function POST(request: NextRequest) {
       topicId?: unknown;
       postType?: unknown;
       visibility?: unknown;
+      isAnnouncement?: unknown;
       videoAssetId?: unknown;
       videoCoverUrl?: unknown;
     };
@@ -199,6 +201,23 @@ export async function POST(request: NextRequest) {
       );
     }
     const normalizedVisibility: PostVisibility = visibilityCandidate as PostVisibility;
+
+    if (isAnnouncement !== undefined && typeof isAnnouncement !== "boolean") {
+      return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
+    }
+    if (isAnnouncement !== undefined && session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only administrators can manage forum announcements" },
+        { status: 403 },
+      );
+    }
+    if (isAnnouncement === true && normalizedPostType !== "TEXT") {
+      return NextResponse.json({ error: "Only text posts can be announcements" }, { status: 400 });
+    }
+    if (isAnnouncement === true && normalizedVisibility !== "PUBLIC") {
+      return NextResponse.json({ error: "Announcements must be public" }, { status: 400 });
+    }
+    const normalizedAnnouncement = isAnnouncement === true;
 
     if (videoAssetId !== undefined && videoAssetId !== null && typeof videoAssetId !== "string") {
       return NextResponse.json({ error: "videoAssetId must be a string" }, { status: 400 });
@@ -358,6 +377,7 @@ export async function POST(request: NextRequest) {
         {
           postType: "VIDEO",
           visibility: normalizedVisibility,
+          isAnnouncement: normalizedAnnouncement,
           videoId: videoAsset.id,
           contentFormat: "PLAIN_TEXT",
           contentJson: null,
@@ -385,6 +405,7 @@ export async function POST(request: NextRequest) {
         normalizedAttachments,
         {
           visibility: normalizedVisibility,
+          isAnnouncement: normalizedAnnouncement,
           contentFormat: normalizedContentFormat,
           contentJson: normalizedContentJson,
         },
@@ -445,6 +466,7 @@ export async function PUT(request: NextRequest) {
       images,
       attachments,
       visibility,
+      isAnnouncement,
       topicId,
     } = await request.json() as {
       id?: unknown;
@@ -455,6 +477,7 @@ export async function PUT(request: NextRequest) {
       images?: unknown;
       attachments?: unknown;
       visibility?: unknown;
+      isAnnouncement?: unknown;
       topicId?: unknown;
     };
 
@@ -589,6 +612,24 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (isAnnouncement !== undefined && typeof isAnnouncement !== "boolean") {
+      return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
+    }
+    if (isAnnouncement !== undefined && session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only administrators can manage forum announcements" },
+        { status: 403 },
+      );
+    }
+
+    const finalVisibility = normalizedVisibility ?? existingPost.visibility;
+    if (isAnnouncement === true && existingPost.postType !== "TEXT") {
+      return NextResponse.json({ error: "Only text posts can be announcements" }, { status: 400 });
+    }
+    if (isAnnouncement === true && finalVisibility !== "PUBLIC") {
+      return NextResponse.json({ error: "Announcements must be public" }, { status: 400 });
+    }
+
     const nextImages = normalizedImages as string[] | undefined;
     const nextAttachments = attachmentPayloads?.map((att) => ({
       id: att.id || null,
@@ -668,6 +709,9 @@ export async function PUT(request: NextRequest) {
       images: existingPost.postType === "VIDEO" ? [] : nextImages,
       attachments: nextAttachments,
       topicId: topicId === undefined ? undefined : topicId || null,
+      isAnnouncement: isAnnouncement === undefined
+        ? (normalizedVisibility === "UNLISTED" ? false : undefined)
+        : isAnnouncement,
     }, {
       id: session.user.id,
       name: session.user.name,

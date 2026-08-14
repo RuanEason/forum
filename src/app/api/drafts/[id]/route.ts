@@ -54,6 +54,7 @@ export async function PATCH(
       styleConfig?: PostStyleConfig | null;
       styleCss?: string | null;
       visibility?: "PUBLIC" | "UNLISTED";
+      isAnnouncement?: boolean;
       topicId?: string | null;
       persistMode?: "EPHEMERAL" | "SAVED";
       assets?: Array<{
@@ -72,6 +73,17 @@ export async function PATCH(
       }>;
       lastError?: string | null;
     };
+
+    const rawAnnouncement = (body as { isAnnouncement?: unknown }).isAnnouncement;
+    if (rawAnnouncement !== undefined && typeof rawAnnouncement !== "boolean") {
+      return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
+    }
+    if (rawAnnouncement !== undefined && user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only administrators can manage forum announcements" },
+        { status: 403 },
+      );
+    }
 
     const draft = await updateDraft(user.id, id, body);
     if (!draft) {

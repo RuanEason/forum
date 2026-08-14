@@ -4,30 +4,26 @@ import {
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
+import Link from "next/link";
 
-const announcements = [
-  {
-    id: "welcome",
-    author: "Slept 社区",
-    meta: "官方公告 · 欢迎加入",
-    title: "欢迎来到 Slept 论坛",
-    description: "这里是分享想法、经验和灵感的地方，期待看到你的第一篇帖子。",
-    footer: "社区公告",
-  },
-  {
-    id: "posting-rules",
-    author: "社区规范",
-    meta: "长期有效 · 发帖前阅读",
-    title: "发帖规范",
-    description: "友善交流，尊重他人；内容清晰，尽量为帖子添加合适的话题。",
-    footer: "发帖指南",
-  },
-] as const;
+export type HomeAnnouncement = {
+  id: string;
+  title: string | null;
+  content: string;
+  announcementAt: string;
+  author: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  };
+};
 
 export default function HomeAnnouncementSidebar({
+  announcements,
   collapsed,
   onToggleCollapsed,
 }: {
+  announcements: HomeAnnouncement[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) {
@@ -60,15 +56,23 @@ export default function HomeAnnouncementSidebar({
           </div>
 
           <div>
-            {announcements.map((announcement) => {
-              return (
-                <article
-                  key={announcement.id}
-                  className="border-b border-gray-100 px-3.5 py-4 last:border-b-0"
+            {announcements.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-gray-400">
+                暂无社区公告
+              </div>
+            ) : announcements.map((announcement) => (
+              <article
+                key={announcement.id}
+                className="border-b border-gray-100 last:border-b-0"
+              >
+                <Link
+                  href={`/post/${announcement.id}`}
+                  className="block px-3.5 py-4 transition-colors hover:bg-gray-50"
                 >
                   <div className="flex items-start gap-2.5">
                     <Avatar
-                      name={announcement.author}
+                      src={announcement.author.avatar}
+                      name={announcement.author.name}
                       size="sm"
                       className="mt-0.5 shrink-0"
                     />
@@ -76,29 +80,28 @@ export default function HomeAnnouncementSidebar({
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-1 text-xs text-gray-400">
                         <span className="truncate font-medium text-gray-700">
-                          {announcement.author}
+                          {announcement.author.name || "管理员"}
                         </span>
                         <span aria-hidden="true">·</span>
-                        <span className="truncate">{announcement.meta}</span>
+                        <span className="truncate">社区公告</span>
                       </div>
 
                       <h3 className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-gray-800">
-                        {announcement.title}
+                        {announcement.title || "社区公告"}
                       </h3>
-                      <p className="mt-1.5 line-clamp-3 text-xs leading-5 text-gray-500">
-                        {announcement.description}
+                      <p className="mt-1.5 line-clamp-3 whitespace-pre-wrap text-xs leading-5 text-gray-500">
+                        {announcement.content || "暂无公告内容"}
                       </p>
 
                       <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
                         <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
-                        <span>{announcement.footer}</span>
+                        <span>查看公告</span>
                       </div>
                     </div>
-
                   </div>
-                </article>
-              );
-            })}
+                </Link>
+              </article>
+            ))}
           </div>
         </aside>
       </div>

@@ -56,6 +56,7 @@ export type DraftUpsertInput = {
   styleConfig?: PostStyleConfig | null;
   styleCss?: string | null;
   visibility?: PostVisibility;
+  isAnnouncement?: boolean;
   topicId?: string | null;
   persistMode?: DraftPersistMode;
   assets?: DraftAssetInput[];
@@ -70,6 +71,7 @@ type DraftPublishPayload = {
   styleConfig: PostStyleConfig | null;
   styleCss: string | null;
   visibility: PostVisibility;
+  isAnnouncement: boolean;
   topicId: string | null;
   postType: PostType;
   imageUrls: string[];
@@ -94,6 +96,7 @@ const draftArgs = Prisma.validator<Prisma.PostDraftDefaultArgs>()({
     styleConfig: true,
     styleCss: true,
     visibility: true,
+    isAnnouncement: true,
     topicId: true,
     persistMode: true,
     status: true,
@@ -501,12 +504,20 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
   const styleConfig = normalizePostStyleConfig(input.styleConfig ?? null);
   const styleCss = normalizePostStyleCss(input.styleCss ?? null);
   const visibility = normalizeVisibility(input.visibility);
+  const isAnnouncement = input.isAnnouncement === true;
   const topicId = normalizeText(input.topicId ?? null);
   const persistMode = normalizePersistMode(input.persistMode);
   const assets = Array.isArray(input.assets) ? input.assets : [];
 
   if (assets.some((asset) => asset.type === "ATTACHMENT")) {
     throw new Error("Attachment assets must be created by the upload service");
+  }
+
+  if (isAnnouncement && postType !== "TEXT") {
+    throw new Error("Only text posts can be announcements");
+  }
+  if (isAnnouncement && visibility !== "PUBLIC") {
+    throw new Error("Announcements must be public");
   }
 
   validateDraftPayload(postType, assets, normalizedContent.text, title, normalizedContent.format);
@@ -524,6 +535,7 @@ export async function createDraft(authorId: string, input: DraftUpsertInput = {}
       styleConfig: toNullableJsonInput(styleConfig),
       styleCss,
       visibility,
+      isAnnouncement,
       topicId,
       persistMode,
       lastError: normalizeText(input.lastError ?? null),
@@ -751,6 +763,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       styleConfig: true,
       styleCss: true,
       visibility: true,
+      isAnnouncement: true,
       topicId: true,
       persistMode: true,
       status: true,
@@ -797,6 +810,9 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
     ? normalizePostStyleCss(input.styleCss ?? null)
     : normalizePostStyleCss(existing.styleCss);
   const nextVisibility = input.visibility ? normalizeVisibility(input.visibility) : (existing.visibility as PostVisibility);
+  const requestedIsAnnouncement = input.isAnnouncement !== undefined
+    ? input.isAnnouncement
+    : existing.isAnnouncement;
   const nextTopicId = input.topicId !== undefined ? normalizeText(input.topicId ?? null) : existing.topicId;
   const requestedPersistMode = input.persistMode ? normalizePersistMode(input.persistMode) : null;
   const nextPersistMode = requestedPersistMode
@@ -821,6 +837,17 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
         sortOrder: asset.sortOrder,
       }));
 
+  if (requestedIsAnnouncement && nextPostType !== "TEXT") {
+    throw new Error("Only text posts can be announcements");
+  }
+  if (requestedIsAnnouncement && nextVisibility !== "PUBLIC") {
+    throw new Error("Announcements must be public");
+  }
+
+  const nextIsAnnouncement = nextVisibility === "UNLISTED"
+    ? false
+    : requestedIsAnnouncement;
+
   validateDraftPayload(nextPostType, nextAssets, nextNormalizedContent.text, nextTitle, nextNormalizedContent.format);
 
   await prisma.postDraft.update({
@@ -836,6 +863,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
       styleConfig: toNullableJsonInput(nextStyleConfig),
       styleCss: nextStyleCss,
       visibility: nextVisibility,
+      isAnnouncement: nextIsAnnouncement,
       topicId: nextTopicId,
       persistMode: nextPersistMode,
       lastError: input.lastError === undefined ? undefined : normalizeText(input.lastError ?? null),
@@ -997,6 +1025,7 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
       styleConfig: normalizedStyleConfig,
       styleCss: normalizedStyleCss,
       visibility: draft.visibility as PostVisibility,
+      isAnnouncement: draft.isAnnouncement,
       topicId: draft.topicId,
       postType: "TEXT",
       imageUrls: textAssets.imageUrls,
@@ -1015,6 +1044,7 @@ export async function buildPublishPayload(authorId: string, draftId: string): Pr
     styleConfig: normalizedStyleConfig,
     styleCss: normalizedStyleCss,
     visibility: draft.visibility as PostVisibility,
+    isAnnouncement: false,
     topicId: draft.topicId,
     postType: "VIDEO",
     imageUrls: [],

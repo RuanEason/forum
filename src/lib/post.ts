@@ -29,6 +29,7 @@ type CreatePostOptions = {
   postType?: "TEXT" | "VIDEO";
   visibility?: "PUBLIC" | "UNLISTED";
   videoId?: string | null;
+  isAnnouncement?: boolean;
 } & PostStyleInput & ContentInput;
 
 type UpdatePostInput = {
@@ -40,6 +41,7 @@ type UpdatePostInput = {
   images?: string[];
   attachments?: UpdatePostAttachmentInput[];
   topicId?: string | null;
+  isAnnouncement?: boolean;
 } & ContentInput;
 
 type PostEditActor = {
@@ -216,6 +218,50 @@ export async function getPosts(topicId?: string) {
   }));
 }
 
+export async function getForumAnnouncements(limit = 5) {
+  const take = Math.max(1, Math.min(5, Math.trunc(limit)));
+  const announcements = await prisma.post.findMany({
+    where: {
+      isAnnouncement: true,
+      announcementAt: { not: null },
+      postType: "TEXT",
+      visibility: "PUBLIC",
+    },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      contentJson: true,
+      contentFormat: true,
+      announcementAt: true,
+      createdAt: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+    },
+    orderBy: [
+      { announcementAt: "desc" },
+      { createdAt: "desc" },
+    ],
+    take,
+  });
+
+  return announcements.map(({ contentJson, contentFormat, announcementAt, createdAt, ...announcement }) => ({
+    ...announcement,
+    contentFormat,
+    content: contentFormat === "RICH_TEXT"
+      ? (parseRichTextDocument(contentJson)
+        ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
+        : "")
+      : announcement.content,
+    announcementAt: announcementAt ?? createdAt,
+  }));
+}
+
 export async function createPost(
   title: string | undefined | null,
   content: string,
@@ -239,6 +285,8 @@ export async function createPost(
       postType: options.postType || "TEXT",
       visibility: options.visibility || "PUBLIC",
       videoId: options.videoId || null,
+      isAnnouncement: options.isAnnouncement === true,
+      announcementAt: options.isAnnouncement === true ? new Date() : null,
       images: {
         create: images.map((url) => ({ url })),
       },
@@ -268,6 +316,8 @@ export async function getPostById(id: string) {
       styleCss: true,
       postType: true,
       visibility: true,
+      isAnnouncement: true,
+      announcementAt: true,
       pinned: true,
       pinnedAt: true,
       createdAt: true,
@@ -431,6 +481,29 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
         }))
       : null;
     const nextTitle = input.title === undefined ? existingPost.title : normalizeTitle(input.title);
+    const nextVisibility = input.visibility ?? existingPost.visibility;
+    const requestedIsAnnouncement = input.isAnnouncement === undefined
+      ? existingPost.isAnnouncement
+      : input.isAnnouncement;
+
+    if (requestedIsAnnouncement && existingPost.postType !== "TEXT") {
+      throw new Error("Only text posts can be announcements");
+    }
+    if (requestedIsAnnouncement && nextVisibility !== "PUBLIC") {
+      throw new Error("Announcements must be public");
+    }
+
+    const nextIsAnnouncement = nextVisibility === "UNLISTED"
+      ? false
+      : requestedIsAnnouncement;
+
+    const nextAnnouncementAt = nextIsAnnouncement
+      ? (existingPost.isAnnouncement && existingPost.announcementAt) || new Date()
+      : null;
+    const hasAnnouncementChanges = (
+      existingPost.isAnnouncement !== nextIsAnnouncement
+      || (nextIsAnnouncement && !existingPost.announcementAt)
+    );
     const hasImageChanges = nextImages !== null && !sameUrlSet(existingPost.images, nextImages);
     const hasAttachmentChanges = nextAttachments !== null && !sameAttachments(existingPost.attachments, nextAttachments);
     const hasPostChanges = (
@@ -442,6 +515,7 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
       || (input.styleCss !== undefined && existingPost.styleCss !== input.styleCss)
       || (input.visibility !== undefined && existingPost.visibility !== input.visibility)
       || (input.topicId !== undefined && existingPost.topicId !== input.topicId)
+      || hasAnnouncementChanges
       || hasImageChanges
       || hasAttachmentChanges
     );
@@ -468,6 +542,8 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
       title: nextTitle,
       ...(input.visibility ? { visibility: input.visibility } : {}),
       ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
+      isAnnouncement: nextIsAnnouncement,
+      announcementAt: nextAnnouncementAt,
     };
 
     await tx.post.update({

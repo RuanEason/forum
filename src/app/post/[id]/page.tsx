@@ -42,6 +42,7 @@ interface PostDetailProps {
   styleCss?: string | null;
   postType: "TEXT" | "VIDEO";
   visibility: "PUBLIC" | "UNLISTED";
+  isAnnouncement?: boolean;
   author: AuthorProps;
   createdAt: Date;
   editHistory: Array<{
@@ -162,6 +163,7 @@ export default async function PostDetailPage({
     contentFormat: post.contentFormat,
     postType: post.postType,
     visibility: post.visibility,
+    isAnnouncement: post.isAnnouncement,
     styleConfig: post.styleConfig,
     styleCss: post.styleCss,
     images: post.images,

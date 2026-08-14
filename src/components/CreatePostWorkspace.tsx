@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
+  Megaphone,
   Type,
 } from "lucide-react";
 
@@ -120,6 +121,7 @@ type DraftDetail = {
   contentJson?: JSONContent | null;
   contentFormat?: "RICH_TEXT" | "PLAIN_TEXT";
   visibility: PostVisibility;
+  isAnnouncement: boolean;
   topicId: string | null;
   persistMode: DraftPersistMode;
   assets: DraftAsset[];
@@ -245,6 +247,7 @@ function CreatePostPageFallback({ presentation }: { presentation: CreatePostPres
 
 function CreatePostPageContent({ presentation }: { presentation: CreatePostPresentation }) {
   const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role === "admin";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -278,6 +281,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [enableTitle, setEnableTitle] = useState(false);
+  const [isAnnouncement, setIsAnnouncement] = useState(false);
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoTopicId, setVideoTopicId] = useState<string | null>(null);
@@ -404,6 +408,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     setVisibility(draft.visibility);
     setTitle(draft.title ?? "");
     setEnableTitle(Boolean(draft.title));
+    setIsAnnouncement(draft.postType === "TEXT" && draft.isAnnouncement);
     setSelectedTopicId(draft.topicId);
     setVideoTopicId(draft.topicId);
 
@@ -509,6 +514,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           contentJson: parseRichTextDocument(content) ?? createEmptyRichTextDocument(),
           contentFormat: "RICH_TEXT" as const,
           visibility,
+          ...(isAdmin ? { isAnnouncement } : {}),
           topicId: selectedTopicId,
           persistMode,
         };
@@ -532,6 +538,8 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     content,
     draftId,
     enableTitle,
+    isAdmin,
+    isAnnouncement,
     postMode,
     selectedTopicId,
     title,
@@ -667,6 +675,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
             contentJson: parseRichTextDocument(content) ?? createEmptyRichTextDocument(),
             contentFormat: "RICH_TEXT" as const,
             visibility,
+            ...(isAdmin ? { isAnnouncement } : {}),
             topicId: selectedTopicId,
             ...persistPatch,
             assets: buildDraftAssets(),
@@ -693,6 +702,8 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     content,
     enableTitle,
     ensureDraftId,
+    isAdmin,
+    isAnnouncement,
     postMode,
     selectedTopicId,
     title,
@@ -718,11 +729,14 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
       || hasRichTextContent(parseRichTextDocument(content))
       || (enableTitle && title.trim())
       || selectedImages.length > 0
-      || selectedAttachments.length > 0,
+      || selectedAttachments.length > 0
+      || (isAdmin && isAnnouncement),
     );
   }, [
     content,
     enableTitle,
+    isAdmin,
+    isAnnouncement,
     postMode,
     selectedAttachments.length,
     selectedImages.length,
@@ -1569,6 +1583,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           images: selectedImages,
           attachments: selectedAttachments,
           visibility,
+          ...(isAdmin ? { isAnnouncement } : {}),
           topicId: selectedTopicId,
         }),
       });
@@ -2046,13 +2061,46 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
                     <select
                       id="text-visibility"
                       value={visibility}
-                      onChange={(e) => setVisibility(e.target.value as PostVisibility)}
+                      onChange={(e) => {
+                        const nextVisibility = e.target.value as PostVisibility;
+                        setVisibility(nextVisibility);
+                        if (nextVisibility === "UNLISTED") {
+                          setIsAnnouncement(false);
+                        }
+                      }}
                       className="max-w-[42%] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-700 outline-none transition-colors focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                     >
                       <option value="PUBLIC">公开可见</option>
                       <option value="UNLISTED">仅链接可见</option>
                     </select>
                   </div>
+
+                  {isAdmin && (
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3.5">
+                      <label className="flex cursor-pointer items-center gap-3">
+                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">
+                          <Megaphone className="h-4 w-4" strokeWidth={1.8} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-slate-800">将此帖设置为论坛公告</span>
+                          <span className="mt-0.5 block text-xs leading-5 text-slate-400">
+                            仅公开文字帖会显示在首页右侧公告栏
+                          </span>
+                        </span>
+                        <span className="relative inline-flex h-6 w-11 shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={isAnnouncement && visibility === "PUBLIC"}
+                            onChange={(e) => setIsAnnouncement(e.target.checked)}
+                            disabled={visibility !== "PUBLIC"}
+                            className="peer sr-only"
+                          />
+                          <span className="absolute inset-0 rounded-full bg-slate-200 transition-colors peer-checked:bg-blue-600 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200 peer-disabled:opacity-50" />
+                          <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-70" />
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-400">

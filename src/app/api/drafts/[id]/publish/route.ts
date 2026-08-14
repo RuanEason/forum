@@ -22,6 +22,19 @@ export async function POST(
 
     const payload = await buildPublishPayload(user.id, id);
 
+    if (payload.isAnnouncement && user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Only administrators can manage forum announcements" },
+        { status: 403 },
+      );
+    }
+    if (payload.isAnnouncement && payload.postType !== "TEXT") {
+      return NextResponse.json({ error: "Only text posts can be announcements" }, { status: 400 });
+    }
+    if (payload.isAnnouncement && payload.visibility !== "PUBLIC") {
+      return NextResponse.json({ error: "Announcements must be public" }, { status: 400 });
+    }
+
     const createdPostId = await prisma.$transaction(async (tx) => {
       if (payload.postType === "VIDEO") {
         if (!payload.videoAssetId) {
@@ -77,6 +90,8 @@ export async function POST(
           authorId: user.id,
           postType: payload.postType,
           visibility: payload.visibility,
+          isAnnouncement: payload.isAnnouncement,
+          announcementAt: payload.isAnnouncement ? new Date() : null,
           videoId: payload.videoAssetId,
           topicId: payload.topicId,
           images: {
