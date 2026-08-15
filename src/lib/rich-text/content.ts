@@ -562,6 +562,15 @@ export function isAllowedRichTextUrl(
 
   try {
     const url = new URL(value);
+    if (url.protocol === "mailto:") {
+      if (options?.kind === "image") {
+        return false;
+      }
+
+      const address = value.slice(value.indexOf(":") + 1).split("?", 1)[0];
+      return /^[^\s@]+@[^\s@]+$/.test(address);
+    }
+
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return false;
     }

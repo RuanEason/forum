@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
+import { Fragment, Slice } from "@tiptap/pm/model";
 import {
   AlignCenter,
   AlignJustify,
@@ -49,6 +50,7 @@ import {
   createRichTextExtensions,
   RICH_TEXT_FONT_SIZES,
 } from "@/lib/rich-text/extensions";
+import { parseMarkdownHeadingPaste } from "@/lib/rich-text/paste";
 import { EditableRichTextImage } from "@/components/editor/rich-text-editor-extensions";
 import type { EditorImageInsertRequest, EditorOutlineItem } from "@/components/editor/types";
 
@@ -671,7 +673,7 @@ function RichTextToolbar({
     }
 
     if (!isAllowedRichTextUrl(normalized)) {
-      window.alert("链接只支持 http 或 https 地址");
+      window.alert("链接只支持 http、https 或有效的邮箱地址");
       return;
     }
 
@@ -990,6 +992,25 @@ export default function RichTextEditor({
         }
 
         return false;
+      },
+      handlePaste: (view, event) => {
+        const plainText = event.clipboardData?.getData("text/plain") ?? "";
+        const blocks = parseMarkdownHeadingPaste(plainText);
+        if (!blocks) {
+          return false;
+        }
+
+        try {
+          const nodes = blocks.map((block) => view.state.schema.nodeFromJSON(block));
+          const transaction = view.state.tr.replaceSelection(
+            new Slice(Fragment.from(nodes), 0, 0),
+          );
+          view.dispatch(transaction);
+          event.preventDefault();
+          return true;
+        } catch {
+          return false;
+        }
       },
     },
   });

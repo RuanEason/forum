@@ -14,6 +14,7 @@ import EditorTopbar from "@/components/editor/EditorTopbar";
 import RichTextDocumentEditor from "@/components/editor/RichTextDocumentEditor";
 import MobileEditorRedirect from "@/components/editor/MobileEditorRedirect";
 import StyleCodeEditor, { DEFAULT_STYLE_TEMPLATE } from "@/components/editor/StyleCodeEditor";
+import { useToast } from "@/components/ui/Toast";
 import {
   buildOutlineItems,
   formatEditorTime,
@@ -113,6 +114,7 @@ function getRichTextJsonPayload(value: string) {
 
 export default function EditorWorkspace() {
   const { status } = useSession();
+  const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -695,7 +697,39 @@ export default function EditorWorkspace() {
   }, [saveDraft]);
 
   const handlePublish = useCallback(async () => {
+    if (isPublishing) {
+      return;
+    }
+
+    if (draftLoading) {
+      const message = "草稿正在加载，请稍候。";
+      setErrorMessage(message);
+      toast.error(message);
+      return;
+    }
+
+    if (historyLoading) {
+      const message = "编辑器仍在加载，请稍候。";
+      setErrorMessage(message);
+      toast.error(message);
+      return;
+    }
+
+    if (isUploadingAssets) {
+      const message = "文件仍在上传，请等待上传完成后再发布。";
+      setErrorMessage(message);
+      toast.error(message);
+      return;
+    }
+
     const currentContentDocument = parseRichTextDocument(contentRef.current);
+    if (!currentContentDocument) {
+      const message = "正文中包含无效链接，请删除该链接或重新设置链接后再发布。";
+      setErrorMessage(message);
+      toast.error(message);
+      return;
+    }
+
     if (
       !titleRef.current.trim()
       && !getRichTextPlainText(currentContentDocument)
@@ -703,7 +737,9 @@ export default function EditorWorkspace() {
       && selectedImagesRef.current.length === 0
       && selectedAttachmentsRef.current.length === 0
     ) {
-      setErrorMessage("请先输入一些内容再发布");
+      const message = "请先输入一些内容再发布";
+      setErrorMessage(message);
+      toast.error(message);
       return;
     }
 
@@ -731,7 +767,7 @@ export default function EditorWorkspace() {
     } finally {
       setIsPublishing(false);
     }
-  }, [router, saveDraft]);
+  }, [draftLoading, historyLoading, isPublishing, isUploadingAssets, router, saveDraft, toast]);
 
   const handleSelectDraft = useCallback(async (draft: EditorDraftSummary) => {
     if (switchingId || draft.id === draftIdRef.current) {
@@ -1135,13 +1171,27 @@ export default function EditorWorkspace() {
     return <MobileEditorRedirect />;
   }
 
-  const canPublish = Boolean(
-    (getRichTextPlainText(contentDocument) || hasRichTextContent(contentDocument) || selectedImages.length > 0 || selectedAttachments.length > 0)
-    && !isPublishing
-    && !isUploadingAssets
-    && !draftLoading
-    && !historyLoading,
+  const hasPublishableContent = Boolean(
+    title.trim()
+    || getRichTextPlainText(contentDocument)
+    || hasRichTextContent(contentDocument)
+    || selectedImages.length > 0
+    || selectedAttachments.length > 0,
   );
+  const publishDisabledReason = isPublishing
+    ? "帖子正在发布，请稍候。"
+    : draftLoading
+      ? "草稿正在加载，请稍候。"
+      : historyLoading
+        ? "编辑器仍在加载，请稍候。"
+        : isUploadingAssets
+          ? "文件仍在上传，请等待上传完成后再发布。"
+          : !contentDocument
+            ? "正文中包含无效链接，请删除该链接或重新设置链接后再发布。"
+            : !hasPublishableContent
+              ? "请先输入一些内容再发布。"
+              : "";
+  const canPublish = publishDisabledReason.length === 0;
   const draftStatusLabel = draftStatus === "READY"
     ? "可发布"
     : draftStatus === "FAILED"
@@ -1161,6 +1211,7 @@ export default function EditorWorkspace() {
         saveStateLabel={saveStateLabel}
         savedAtLabel={formatEditorTime(lastSavedAt)}
         canPublish={canPublish}
+        publishDisabledReason={publishDisabledReason}
         isPublishing={isPublishing}
         historyLoading={historyLoading}
         switchingId={switchingId}

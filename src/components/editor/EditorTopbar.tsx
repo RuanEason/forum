@@ -29,6 +29,7 @@ interface EditorTopbarProps {
   saveStateLabel: string;
   savedAtLabel: string;
   canPublish: boolean;
+  publishDisabledReason?: string;
   isPublishing: boolean;
   historyLoading?: boolean;
   switchingId?: string | null;
@@ -48,6 +49,7 @@ export default function EditorTopbar({
   saveStateLabel,
   savedAtLabel,
   canPublish,
+  publishDisabledReason,
   isPublishing,
   historyLoading = false,
   switchingId = null,
@@ -329,9 +331,10 @@ export default function EditorTopbar({
         <button
           type="button"
           onClick={onPublish}
-          disabled={!canPublish || isPublishing}
+          disabled={isPublishing || (!canPublish && !publishDisabledReason)}
           aria-label="发布"
-          title="发布"
+          aria-disabled={!canPublish || isPublishing}
+          title={publishDisabledReason || "发布"}
           className={cn(
             "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors",
             !canPublish || isPublishing

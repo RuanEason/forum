@@ -10,6 +10,7 @@ import RichTextEditor from "@/components/editor/RichTextEditor";
 import TopicSelector from "@/components/TopicSelector";
 import CreatePostSheet from "@/components/CreatePostSheet";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
+import { useToast } from "@/components/ui/Toast";
 import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
 import {
   createEmptyRichTextDocument,
@@ -252,6 +253,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { startTask } = usePageLoadProgress();
+  const toast = useToast();
   const draftIdFromUrl = searchParams.get("draftId");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
@@ -1745,14 +1747,22 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     await handleCancel();
   }, [handleCancel, navigateAfterSheetClose]);
 
-  const canPublishText =
-    !loading
-    && !isUploading
-    && (getRichTextPlainText(parseRichTextDocument(content)).length > 0
-      || hasRichTextContent(parseRichTextDocument(content))
-      || selectedImages.length > 0
-      || selectedAttachments.length > 0)
-    && (!enableTitle || title.trim().length > 0);
+  const textContentDocument = parseRichTextDocument(content);
+  const textContentPlainText = getRichTextPlainText(textContentDocument);
+  const textHasRichContent = hasRichTextContent(textContentDocument);
+  const hasTextMedia = selectedImages.length > 0 || selectedAttachments.length > 0;
+  const textPublishBlockedReason = loading
+    ? "帖子正在发布，请稍候。"
+    : isUploading
+      ? "文件仍在上传，请等待上传完成后再发布。"
+      : !textContentDocument
+        ? "正文中包含无效链接，请删除该链接或重新设置链接后再发布。"
+        : textContentPlainText.length === 0 && !textHasRichContent && !hasTextMedia
+          ? "正文、图片或附件至少需要填写一项。"
+          : enableTitle && !title.trim()
+            ? "请输入标题。"
+            : "";
+  const canPublishText = textPublishBlockedReason.length === 0;
 
   const canPublishVideo =
     !loading
@@ -1925,9 +1935,20 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
               footerRight={
                 <button
                   type="button"
-                  onClick={handlePublish}
-                  disabled={!canPublishText}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                  onClick={() => {
+                    if (!canPublishText) {
+                      toast.error(textPublishBlockedReason);
+                      return;
+                    }
+                    handlePublish();
+                  }}
+                  disabled={loading}
+                  aria-disabled={!canPublishText}
+                  className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 ${
+                    canPublishText
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "cursor-not-allowed bg-slate-200 text-slate-400 shadow-none"
+                  }`}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? "发布中..." : "发布"}
