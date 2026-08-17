@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { deleteFromCOS, getCOSPublicUrl, uploadToCOS } from "@/lib/cos";
+import { getCOSPublicUrl, uploadToCOS } from "@/lib/cos";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
+import { enqueueMediaCleanupTask } from "@/lib/media-cleanup";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024 * 1024;
@@ -17,8 +17,6 @@ const IMAGE_EXTENSIONS: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
-
-type SessionShape = { user?: { id?: string } } | null;
 
 function jsonAsset(asset: {
   id: string;
@@ -53,6 +51,12 @@ async function cleanupStalePendingAssets(userId: string) {
       });
 
       if (result.count > 0) {
+        await enqueueMediaCleanupTask({
+          objectKey: asset.objectKey,
+          resourceType: "EDITOR_IMAGE",
+          reason: "UPLOAD_EXPIRED",
+          ownerId: userId,
+        }, tx);
         await tx.user.update({
           where: { id: userId },
           data: { editorImageBytesUsed: { decrement: asset.fileSize } },
@@ -63,22 +67,17 @@ async function cleanupStalePendingAssets(userId: string) {
     });
 
     if (removed) {
-      try {
-        await deleteFromCOS(asset.objectKey);
-      } catch (error) {
-        console.error("Failed to remove stale editor image asset from COS", error);
-      }
+      console.info("Queued stale editor image asset for COS cleanup", { objectKey: asset.objectKey });
     }
   }));
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions) as SessionShape;
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireActiveUser();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const userId = auth.user.id;
 
   try {
     await cleanupStalePendingAssets(userId);
@@ -123,12 +122,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions) as SessionShape;
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireActiveUser();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const userId = auth.user.id;
 
   try {
     await cleanupStalePendingAssets(userId);
@@ -233,18 +231,18 @@ export async function POST(request: NextRequest) {
       await prisma.$transaction(async (tx) => {
         const deleted = await tx.editorImageAsset.deleteMany({ where: { id, userId } });
         if (deleted.count > 0) {
+          await enqueueMediaCleanupTask({
+            objectKey,
+            resourceType: "EDITOR_IMAGE",
+            reason: "UPLOAD_EXPIRED",
+            ownerId: userId,
+          }, tx);
           await tx.user.update({
             where: { id: userId },
             data: { editorImageBytesUsed: { decrement: file.size } },
           });
         }
       });
-
-      try {
-        await deleteFromCOS(objectKey);
-      } catch (cleanupError) {
-        console.error("Failed to clean up editor image asset from COS", cleanupError);
-      }
 
       return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
     }

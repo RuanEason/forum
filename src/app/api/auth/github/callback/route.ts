@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
-import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAuthPageRedirectPath } from "@/lib/auth-redirect";
 import { createSessionToken, setSessionCookie } from "@/lib/auth-session";
@@ -19,6 +17,7 @@ import {
   readGitHubConnectIntent,
   verifyGitHubState,
 } from "@/lib/github";
+import { getCurrentUser } from "@/lib/server-auth";
 
 function clearGitHubConnectCookie(response: NextResponse, isSecure: boolean) {
   response.cookies.set(GITHUB_CONNECT_COOKIE, "", {
@@ -98,17 +97,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (connectIntent) {
-      const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
-      if (!session?.user?.id || session.user.id !== connectIntent.userId) {
+      const currentSessionUser = await getCurrentUser();
+      if (!currentSessionUser || currentSessionUser.id !== connectIntent.userId) {
         return createConnectResponse("error");
       }
 
       const currentUser = await prisma.user.findUnique({
         where: { id: connectIntent.userId },
-        select: { id: true, banned: true, githubUserId: true },
+        select: { id: true, banned: true, deletionRequestedAt: true, githubUserId: true },
       });
 
-      if (!currentUser || currentUser.banned) {
+      if (!currentUser || currentUser.banned || currentUser.deletionRequestedAt) {
         return createConnectResponse("error");
       }
 
@@ -128,7 +127,10 @@ export async function GET(request: NextRequest) {
       if (!currentUser.githubUserId) {
         await prisma.user.update({
           where: { id: currentUser.id },
-          data: { githubUserId: identity.githubUserId },
+          data: {
+            githubUserId: identity.githubUserId,
+            sessionVersion: { increment: 1 },
+          },
         });
       }
 

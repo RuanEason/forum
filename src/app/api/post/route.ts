@@ -1,9 +1,10 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createPost, updatePost, deletePost, getPosts } from "@/lib/post";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { createPost, updatePost, getPosts } from "@/lib/post";
 import { prisma } from "@/lib/prisma";
-import { deleteFromCOS } from "@/lib/cos";
+import {
+  enqueueMediaCleanupTaskFromUrl,
+  requestPostDeletion,
+} from "@/lib/media-cleanup";
 import { rewardActionExperience } from "@/lib/experience";
 import type { JSONContent } from "@tiptap/core";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/lib/rich-text/content";
 import { renderRichTextHtml } from "@/lib/rich-text/server";
 import { linkMarkdownMentions, linkRichTextMentions } from "@/lib/mentions";
+import { isAdminRole, requireActiveUser } from "@/lib/server-auth";
 
 /**
  * 甯栧瓙瀛楁鏈€澶ч暱搴﹂檺鍒?
@@ -30,14 +32,6 @@ const POST_VISIBILITIES = ["PUBLIC", "UNLISTED"] as const;
 type PostVisibility = (typeof POST_VISIBILITIES)[number];
 type ContentFormat = "RICH_TEXT" | "PLAIN_TEXT";
 
-type SessionShape = {
-  user?: {
-    id?: string;
-    role?: string;
-    name?: string | null;
-  };
-} | null;
-
 type AttachmentPayload = {
   id?: string | null;
   url: string;
@@ -46,16 +40,22 @@ type AttachmentPayload = {
   mimeType: string;
 };
 
-async function deleteCosFileByUrl(fileUrl: string, label: string) {
+async function scheduleCosFileCleanup(
+  fileUrl: string,
+  label: string,
+  ownerId: string,
+  postId: string,
+) {
   try {
-    const url = new URL(fileUrl);
-    const filename = url.pathname.slice(1);
-    if (!filename) {
-      return;
-    }
-    await deleteFromCOS(filename);
+    await enqueueMediaCleanupTaskFromUrl({
+      value: fileUrl,
+      resourceType: label === "image" ? "POST_IMAGE" : "POST_ATTACHMENT",
+      reason: "POST_DELETE",
+      ownerId,
+      postId,
+    });
   } catch (error) {
-    console.error(`Failed to delete ${label} from COS: ${fileUrl}`, error);
+    console.error(`Failed to enqueue ${label} cleanup: ${fileUrl}`, error);
   }
 }
 
@@ -118,10 +118,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const {
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
     if (isAnnouncement !== undefined && typeof isAnnouncement !== "boolean") {
       return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
     }
-    if (isAnnouncement !== undefined && session.user.role !== "admin") {
+    if (isAnnouncement !== undefined && !isAdminRole(auth.user.role)) {
       return NextResponse.json(
         { error: "Only administrators can manage forum announcements" },
         { status: 403 },
@@ -344,7 +344,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (!videoAsset || videoAsset.ownerId !== session.user.id) {
+      if (!videoAsset || videoAsset.ownerId !== auth.user.id) {
         return NextResponse.json({ error: "Video asset not found" }, { status: 404 });
       }
 
@@ -371,7 +371,7 @@ export async function POST(request: NextRequest) {
       post = await createPost(
         title,
         await linkMarkdownMentions(normalizedContent),
-        session.user.id,
+        auth.user.id,
         [],
         topicId || null,
         normalizedAttachments,
@@ -400,7 +400,7 @@ export async function POST(request: NextRequest) {
       post = await createPost(
         title,
         normalizedContent,
-        session.user.id,
+        auth.user.id,
         normalizedImages,
         topicId || null,
         normalizedAttachments,
@@ -414,7 +414,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await rewardActionExperience(session.user.id, "post");
+      await rewardActionExperience(auth.user.id, "post");
     } catch (error) {
       console.error("Failed to reward post experience:", error);
     }
@@ -452,10 +452,10 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const {
@@ -609,14 +609,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // 鍙湁浣滆€呮垨绠＄悊鍛樻墠鑳界紪杈戝笘瀛?
-    if (existingPost.authorId !== session.user.id && session.user.role !== "admin") {
+    if (existingPost.authorId !== auth.user.id && !isAdminRole(auth.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (isAnnouncement !== undefined && typeof isAnnouncement !== "boolean") {
       return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
     }
-    if (isAnnouncement !== undefined && session.user.role !== "admin") {
+    if (isAnnouncement !== undefined && !isAdminRole(auth.user.role)) {
       return NextResponse.json(
         { error: "Only administrators can manage forum announcements" },
         { status: 403 },
@@ -718,13 +718,13 @@ export async function PUT(request: NextRequest) {
         ? (normalizedVisibility === "UNLISTED" ? false : undefined)
         : isAnnouncement,
     }, {
-      id: session.user.id,
-      name: session.user.name,
+      id: auth.user.id,
+      name: auth.user.name,
     });
 
     await Promise.all([
-      ...removedImageUrls.map((url) => deleteCosFileByUrl(url, "image")),
-      ...removedAttachmentUrls.map((url) => deleteCosFileByUrl(url, "attachment")),
+      ...removedImageUrls.map((url) => scheduleCosFileCleanup(url, "image", existingPost.authorId, id)),
+      ...removedAttachmentUrls.map((url) => scheduleCosFileCleanup(url, "attachment", existingPost.authorId, id)),
     ]);
 
     return NextResponse.json({ message: "Post updated successfully", post: updatedPost }, { status: 200 });
@@ -756,10 +756,10 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await request.json();
@@ -781,39 +781,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 鍙湁浣滆€呮垨绠＄悊鍛樻墠鑳藉垹闄ゅ笘瀛?
-    if (existingPost.authorId !== session.user.id && session.user.role !== "admin") {
+    if (existingPost.authorId !== auth.user.id && !isAdminRole(auth.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // 鍒犻櫎COS涓殑闄勪欢鏂囦欢
-    if (existingPost.attachments.length > 0) {
-      for (const attachment of existingPost.attachments) {
-        try {
-          const url = new URL(attachment.url);
-          const filename = url.pathname.slice(1);
-          await deleteFromCOS(filename);
-        } catch (error) {
-          console.error(`Failed to delete attachment from COS: ${attachment.url}`, error);
-        }
-      }
+    const deletion = await requestPostDeletion(id, { ownerId: existingPost.authorId });
+    if (!deletion) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // 鍒犻櫎COS涓殑鍥剧墖鏂囦欢
-    if (existingPost.images.length > 0) {
-      for (const image of existingPost.images) {
-        try {
-          const url = new URL(image.url);
-          const filename = url.pathname.slice(1);
-          await deleteFromCOS(filename);
-        } catch (error) {
-          console.error(`Failed to delete image from COS: ${image.url}`, error);
-        }
-      }
-    }
-
-    await deletePost(id);
-
-    return NextResponse.json({ message: "Post deleted successfully" }, { status: 200 });
+    return NextResponse.json({
+      message: deletion.alreadyDeleted
+        ? "Post deletion is already scheduled"
+        : "Post deletion scheduled",
+      deleteScheduledAt: deletion.scheduledAt,
+    }, { status: 200 });
   } catch (error) {
     console.error("Delete post error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

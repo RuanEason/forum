@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildPublishPayload } from "@/lib/draft";
 import { rewardActionExperience } from "@/lib/experience";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated";
+import { isAdminRole } from "@/lib/server-auth";
 
 export async function POST(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { id } = await context.params;
     if (!id) {
@@ -22,7 +24,7 @@ export async function POST(
 
     const payload = await buildPublishPayload(user.id, id);
 
-    if (payload.isAnnouncement && user.role !== "admin") {
+    if (payload.isAnnouncement && !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Only administrators can manage forum announcements" },
         { status: 403 },

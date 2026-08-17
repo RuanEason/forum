@@ -1,25 +1,17 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserLevel } from "@/lib/experience";
-
-type SessionShape = {
-  user?: {
-    id?: string;
-  };
-} | null;
+import { requireCurrentUser, unauthorizedResponse } from "@/lib/server-auth";
 
 export async function GET() {
-  const session = await getServerSession(authOptions) as SessionShape;
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireCurrentUser();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: auth.user.id },
       select: {
         id: true,
         name: true,
@@ -33,11 +25,16 @@ export async function GET() {
         notifyLikes: true,
         notifyFollows: true,
         experience: true,
+        role: true,
+        banned: true,
+        sessionVersion: true,
+        deletionRequestedAt: true,
+        deletionScheduledAt: true,
       },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return unauthorizedResponse();
     }
 
     return NextResponse.json({

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import type { Session } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getHomeTopics } from "@/lib/topic";
+import { requireActiveUser } from "@/lib/server-auth";
 
 // Maximum field lengths
 const MAX_TOPIC_NAME_LENGTH = 50;
@@ -51,10 +49,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { name, description, icon } = await request.json();
@@ -120,7 +118,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description,
         icon,
-        creatorId: session.user.id,
+        creatorId: auth.user.id,
       },
     });
 

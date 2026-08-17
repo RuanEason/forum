@@ -1,29 +1,16 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import {
+  getCurrentUser,
+  requireActiveUser,
+  type AuthResult,
+  type CurrentUser,
+} from "@/lib/server-auth";
 
-type SessionShape = {
-  user?: {
-    id?: string;
-    role?: string;
-  };
-} | null;
-
-export type SessionUser = {
-  id: string;
-  role?: string;
-};
+export type SessionUser = CurrentUser;
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const session = (await getServerSession(authOptions)) as SessionShape;
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return null;
-  }
-
-  return {
-    id: userId,
-    role: session.user?.role,
-  };
+  return getCurrentUser();
 }
 
+export async function requireSessionUser(): Promise<AuthResult> {
+  return requireActiveUser();
+}

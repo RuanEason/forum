@@ -1,61 +1,47 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { isProductionEnvironment } from "@/lib/dev-toolbox";
+import {
+  createHealthcheckPayload,
+  getHealthcheckSecretFromHeaders,
+  isHealthcheckSecretValid,
+} from "@/lib/healthcheck";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 /**
- * 数据库连接测试端点
- * 用于验证生产环境数据库连接是否正常
+ * Return a minimal database health result for internal monitoring.
  *
- * @example
- * GET /api/test-db
+ * Production requests require the internal health-check secret; unauthenticated
+ * production requests intentionally look like a missing route.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const expectedSecret = process.env.HEALTHCHECK_SECRET;
+  const providedSecret = getHealthcheckSecretFromHeaders(request.headers);
+
+  if (!isHealthcheckSecretValid(providedSecret, expectedSecret)) {
+    const status = isProductionEnvironment() ? 404 : 401;
+
+    return NextResponse.json(
+      { error: status === 404 ? "Not Found" : "Unauthorized" },
+      { status },
+    );
+  }
+
   const startTime = Date.now();
 
   try {
-    // 测试数据库连接
-    await prisma.$connect();
+    await prisma.$queryRaw`SELECT 1`;
 
-    // 执行简单查询
-    const postCount = await prisma.post.count();
-    const userCount = await prisma.user.count();
-
-    const responseTime = Date.now() - startTime;
-
-    return NextResponse.json({
-      success: true,
-      message: "Database connection successful",
-      data: {
-        postCount,
-        userCount,
-        responseTime: `${responseTime}ms`,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set",
-      },
-    });
+    return NextResponse.json(
+      createHealthcheckPayload(true, `${Date.now() - startTime}ms`),
+    );
   } catch (error) {
-    const responseTime = Date.now() - startTime;
+    console.error("Database health check failed:", error);
 
-    // 详细错误信息
-    const errorDetails = {
-      success: false,
-      message: "Database connection failed",
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        code: (error as any).code,
-      } : String(error),
-      responseTime: `${responseTime}ms`,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set",
-    };
-
-    console.error("Database test failed:", errorDetails);
-
-    return NextResponse.json(errorDetails, { status: 500 });
-  } finally {
-    // 确保连接关闭
-    await prisma.$disconnect();
+    return NextResponse.json(
+      createHealthcheckPayload(false, `${Date.now() - startTime}ms`),
+      { status: 503 },
+    );
   }
 }

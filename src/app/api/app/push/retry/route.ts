@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { processPendingPushLogs } from "@/lib/push";
+import { requireAdminUser } from "@/lib/server-auth";
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
-    const sessionUser = (session as { user?: { id?: string; role?: string } } | null)?.user;
-
-    if (!sessionUser?.id || sessionUser.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const auth = await requireAdminUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const processed = await processPendingPushLogs(100);

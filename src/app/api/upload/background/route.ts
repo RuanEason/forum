@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import { uploadToCOS } from "@/lib/cos";
 import path from "path";
 import fs from "fs/promises";
 import os from "os";
+import { requireActiveUser } from "@/lib/server-auth";
+import { enqueueMediaCleanupTask } from "@/lib/media-cleanup";
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const MAX_IMAGE_COMPRESS_SIZE = 10 * 1024 * 1024;
@@ -43,7 +43,7 @@ async function processImage(file: File, filename: string): Promise<ProcessedUplo
   return { url: cdnUrl, type: 'image' };
 }
 
-async function processVideo(file: File, filename: string): Promise<ProcessedUploadResult> {
+async function processVideo(file: File, filename: string, ownerId: string): Promise<ProcessedUploadResult> {
   if (file.size > MAX_VIDEO_SIZE) {
     throw new Error("因服务器资源紧缺，不支持上传高于100MB视频作为背景，请自行压缩后上传");
   }
@@ -99,10 +99,30 @@ async function processVideo(file: File, filename: string): Promise<ProcessedUplo
     const videoFilename = `backgrounds/${filename}.mp4`;
     const previewFilename = `backgrounds/${filename}_preview.webp`;
 
-    const [videoUrl, previewUrl] = await Promise.all([
-      uploadToCOS(videoBuffer, videoFilename),
-      uploadToCOS(previewBuffer, previewFilename)
-    ]);
+    let videoUrl: string;
+    let previewUrl: string;
+    try {
+      [videoUrl, previewUrl] = await Promise.all([
+        uploadToCOS(videoBuffer, videoFilename),
+        uploadToCOS(previewBuffer, previewFilename),
+      ]);
+    } catch (error) {
+      await Promise.all([
+        enqueueMediaCleanupTask({
+          objectKey: videoFilename,
+          resourceType: "BACKGROUND_VIDEO_RAW",
+          reason: "UPLOAD_EXPIRED",
+          ownerId,
+        }),
+        enqueueMediaCleanupTask({
+          objectKey: previewFilename,
+          resourceType: "BACKGROUND_VIDEO_COVER",
+          reason: "UPLOAD_EXPIRED",
+          ownerId,
+        }),
+      ]);
+      throw error;
+    }
 
     return { url: videoUrl, previewUrl, type: 'video' };
   } finally {
@@ -111,10 +131,10 @@ async function processVideo(file: File, filename: string): Promise<ProcessedUplo
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
+  const auth = await requireActiveUser();
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const formData = await request.formData();
@@ -141,7 +161,7 @@ export async function POST(request: Request) {
     if (isImage) {
       result = await processImage(file, fileId);
     } else {
-      result = await processVideo(file, fileId);
+      result = await processVideo(file, fileId, auth.user.id);
     }
 
     return NextResponse.json(result);

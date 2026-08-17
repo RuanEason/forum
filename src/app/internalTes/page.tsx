@@ -1,6 +1,21 @@
+import { notFound } from "next/navigation";
+import { isDevToolboxEnabled } from "@/lib/dev-toolbox";
+import { getCurrentUser } from "@/lib/server-auth";
+
 const APK_DOWNLOAD_URL = "https://cdn.zyg2024.top/release/r_forum_app-release.apk";
 
-export default function InternalTesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function InternalTesPage() {
+  if (!isDevToolboxEnabled()) {
+    notFound();
+  }
+
+  const user = await getCurrentUser();
+  if (!user || user.banned) {
+    notFound();
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-blue-50 px-4 py-8">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md items-center">

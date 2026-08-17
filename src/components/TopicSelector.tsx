@@ -82,7 +82,7 @@ export default function TopicSelector({
       } else {
           setSelectedTopicName(null);
       }
-  }, [selectedTopicId]);
+  }, [selectedTopicId, selectedTopicName]);
 
     // Update selected topic name when topics list updates and we find a match
     useEffect(() => {

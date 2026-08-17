@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   VIDEO_ALLOWED_MIME_TYPES,
@@ -9,6 +7,7 @@ import {
   getVideoPublicConstraints,
   issueVideoTemporaryCredential,
 } from "@/lib/video";
+import { requireActiveUser } from "@/lib/server-auth";
 
 type StsRequestBody = {
   fileName?: unknown;
@@ -19,9 +18,9 @@ type StsRequestBody = {
 
 export async function POST(request: Request) {
   try {
-    const session = (await getServerSession(authOptions)) as { user?: { id?: string } } | null;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as StsRequestBody;
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const objectKey = createVideoRawObjectKey(session.user.id, fileName, mimeType);
+    const objectKey = createVideoRawObjectKey(auth.user.id, fileName, mimeType);
     const rawUrl = buildVideoCdnUrl(objectKey);
 
     let linkedDraftId: string | null = null;
@@ -61,7 +60,7 @@ export async function POST(request: Request) {
       const draft = await prisma.postDraft.findFirst({
         where: {
           id: draftId,
-          authorId: session.user.id,
+          authorId: auth.user.id,
         },
         select: {
           id: true,
@@ -76,7 +75,7 @@ export async function POST(request: Request) {
     const [videoAsset, credentials] = await Promise.all([
       prisma.videoAsset.create({
         data: {
-          ownerId: session.user.id,
+          ownerId: auth.user.id,
           bucket: constraints.bucket,
           region: constraints.region,
           rawObjectKey: objectKey,
@@ -87,7 +86,7 @@ export async function POST(request: Request) {
         },
       }),
       issueVideoTemporaryCredential({
-        userId: session.user.id,
+        userId: auth.user.id,
       }),
     ]);
 

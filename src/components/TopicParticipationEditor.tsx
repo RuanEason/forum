@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import {
     createEmptyRichTextDocument,
@@ -263,7 +264,13 @@ export default function TopicParticipationEditor({ topic, onPostSuccess }: Topic
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 animate-in fade-in duration-300">
                             {images.map((url, index) => (
                                 <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm bg-gray-100">
-                                    <img src={url} alt="Uploaded" className="w-full h-full object-cover" />
+                                    <Image
+                                        src={url}
+                                        alt="Uploaded"
+                                        fill
+                                        sizes="(max-width: 640px) 33vw, 180px"
+                                        className="object-cover"
+                                    />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                                     <button
                                         onClick={() => setImages(images.filter((_, i) => i !== index))}

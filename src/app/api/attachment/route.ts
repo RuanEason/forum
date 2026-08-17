@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { deleteFromCOS } from "@/lib/cos";
+import { enqueueMediaCleanupTaskFromUrl } from "@/lib/media-cleanup";
+import { isAdminRole, requireActiveUser } from "@/lib/server-auth";
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await request.json();
@@ -32,18 +30,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Attachment not found" }, { status: 404 });
     }
 
-    if (attachment.post.authorId !== session.user.id && session.user.role !== "admin") {
+    if (attachment.post.authorId !== auth.user.id && !isAdminRole(auth.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const url = new URL(attachment.url);
-    const filename = url.pathname.slice(1);
-
-    try {
-      await deleteFromCOS(filename);
-    } catch (cosError) {
-      console.error("Failed to delete from COS:", cosError);
-    }
+    await enqueueMediaCleanupTaskFromUrl({
+      value: attachment.url,
+      resourceType: "POST_ATTACHMENT",
+      reason: "POST_DELETE",
+      ownerId: attachment.post.authorId,
+      postId: attachment.postId,
+    });
 
     await prisma.postAttachment.delete({
       where: { id },

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToCOS } from "@/lib/cos";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
+import { enqueueMediaCleanupTask } from "@/lib/media-cleanup";
 
 // Legacy proxy upload retained for older clients. New editor clients use STS + COS multipart upload.
 
@@ -22,11 +23,11 @@ const BLOCKED_MIME_TYPES = [
 ];
 
 export async function POST(request: Request) {
-  const session = await getSessionUser();
-
-  if (!session?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireSessionUser();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const session = auth.user;
 
   const formData = await request.formData();
   const file = formData.get("file") as File;
@@ -134,6 +135,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error uploading attachment:", error);
+    await enqueueMediaCleanupTask({
+      objectKey: filename,
+      resourceType: "DRAFT_ASSET",
+      reason: "UPLOAD_EXPIRED",
+      ownerId: session.id,
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Error uploading file" },
       { status: 500 }

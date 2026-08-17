@@ -26,12 +26,18 @@ const hasRequiredSchemaFields = (client: PrismaClientSingleton) => {
   })._runtimeDataModel;
 
   const userFields = runtimeDataModel?.models?.User?.fields;
-  if (!Array.isArray(userFields)) {
+  const postFields = runtimeDataModel?.models?.Post?.fields;
+  if (!Array.isArray(userFields) || !Array.isArray(postFields)) {
     return false;
   }
 
   const userFieldNames = new Set(
     userFields
+      .map((field) => field.name)
+      .filter((name): name is string => typeof name === "string"),
+  );
+  const postFieldNames = new Set(
+    postFields
       .map((field) => field.name)
       .filter((name): name is string => typeof name === "string"),
   );
@@ -42,6 +48,12 @@ const hasRequiredSchemaFields = (client: PrismaClientSingleton) => {
     && userFieldNames.has("lastLoginRewardAt")
     && userFieldNames.has("dailyLikeRewardCount")
     && userFieldNames.has("lastLikeRewardAt")
+    && userFieldNames.has("sessionVersion")
+    && userFieldNames.has("deletionRequestedAt")
+    && userFieldNames.has("deletionScheduledAt")
+    && postFieldNames.has("deletedAt")
+    && postFieldNames.has("deleteScheduledAt")
+    && Boolean(runtimeDataModel?.models?.MediaCleanupTask)
   );
 };
 

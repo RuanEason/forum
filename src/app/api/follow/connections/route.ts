@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireCurrentUser } from "@/lib/server-auth";
+
+type Connection = {
+  user: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+    bio: string | null;
+  };
+  followedAt: Date;
+};
 
 /**
  * GET /api/follow/connections
@@ -13,9 +22,12 @@ import { prisma } from "@/lib/prisma";
  */
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const auth = await requireCurrentUser();
+    if (!auth.ok) {
+      return auth.response;
+    }
 
-    if (!session?.user) {
+    if (!auth.ok) {
       return NextResponse.json(
         { error: "请先登录" },
         { status: 401 }
@@ -23,7 +35,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") || session.user.id;
+    const userId = searchParams.get("userId") || auth.user.id;
     const type = searchParams.get("type"); // "following" or "followers"
 
     if (!type || (type !== "following" && type !== "followers")) {
@@ -33,7 +45,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const currentUserId = session.user.id;
+    const currentUserId = auth.user.id;
     const isOwnProfile = currentUserId === userId;
 
     // 获取用户信息
@@ -44,6 +56,7 @@ export async function GET(request: Request) {
         name: true,
         avatar: true,
         bio: true,
+        deletionRequestedAt: true,
       },
     });
 
@@ -53,14 +66,20 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
+    if (user.deletionRequestedAt && !isOwnProfile) {
+      return NextResponse.json({ error: "用户不存在" }, { status: 404 });
+    }
 
-    let connections: any[] = [];
+    let connections: Connection[] = [];
     let total = 0;
 
     if (type === "following") {
       // 获取关注列表
       const result = await prisma.follow.findMany({
-        where: { followerId: userId },
+        where: {
+          followerId: userId,
+          following: { deletionRequestedAt: null },
+        },
         include: {
           following: {
             select: {
@@ -84,7 +103,10 @@ export async function GET(request: Request) {
     } else {
       // 获取粉丝列表
       const result = await prisma.follow.findMany({
-        where: { followingId: userId },
+        where: {
+          followingId: userId,
+          follower: { deletionRequestedAt: null },
+        },
         include: {
           follower: {
             select: {

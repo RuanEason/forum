@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
 
 type UnregisterBody = {
   registrationId?: unknown;
@@ -9,12 +8,11 @@ type UnregisterBody = {
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const sessionUser = (session as { user?: { id?: string } } | null)?.user;
-
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = await request.json() as UnregisterBody;
     const registrationId = typeof body.registrationId === "string" ? body.registrationId.trim() : "";

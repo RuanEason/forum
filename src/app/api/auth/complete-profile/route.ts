@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/server-auth";
 
 // Maximum field lengths
 const MAX_NAME_LENGTH = 50;
@@ -10,11 +9,9 @@ const MAX_URL_LENGTH = 500;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const sessionUser = (session as { user?: { id?: string } } | null)?.user;
-
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { name, avatar, bio, postViewMode, coverImage, showUserData } = await request.json();
@@ -82,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.update({
-      where: { id: sessionUser.id },
+      where: { id: auth.user.id },
       data: {
         name,
         avatar,

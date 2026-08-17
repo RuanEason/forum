@@ -252,15 +252,6 @@ export async function headAttachmentObject(objectKey: string): Promise<Attachmen
   });
 }
 
-export async function deleteAttachmentObject(objectKey: string): Promise<void> {
-  const config = getAttachmentConfig();
-  await getAttachmentCosClient().deleteObject({
-    Bucket: config.bucket,
-    Region: config.region,
-    Key: objectKey,
-  });
-}
-
 export async function abortAttachmentMultipartUploads(objectKey: string): Promise<void> {
   const config = getAttachmentConfig();
   const cos = getAttachmentCosClient();
@@ -297,42 +288,34 @@ export async function abortAttachmentMultipartUploads(objectKey: string): Promis
   } while (keyMarker || uploadIdMarker);
 }
 
-export async function cleanupAttachmentObject(objectKey: string | null | undefined): Promise<void> {
-  if (!objectKey) {
-    return;
-  }
-
-  try {
-    await abortAttachmentMultipartUploads(objectKey);
-  } catch (error) {
-    console.error("Failed to abort attachment multipart uploads", { objectKey, error });
-  }
-
-  try {
-    await deleteAttachmentObject(objectKey);
-  } catch (error) {
-    console.error("Failed to delete attachment object", { objectKey, error });
-  }
-}
-
 export async function cleanupStaleAttachmentUploads(): Promise<number> {
   const staleBefore = new Date(Date.now() - STALE_ATTACHMENT_UPLOAD_MS);
+  const { enqueueMediaCleanupTaskFromUrl } = await import("@/lib/media-cleanup");
   const staleAssets = await prisma.draftAsset.findMany({
     where: {
       type: "ATTACHMENT",
       status: "UPLOADING",
       updatedAt: { lt: staleBefore },
     },
-    select: { id: true, objectKey: true },
+    select: {
+      id: true,
+      objectKey: true,
+      draft: { select: { authorId: true } },
+    },
   });
 
   let cleaned = 0;
   for (const asset of staleAssets) {
+    await enqueueMediaCleanupTaskFromUrl({
+      value: asset.objectKey,
+      resourceType: "DRAFT_ASSET",
+      reason: "UPLOAD_EXPIRED",
+      ownerId: asset.draft.authorId,
+    });
     const deleted = await prisma.draftAsset.deleteMany({
       where: { id: asset.id, type: "ATTACHMENT", status: "UPLOADING" },
     });
     if (deleted.count > 0) {
-      await cleanupAttachmentObject(asset.objectKey);
       cleaned += 1;
     }
   }

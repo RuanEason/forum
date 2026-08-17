@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireCurrentUser } from "@/lib/server-auth";
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = (await getServerSession(authOptions)) as { user?: { id?: string } } | null;
+    const auth = await requireCurrentUser();
     const { id } = await context.params;
 
     if (!id) {
@@ -44,7 +43,7 @@ export async function GET(
       return NextResponse.json({ error: "Video asset not found" }, { status: 404 });
     }
 
-    const isOwner = Boolean(session?.user?.id && session.user.id === videoAsset.ownerId);
+    const isOwner = auth.ok && auth.user.id === videoAsset.ownerId;
     if (isOwner) {
       return NextResponse.json(videoAsset);
     }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireAdminUser } from "@/lib/server-auth";
 
 /**
  * POST /api/pin
@@ -15,9 +14,11 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as any;
-
-    if (!session?.user) {
+    const auth = await requireAdminUser();
+    if (!auth.ok) {
+      return auth.response;
+    }
+    if (!auth.ok) {
       return NextResponse.json(
         { error: "请先登录" },
         { status: 401 }
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // 检查是否为管理员
-    if (session.user.role !== "admin") {
+    if (auth.user.role !== "admin" && auth.user.role !== "super_admin") {
       return NextResponse.json(
         { error: "无权执行此操作，仅管理员可置顶帖子" },
         { status: 403 }

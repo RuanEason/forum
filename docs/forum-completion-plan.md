@@ -23,7 +23,43 @@
 
 ## 节点 0：建立基线与回滚准备
 
-状态：待开始
+状态：已完成
+
+完成日期：2026-08-17
+
+完成内容：
+
+- 新增 [节点 0 基线记录](./forum-node-0-baseline.md)，记录 TypeScript、Prisma、测试和 ESLint 基线。
+- 新增 [备份、迁移与回滚说明](./forum-backup-migration-rollback.md)，明确 MySQL、Redis、COS 的备份确认项，以及 Prisma 迁移和应用代码回滚步骤。
+- 在 `.env.example` 中补充 `TEST_DATABASE_URL`、`TEST_REDIS_URL`、`HEALTHCHECK_SECRET`、`CRON_SECRET` 和三个默认关闭的分阶段功能开关。
+- 新增 `src/lib/feature-flags.ts`，提供 fail-closed 的运行时开关读取能力；本节点未接入后续业务逻辑。
+- 新增功能开关单元测试。
+- 清理未使用的 Casdoor 配置和第三方参考目录，避免无关代码污染 ESLint。
+- 修复项目自身全部 ESLint 错误和警告。
+
+验证结果：
+
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx prisma validate`
+  - 结果：通过，Prisma schema 有效；本节点未新增数据库 migration
+- 命令：`npx tsx --test tests/feature-flags.test.ts tests/mentions.test.ts tests/rich-text-content.test.ts tests/rich-text-paste.test.ts`
+  - 结果：通过，11/11
+- 命令：`npx eslint src/lib/feature-flags.ts tests/feature-flags.test.ts`
+  - 结果：通过
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npx next build`
+  - 结果：通过，生产构建成功，静态页面 88/88 生成
+- 命令：`npm run build`
+  - 结果：前置 `prisma generate` 因正在运行的开发服务器占用 Windows Prisma 引擎文件而出现 EPERM；随后使用已生成 Client 执行 `npx next build` 通过，未发现代码构建错误
+
+后续观察：
+
+- 当前 MySQL 和 Redis 属于开发环境，允许数据丢失；Redis 当前主要用于验证码。迁移到生产服务器前，仍需建立生产数据库、Redis 和 COS 的正式备份与恢复演练记录。
+- 如果需要执行完整的 `npm run build`，应先停止占用 Prisma 引擎文件的本地开发服务器，再重试该命令。
 
 - 创建备份、迁移和回滚说明。
 - 增加测试环境变量约定：
@@ -43,7 +79,8 @@
 
 ## 节点 1：修复权限状态不会即时生效
 
-状态：待开始
+状态：已完成
+完成日期：2026-08-17
 
 目标：数据库中的 role、banned 和用户存在状态作为最终权限依据，JWT 只用于识别用户。
 
@@ -96,9 +133,45 @@
 - 权限变更测试全部通过。
 - 完成后立即标记为已完成，并记录测试结果。
 
+完成内容：
+
+- 新增 `src/lib/server-auth.ts`，统一回查数据库用户的 `id`、`role`、`banned` 和 `sessionVersion`，并提供当前用户、活跃用户、管理员鉴权及失效 Cookie 清理。
+- 新增 `User.sessionVersion` 字段和兼容式 Prisma migration `20260817090000_add_user_session_version`。
+- JWT 保留兼容字段，但每次会话刷新同步数据库中的角色和封禁状态；权限判断改用数据库用户对象。
+- 发帖、编辑、删除、评论、点赞、转发、关注、图片/附件/视频上传、草稿发布、管理员、推送和账号安全 API 已接入统一鉴权。
+- 密码修改、GitHub 绑定/解绑等账号安全变更会递增 `sessionVersion`。
+- 管理员不能封禁自己；普通管理员不能修改其他管理员，超级管理员除外。
+- 增加权限策略单元测试 `tests/server-auth.test.ts`，并在页面刷新后显示账号封禁提示。
+
+验证结果：
+
+- 命令：`npx prisma migrate deploy`
+  - 结果：通过，已应用 `20260817090000_add_user_session_version`
+- 命令：`npx prisma migrate status`
+  - 结果：通过，数据库 schema 已是最新
+- 命令：`npx prisma validate`
+  - 结果：通过
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx tsx --test tests/server-auth.test.ts tests/feature-flags.test.ts tests/mentions.test.ts tests/rich-text-content.test.ts tests/rich-text-paste.test.ts`
+  - 结果：通过，14/14
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npm run build`
+  - 结果：通过，Prisma Client 生成成功，生产构建成功，静态页面 88/88 生成
+
+后续观察：
+
+- 需要在真实登录会话中继续观察：封禁后的写接口是否稳定返回 403、角色降级后的管理接口是否立即返回 403，以及删除账号后认证 Cookie 是否在客户端被清理。
+- 生产部署前执行 `npx prisma migrate deploy`，并确认所有实例使用包含 `sessionVersion` 的 Prisma Client。
+- 当前开发服务器已停止以完成 Prisma 生成和构建；需要本地开发时重新执行 `npm run dev`。
+
 ## 节点 2：关闭或保护公开数据库测试接口
 
-状态：待开始
+状态：已完成
+完成日期：2026-08-17
 
 目标：生产环境不得公开数据库状态、数据量和环境信息。
 
@@ -136,9 +209,43 @@
 - 健康检查可被内部监控调用。
 - 完成后在计划文档中标记为已完成。
 
+实施记录：
+
+- 新增 `src/lib/healthcheck.ts`，统一处理 `x-healthcheck-secret`/Bearer 密钥读取、恒定时间比较和脱敏响应结构。
+- `/api/test-db` 改为仅执行 `SELECT 1`；生产环境无效密钥返回 404，其他环境返回 401；成功和数据库失败响应都只包含 `ok`、`responseTime`、`timestamp`。
+- 数据库错误只写服务端日志，客户端不再收到用户数量、帖子数量、`NODE_ENV`、数据库配置状态或底层错误详情。
+- `/dev-tools`、`/api/dev-tools/run` 和 `/internalTes` 均受 `APP_ENV` 与 `DEV_TOOLBOX_ENABLED` 双重开关控制；生产环境关闭，预发布环境必须显式设置 `APP_ENV=staging` 和 `DEV_TOOLBOX_ENABLED=true`。
+- `/api/dev-tools/run` 增加正常的数据库管理员鉴权；`/dev-tools` 只对管理员显示；`/internalTes` 只对已登录且未封禁用户显示。
+- 清理阅读量 Server Action 返回值中的环境、数据库配置和详细错误调试字段，避免通过公开页面返回调试信息。
+- `package.json` 和 `package-lock.json` 增加 `geist@1.7.2` 依赖；安装后生产构建验证通过。
+- 本节点未新增数据库 migration。
+
+验证结果：
+
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx prisma validate`
+  - 结果：通过
+- 命令：`npx tsx --test tests/healthcheck.test.ts tests/server-auth.test.ts tests/feature-flags.test.ts tests/mentions.test.ts tests/rich-text-content.test.ts tests/rich-text-paste.test.ts`
+  - 结果：通过，19/19
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npm run build`
+  - 结果：通过；Prisma Client 生成成功，Next 生产构建成功，静态页面 84/84 生成。
+
+后续观察：
+
+- 生产部署必须配置独立随机的 `HEALTHCHECK_SECRET`，监控请求使用 `x-healthcheck-secret` 或 `Authorization: Bearer`，不得放入前端环境变量或 URL 查询参数。
+- 预发布环境需同时配置 `APP_ENV=staging` 和 `DEV_TOOLBOX_ENABLED=true`；生产环境保持 `APP_ENV=production` 或默认 `NODE_ENV=production` 且关闭 `DEV_TOOLBOX_ENABLED`。
+- `geist` 当前作为构建依赖保留；源码仍通过 `next/font/google` 使用 Geist 字体，如后续改为本地字体加载需同步调整 `src/app/layout.tsx`。
+
 ## 节点 3：媒体清理与注销风险治理
 
-状态：待开始
+状态：已完成
+
+完成日期：2026-08-17
 
 目标：避免注销、删帖、失败上传导致 COS 孤儿文件和持续资源消耗，同时保留恢复窗口。
 
@@ -205,6 +312,43 @@
 - 清理任务具备状态、重试、审计能力。
 - 生产环境有定时执行方式。
 - 完成后标记为已完成。
+
+实施记录：
+
+- 新增 `MediaCleanupTask` 模型和兼容式 Prisma migration `20260817120000_add_media_cleanup_and_deletion_windows`，记录对象 Key、资源类型、用户/帖子、状态、执行时间、重试次数、错误和审计时间。
+- 帖子删除改为逻辑删除，写入 `deletedAt`、`deleteScheduledAt` 和删除原因；新增 `POST /api/post/restore`，24 小时窗口内可恢复，窗口结束后由清理任务硬删除数据库记录。
+- 账号注销改为两阶段：立即写入 `deletionRequestedAt`/`deletionScheduledAt`、阻止登录和写操作、隐藏公开内容；新增 `POST /api/auth/delete-account/cancel`，窗口内可取消并恢复账号内容。
+- 删除帖子、注销账号、替换头像/封面、删除草稿、编辑器图片删除和失败上传均先登记媒体清理任务，不再同步遗漏 COS 对象。
+- 清理任务支持幂等去重、`PENDING/PROCESSING/RETRYING/SUCCEEDED/FAILED/CANCELLED` 状态、失败退避重试、失败队列、过期上传/失败转码/长期草稿媒体清理。
+- 新增 `POST /api/internal/media-cleanup`，仅接受 `CRON_SECRET`，支持批量处理、`retryFailed`、`dryRun` 和 report-only 孤儿对象审计；普通用户无法调用。
+- 孤儿对象审计仅扫描和报告，默认扫描 `images/`、`attachments/`、`videos/`、`backgrounds/`、`editor-pool/`，不会自动删除对象。
+- 管理后台增加待处理、重试中、处理中、失败、成功数量及最近失败信息。
+- 新增 `tests/media-cleanup.test.ts`，覆盖 24 小时窗口、CDN Key 提取、幂等 Key 和孤儿审计前缀。
+
+验证结果：
+
+- 命令：`npx prisma migrate deploy`
+  - 结果：通过，已应用 `20260817120000_add_media_cleanup_and_deletion_windows`
+- 命令：`npx prisma migrate status`
+  - 结果：通过，数据库 schema 已是最新
+- 命令：`npx prisma validate`
+  - 结果：通过
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx tsx --test tests/media-cleanup.test.ts tests/server-auth.test.ts tests/healthcheck.test.ts tests/feature-flags.test.ts tests/mentions.test.ts tests/rich-text-content.test.ts tests/rich-text-paste.test.ts`
+  - 结果：通过，23/23
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npm run build`
+  - 结果：通过，Prisma Client 生成成功，Next 生产构建成功，静态页面 87/87 生成
+
+后续观察：
+
+- 生产环境需设置 `FEATURE_MEDIA_CLEANUP=true`，并使用独立随机的 `CRON_SECRET` 定时调用 `/api/internal/media-cleanup`；默认关闭状态下只保留任务和 dry-run 能力，不会自动删除 COS 对象。
+- 上线前先用 `dryRun=true` 和 `auditOrphans=true` 观察任务及孤儿报告，确认无误后再启用自动清理。
+- 需要在真实 COS 环境继续观察 COS 删除失败重试、24 小时后帖子/账号硬删除、注销窗口取消恢复，以及多实例并发执行时的任务抢占情况。
 
 ## 节点 4：统一列表分页与查询负载
 

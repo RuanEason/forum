@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import { uploadToCOS } from "@/lib/cos";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
+import { enqueueMediaCleanupTask } from "@/lib/media-cleanup";
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
@@ -27,10 +27,10 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp
  * ```
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions) as any;
+  const auth = await requireActiveUser();
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const formData = await request.formData();
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const draft = await prisma.postDraft.findFirst({
       where: {
         id: draftId,
-        authorId: session.user.id,
+        authorId: auth.user.id,
       },
       select: {
         id: true,
@@ -88,17 +88,19 @@ export async function POST(request: Request) {
   const originalExt = file.type.split('/')[1]; // 保留原始文件扩展名
   const originalFilename = `${filename}.${originalExt}`;
   const thumbnailFilename = `${filename}_thumbnail.webp`;
+  const uploadedObjectKeys: string[] = [];
 
   try {
     if (file.size <= MAX_FILE_SIZE) {
       // 文件 ≤10MB: 直接上传原图
-      let uploadBuffer = buffer;
-      let uploadFilename = originalFilename;
+      const uploadBuffer = buffer;
+      const uploadFilename = originalFilename;
 
       // 对于非WebP格式，保持原始格式上传
       // 这里可以根据需要调整，现在保持原始格式
 
       const cdnUrl = await uploadToCOS(uploadBuffer, uploadFilename);
+      uploadedObjectKeys.push(uploadFilename);
       if (linkedDraftId) {
         const sortOrder = await prisma.draftAsset.count({
           where: {
@@ -126,6 +128,7 @@ export async function POST(request: Request) {
 
       // 1. 上传原图
       const originalUrl = await uploadToCOS(buffer, originalFilename);
+      uploadedObjectKeys.push(originalFilename);
 
       // 2. 生成并上传缩略图（压缩至80%质量，最大宽度1920px）
       const thumbnailBuffer = await sharp(buffer)
@@ -137,6 +140,7 @@ export async function POST(request: Request) {
         .toBuffer();
 
       const thumbnailUrl = await uploadToCOS(thumbnailBuffer, thumbnailFilename);
+      uploadedObjectKeys.push(thumbnailFilename);
 
       if (linkedDraftId) {
         const sortOrder = await prisma.draftAsset.count({
@@ -167,6 +171,14 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error uploading file:", error);
+    await Promise.all(
+      uploadedObjectKeys.map((objectKey) => enqueueMediaCleanupTask({
+        objectKey,
+        resourceType: "DRAFT_ASSET",
+        reason: "UPLOAD_EXPIRED",
+        ownerId: auth.user.id,
+      })),
+    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Error uploading file" },
       { status: 500 }

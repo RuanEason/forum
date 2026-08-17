@@ -58,7 +58,7 @@ export async function uploadToCOS(fileBuffer: Buffer, filename: string): Promise
       Key: filename,
       Body: fileBuffer,
       ContentType: contentType,
-    }, (err, data) => {
+    }, (err) => {
       if (err) {
         console.error('COS upload error:', err);
         reject(new Error(`Failed to upload to COS: ${err.message}`));
@@ -80,6 +80,24 @@ export function getCOSPublicUrl(filename: string): string {
   }
 
   return `${cdnDomain}/${filename}`;
+}
+
+function isMissingObjectError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as {
+    code?: unknown;
+    statusCode?: unknown;
+    status?: unknown;
+  };
+  const code = String(candidate.code || "").toLowerCase();
+  const status = Number(candidate.statusCode || candidate.status);
+  return status === 404
+    || code === "nosuchkey"
+    || code === "nosuchresource"
+    || code === "notfound";
 }
 
 /**
@@ -106,8 +124,12 @@ export async function deleteFromCOS(filename: string): Promise<void> {
       Bucket: bucket,
       Region: region,
       Key: filename,
-    }, (err, data) => {
+    }, (err) => {
       if (err) {
+        if (isMissingObjectError(err)) {
+          resolve();
+          return;
+        }
         console.error('COS delete error:', err);
         reject(new Error(`Failed to delete from COS: ${err.message}`));
       } else {

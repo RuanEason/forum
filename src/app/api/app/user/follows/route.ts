@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { isAdminRole } from "@/lib/server-auth";
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     const isSelf = sessionUser?.id === targetUser.id;
-    const isAdmin = sessionUser?.role === "admin";
+    const isAdmin = sessionUser ? isAdminRole(sessionUser.role) : false;
     if (targetUser.banned && !isSelf && !isAdmin) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
@@ -10,21 +11,10 @@ interface UserProfileProps {
   params: Promise<{ id: string }>;
 }
 
-interface UserStats {
-  daysJoined: number;
-  postsPublished: number;
-  totalViews: number;
-  likesReceived: number;
-  likes: number;
-  likesGiven: number;
-  followersCount: number;
-  followingCount: number;
-}
-
 // 获取用户基本信息（用于 metadata 和页面）
 async function getUserBasicInfo(id: string) {
-  return prisma.user.findUnique({
-    where: { id },
+  return prisma.user.findFirst({
+    where: { id, deletionRequestedAt: null },
     select: { name: true, bio: true, avatar: true, coverImage: true },
   });
 }
@@ -35,10 +25,14 @@ async function getUserProfileWithStats(id: string, includeUnlistedPosts: boolean
     ? undefined
     : {
         visibility: "PUBLIC" as const,
+        deletedAt: null,
       };
 
-  const user = await prisma.user.findUnique({
-    where: { id },
+  const user = await prisma.user.findFirst({
+    where: {
+      id,
+      ...(includeUnlistedPosts ? {} : { deletionRequestedAt: null }),
+    },
     select: {
       id: true,
       name: true,
@@ -130,13 +124,16 @@ async function getUserProfileWithStats(id: string, includeUnlistedPosts: boolean
 
   const serializedUser = {
     ...user,
-    posts: user.posts.map(({ contentJson, contentFormat, ...post }) => {
+    email: user.email ?? "",
+    createdAt: user.createdAt.toISOString(),
+    posts: user.posts.map(({ contentJson, contentFormat, createdAt, ...post }) => {
       const document = contentFormat === "RICH_TEXT"
         ? parseRichTextDocument(contentJson)
         : null;
 
       return {
         ...post,
+        createdAt: createdAt.toISOString(),
         contentFormat,
         content: document ? getRichTextSummaryWithMentions(document, 300) : post.content,
       };
@@ -183,7 +180,7 @@ export async function generateMetadata({
 export default async function UserProfile({ params }: UserProfileProps) {
   const { id } = await params;
   const userId = id;
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
   const isCurrentUser = session?.user?.id === userId;
 
   // 一次性获取用户数据和统计数据
@@ -216,7 +213,7 @@ export default async function UserProfile({ params }: UserProfileProps) {
 
   return (
     <UserProfileClient
-      user={user as any}
+      user={user}
       isCurrentUser={isCurrentUser}
       stats={stats}
       isFollowing={isFollowing}

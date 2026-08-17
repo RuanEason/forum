@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
+import { isAdminRole } from "@/lib/server-auth";
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -33,12 +34,13 @@ export async function GET(request: NextRequest) {
     const [targetUser, total] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, banned: true },
+        select: { id: true, banned: true, deletionRequestedAt: true },
       }),
       prisma.post.count({
         where: {
           authorId: userId,
           visibility: "PUBLIC",
+          deletedAt: null,
         },
       }),
     ]);
@@ -48,8 +50,8 @@ export async function GET(request: NextRequest) {
     }
 
     const isSelf = sessionUser?.id === userId;
-    const isAdmin = sessionUser?.role === "admin";
-    if (targetUser.banned && !isSelf && !isAdmin) {
+    const isAdmin = sessionUser ? isAdminRole(sessionUser.role) : false;
+    if ((targetUser.banned || targetUser.deletionRequestedAt) && !isSelf && !isAdmin) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -59,6 +61,7 @@ export async function GET(request: NextRequest) {
       where: {
         authorId: userId,
         visibility: "PUBLIC",
+        deletedAt: null,
       },
       orderBy: [{ pinned: "desc" }, { pinnedAt: "desc" }, { createdAt: "desc" }],
       skip,

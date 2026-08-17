@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import { prisma } from "@/lib/prisma";
-import { cleanupAttachmentObject } from "@/lib/attachment";
+import { enqueueMediaCleanupTaskFromUrl } from "@/lib/media-cleanup";
 
 type CancelRequestBody = { attachmentAssetId?: unknown };
 
 export async function POST(request: Request) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const body = await request.json() as CancelRequestBody;
     const attachmentAssetId = typeof body.attachmentAssetId === "string" ? body.attachmentAssetId.trim() : "";
@@ -32,8 +33,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Attachment asset not found" }, { status: 404 });
     }
 
+    await enqueueMediaCleanupTaskFromUrl({
+      value: asset.objectKey,
+      resourceType: "DRAFT_ASSET",
+      reason: "UPLOAD_EXPIRED",
+      ownerId: user.id,
+    });
     await prisma.draftAsset.delete({ where: { id: asset.id } });
-    await cleanupAttachmentObject(asset.objectKey);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Attachment cancel error:", error);

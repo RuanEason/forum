@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   VIDEO_ALLOWED_MIME_TYPES,
@@ -9,6 +7,7 @@ import {
   getBackgroundVideoPublicConstraints,
   issueBackgroundTemporaryCredential,
 } from "@/lib/video";
+import { requireActiveUser } from "@/lib/server-auth";
 
 type StsRequestBody = {
   fileName?: unknown;
@@ -18,9 +17,9 @@ type StsRequestBody = {
 
 export async function POST(request: Request) {
   try {
-    const session = (await getServerSession(authOptions)) as { user?: { id?: string } } | null;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as StsRequestBody;
@@ -51,13 +50,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const objectKey = createBackgroundRawObjectKey(session.user.id, fileName, mimeType);
+    const objectKey = createBackgroundRawObjectKey(auth.user.id, fileName, mimeType);
     const rawUrl = buildVideoCdnUrl(objectKey);
 
     const [videoAsset, credentials] = await Promise.all([
       prisma.videoAsset.create({
         data: {
-          ownerId: session.user.id,
+          ownerId: auth.user.id,
           bucket: constraints.bucket,
           region: constraints.region,
           rawObjectKey: objectKey,
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
         },
       }),
       issueBackgroundTemporaryCredential({
-        userId: session.user.id,
+        userId: auth.user.id,
       }),
     ]);
 
@@ -93,4 +92,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

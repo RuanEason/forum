@@ -1,19 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/server-auth";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const user = await getCurrentUser();
 
-    if (!session?.user?.id) {
+    if (!user) {
       return NextResponse.json({ count: 0 }, { status: 200 }); // Return 0 if not logged in
     }
 
     const count = await prisma.notification.count({
       where: {
-        receiverId: session.user.id,
+        receiverId: user.id,
         isRead: false,
       },
     });

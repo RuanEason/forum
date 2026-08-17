@@ -7,7 +7,7 @@ export function initializeFFmpeg() {
     execSync('ffmpeg -version', { stdio: 'ignore' });
     console.log('Using system FFmpeg');
     return ffmpeg;
-  } catch (e) {
+  } catch {
     console.log('System FFmpeg not found, using npm package');
 
     ffmpeg.setFfmpegPath(ffmpegInstaller.path);

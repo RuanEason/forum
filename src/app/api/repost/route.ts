@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { postId }: { postId: string } = await request.json();
@@ -17,7 +16,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "postId is required" }, { status: 400 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.user.id;
+
+    const post = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
+      select: { id: true },
+    });
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
 
     // 检查是否已经转发
     const existingRepost = await prisma.repost.findUnique({

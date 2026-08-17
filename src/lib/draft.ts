@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { cleanupAttachmentObject } from "@/lib/attachment";
+import {
+  enqueueMediaCleanupTaskFromUrl,
+  enqueueVideoAssetCleanup,
+} from "@/lib/media-cleanup";
 import { Prisma } from "@/generated";
 import type { JSONContent } from "@tiptap/core";
 import {
@@ -628,7 +631,7 @@ export async function listDrafts(authorId: string, options?: { persistMode?: Dra
   });
 }
 
-async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
+async function syncDraftAssets(authorId: string, draftId: string, assets: DraftAssetInput[]) {
   const existingAssets = await prisma.draftAsset.findMany({
     where: { draftId },
     select: {
@@ -644,6 +647,13 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
       videoAssetId: true,
       errorMessage: true,
       sortOrder: true,
+      videoAsset: {
+        select: {
+          rawObjectKey: true,
+          hlsMasterObjectKey: true,
+          coverObjectKey: true,
+        },
+      },
     },
   });
   const existingAssetById = new Map(existingAssets.map((asset) => [asset.id, asset]));
@@ -713,6 +723,27 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
   );
   const removedAssetIds = removedAssets.map((asset) => asset.id);
 
+  for (const asset of removedAssets) {
+    if (asset.objectKey || asset.url) {
+      await enqueueMediaCleanupTaskFromUrl({
+        value: asset.objectKey || asset.url,
+        resourceType: "DRAFT_ASSET",
+        reason: "MANUAL",
+        ownerId: authorId,
+      });
+    }
+    if (asset.videoAsset) {
+      await enqueueVideoAssetCleanup(
+        asset.videoAsset,
+        {
+          ownerId: authorId,
+          reason: "MANUAL",
+          executeAfter: new Date(),
+        },
+      );
+    }
+  }
+
   if (removedAssetIds.length > 0) {
     await prisma.draftAsset.deleteMany({
       where: {
@@ -721,12 +752,6 @@ async function syncDraftAssets(draftId: string, assets: DraftAssetInput[]) {
       },
     });
   }
-
-  await Promise.all(
-    removedAssets
-      .filter((asset) => asset.type === "ATTACHMENT" && asset.objectKey)
-      .map((asset) => cleanupAttachmentObject(asset.objectKey)),
-  );
 
   for (const asset of normalizedAssets) {
     if (asset.create) {
@@ -872,7 +897,7 @@ export async function updateDraft(authorId: string, draftId: string, input: Draf
   });
 
   if (input.assets) {
-    await syncDraftAssets(draftId, nextAssets);
+    await syncDraftAssets(authorId, draftId, nextAssets);
   }
 
   await setDraftComputedStatus(draftId);
@@ -889,7 +914,18 @@ export async function deleteDraft(authorId: string, draftId: string) {
       id: true,
       publishedPostId: true,
       assets: {
-        select: { type: true, objectKey: true },
+        select: {
+          type: true,
+          objectKey: true,
+          url: true,
+          videoAsset: {
+            select: {
+              rawObjectKey: true,
+              hlsMasterObjectKey: true,
+              coverObjectKey: true,
+            },
+          },
+        },
       },
     },
   });
@@ -902,17 +938,32 @@ export async function deleteDraft(authorId: string, draftId: string) {
     throw new Error("Published draft cannot be deleted");
   }
 
+  for (const asset of existing.assets) {
+    if (asset.objectKey || asset.url) {
+      await enqueueMediaCleanupTaskFromUrl({
+        value: asset.objectKey || asset.url,
+        resourceType: "DRAFT_ASSET",
+        reason: "MANUAL",
+        ownerId: authorId,
+      });
+    }
+    if (asset.videoAsset) {
+      await enqueueVideoAssetCleanup(
+        asset.videoAsset,
+        {
+          ownerId: authorId,
+          reason: "MANUAL",
+          executeAfter: new Date(),
+        },
+      );
+    }
+  }
+
   await prisma.postDraft.delete({
     where: {
       id: draftId,
     },
   });
-
-  await Promise.all(
-    existing.assets
-      .filter((asset) => asset.type === "ATTACHMENT" && asset.objectKey)
-      .map((asset) => cleanupAttachmentObject(asset.objectKey)),
-  );
 
   return true;
 }

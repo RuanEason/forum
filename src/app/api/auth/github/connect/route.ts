@@ -1,6 +1,4 @@
-import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
 import { getAuthPageRedirectPath, toSignInPath } from "@/lib/auth-redirect";
 import {
   buildGitHubAuthorizeUrl,
@@ -8,13 +6,14 @@ import {
   encodeGitHubConnectIntent,
   GITHUB_CONNECT_COOKIE,
 } from "@/lib/github";
+import { requireActiveUser } from "@/lib/server-auth";
 
 const SETTINGS_SECURITY_PATH = "/settings?section=security";
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
+  const auth = await requireActiveUser();
 
-  if (!session?.user?.id) {
+  if (!auth.ok) {
     return NextResponse.redirect(new URL(toSignInPath(SETTINGS_SECURITY_PATH), request.url));
   }
 
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
     const isSecure = request.nextUrl.protocol === "https:";
     const state = await createGitHubState(isSecure);
     const intent = await encodeGitHubConnectIntent({
-      userId: session.user.id,
+      userId: auth.user.id,
       redirectPath,
     });
     const response = NextResponse.redirect(buildGitHubAuthorizeUrl({ state }));

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import { prisma } from "@/lib/prisma";
 import {
   buildAttachmentCdnUrl,
@@ -15,10 +15,11 @@ type CommitRequestBody = {
 
 export async function POST(request: Request) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const body = await request.json() as CommitRequestBody;
     const attachmentAssetId = typeof body.attachmentAssetId === "string" ? body.attachmentAssetId.trim() : "";

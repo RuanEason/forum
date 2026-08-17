@@ -34,6 +34,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await prisma.post.findMany({
     where: {
       visibility: "PUBLIC",
+      deletedAt: null,
+      author: { deletionRequestedAt: null },
     },
     select: {
       id: true,
@@ -43,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 获取所有用户的 ID 和更新时间
   const users = await prisma.user.findMany({
+    where: { deletionRequestedAt: null },
     select: {
       id: true,
       updatedAt: true,

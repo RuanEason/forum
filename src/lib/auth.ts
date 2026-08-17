@@ -8,8 +8,11 @@ import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
 import type { GitHubIdentity } from "@/lib/github";
 
 type AuthUserPayload = {
+  id?: string;
   email?: string | null;
   role: string;
+  banned: boolean;
+  sessionVersion: number;
   avatar?: string | null;
   postViewMode?: string;
   showUserData?: boolean;
@@ -58,7 +61,7 @@ export const authOptions: any = {
           return null;
         }
 
-        if (user.banned) {
+        if (user.banned || user.deletionRequestedAt) {
           // Use generic error message to avoid revealing user existence
           throw new Error("Invalid credentials");
         }
@@ -79,6 +82,8 @@ export const authOptions: any = {
           email: user.email ?? null,
           name: user.name,
           role: user.role,
+          banned: user.banned,
+          sessionVersion: user.sessionVersion,
           avatar: user.avatar,
           postViewMode: user.postViewMode,
           showUserData: user.showUserData,
@@ -120,6 +125,8 @@ export const authOptions: any = {
           email: user.email ?? null,
           name: user.name,
           role: user.role,
+          banned: user.banned,
+          sessionVersion: user.sessionVersion,
           avatar: user.avatar,
           postViewMode: user.postViewMode,
           showUserData: user.showUserData,
@@ -139,6 +146,9 @@ export const authOptions: any = {
     async jwt({ token, user, trigger, session }: JwtCallbackParams) {
       if (user) {
         token.role = user.role;
+        token.banned = user.banned;
+        token.sessionVersion = user.sessionVersion;
+        token.sessionInvalid = false;
         token.avatar = user.avatar;
         token.postViewMode = user.postViewMode;
         token.showUserData = user.showUserData;
@@ -150,11 +160,42 @@ export const authOptions: any = {
       if (!user && token.sub) {
         const existingUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { id: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            banned: true,
+            sessionVersion: true,
+            deletionRequestedAt: true,
+            deletionScheduledAt: true,
+            avatar: true,
+            postViewMode: true,
+            showUserData: true,
+            coverImage: true,
+            experience: true,
+          },
         });
 
         if (!existingUser) {
-          throw new Error("Session user no longer exists");
+          token.sessionInvalid = true;
+        } else {
+          if (token.sessionVersion === undefined) {
+            token.sessionVersion = existingUser.sessionVersion;
+          } else if (token.sessionVersion !== existingUser.sessionVersion) {
+            token.sessionInvalid = true;
+          }
+
+          token.email = existingUser.email ?? undefined;
+          token.name = existingUser.name ?? undefined;
+          token.role = existingUser.role;
+          token.banned = existingUser.banned;
+          token.avatar = existingUser.avatar;
+          token.postViewMode = existingUser.postViewMode;
+          token.showUserData = existingUser.showUserData;
+          token.coverImage = existingUser.coverImage;
+          token.experience = existingUser.experience;
+          token.level = getUserLevel(existingUser.experience);
         }
       }
 
@@ -181,9 +222,15 @@ export const authOptions: any = {
       return token;
     },
     async session({ session, token }: SessionCallbackParams) {
+      if (token?.sessionInvalid || !token?.sub) {
+        return null;
+      }
+
       if (token) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
+        session.user.banned = token.banned as boolean;
+        session.user.sessionVersion = token.sessionVersion as number;
         session.user.avatar = token.avatar as string;
         session.user.postViewMode = token.postViewMode as string;
         session.user.showUserData = token.showUserData as boolean;

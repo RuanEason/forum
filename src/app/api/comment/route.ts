@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { linkMarkdownMentions } from "@/lib/mentions";
-
-type SessionShape = {
-  user?: {
-    id?: string;
-    role?: string;
-  };
-} | null;
+import { requireActiveUser, isAdminRole } from "@/lib/server-auth";
 
 const MAX_COMMENT_IMAGES = 9;
 
@@ -73,10 +65,10 @@ function buildCommentContent(content: string, imageUrls: string[]): string {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = (await getServerSession(authOptions)) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const {
@@ -102,7 +94,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Content and postId are required" }, { status: 400 });
     }
 
-    const authorId = session.user.id;
+    const authorId = auth.user.id;
+
+    const activePost = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
+      select: { id: true },
+    });
+    if (!activePost) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
 
     let normalizedParentId: string | null = null;
     let normalizedReplyToId: string | null = null;
@@ -193,8 +193,8 @@ export async function POST(request: NextRequest) {
         });
       }
     } else {
-      const post = await prisma.post.findUnique({
-        where: { id: postId },
+      const post = await prisma.post.findFirst({
+        where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
         select: { authorId: true }
       });
       
@@ -238,10 +238,10 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = (await getServerSession(authOptions)) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await request.json();
@@ -259,7 +259,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Only author or admin can delete
-    if (comment.authorId !== session.user.id && session.user.role !== "admin") {
+    if (comment.authorId !== auth.user.id && !isAdminRole(auth.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

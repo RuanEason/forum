@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { getSessionUser, requireSessionUser } from "@/app/api/app/_shared/auth";
 import { getTrimmedParam } from "@/app/api/app/_shared/user";
 
 type FollowBody = {
@@ -47,10 +47,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = (await request.json()) as FollowBody;
     const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";
@@ -120,10 +121,11 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = (await request.json()) as FollowBody;
     const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId.trim() : "";

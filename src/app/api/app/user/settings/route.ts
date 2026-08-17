@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserLevel } from "@/lib/experience";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
+import { enqueueMediaCleanupTaskFromUrl } from "@/lib/media-cleanup";
 import {
   MAX_BIO_LENGTH,
   MAX_NAME_LENGTH,
@@ -38,10 +39,11 @@ function normalizeOptionalString(value: unknown): string | null | undefined {
 
 export async function GET() {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const user = await prisma.user.findUnique({
       where: { id: sessionUser.id },
@@ -77,10 +79,11 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = (await request.json()) as UpdateSettingsBody;
     const data: {
@@ -192,6 +195,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id: sessionUser.id },
+      select: { avatar: true, coverImage: true },
+    });
+
     const user = await prisma.user.update({
       where: { id: sessionUser.id },
       data,
@@ -210,6 +218,25 @@ export async function PATCH(request: NextRequest) {
         experience: true,
       },
     });
+
+    if (currentUser) {
+      if (body.avatar !== undefined && currentUser.avatar !== user.avatar) {
+        await enqueueMediaCleanupTaskFromUrl({
+          value: currentUser.avatar,
+          resourceType: "USER_AVATAR",
+          reason: "MANUAL",
+          ownerId: sessionUser.id,
+        });
+      }
+      if (body.coverImage !== undefined && currentUser.coverImage !== user.coverImage) {
+        await enqueueMediaCleanupTaskFromUrl({
+          value: currentUser.coverImage,
+          resourceType: "USER_COVER",
+          reason: "MANUAL",
+          ownerId: sessionUser.id,
+        });
+      }
+    }
 
     return NextResponse.json({
       message: "Settings updated successfully",

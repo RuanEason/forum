@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
+import { enqueueMediaCleanupTaskFromUrl } from "@/lib/media-cleanup";
 
 const MAX_NAME_LENGTH = 50;
 const MAX_BIO_LENGTH = 500;
@@ -31,11 +31,9 @@ function normalizeOptionalString(value: unknown): string | null | undefined {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const sessionUser = (session as { user?: { id?: string } } | null)?.user;
-
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as UpdateSettingsBody;
@@ -143,8 +141,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id: auth.user.id },
+      select: { avatar: true, coverImage: true },
+    });
+
     const user = await prisma.user.update({
-      where: { id: sessionUser.id },
+      where: { id: auth.user.id },
       data: updateData,
       select: {
         id: true,
@@ -160,6 +163,25 @@ export async function PATCH(request: NextRequest) {
         notifyFollows: true,
       },
     });
+
+    if (currentUser) {
+      if (body.avatar !== undefined && currentUser.avatar !== user.avatar) {
+        await enqueueMediaCleanupTaskFromUrl({
+          value: currentUser.avatar,
+          resourceType: "USER_AVATAR",
+          reason: "MANUAL",
+          ownerId: auth.user.id,
+        });
+      }
+      if (body.coverImage !== undefined && currentUser.coverImage !== user.coverImage) {
+        await enqueueMediaCleanupTaskFromUrl({
+          value: currentUser.coverImage,
+          resourceType: "USER_COVER",
+          reason: "MANUAL",
+          ownerId: auth.user.id,
+        });
+      }
+    }
 
     return NextResponse.json({ message: "Settings updated successfully", user });
   } catch (error) {

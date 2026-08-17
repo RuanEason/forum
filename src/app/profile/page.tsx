@@ -1,9 +1,10 @@
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
 
   if (!session?.user?.id) {
     redirect("/auth/signin");

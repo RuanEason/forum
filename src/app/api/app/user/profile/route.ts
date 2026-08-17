@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserLevel } from "@/lib/experience";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { getJoinedDays, getTrimmedParam } from "@/app/api/app/_shared/user";
+import { isAdminRole } from "@/lib/server-auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         showUserData: true,
         banned: true,
+        deletionRequestedAt: true,
       },
     });
 
@@ -38,9 +40,9 @@ export async function GET(request: NextRequest) {
     }
 
     const isSelf = sessionUser?.id === user.id;
-    const isAdmin = sessionUser?.role === "admin";
+    const isAdmin = sessionUser ? isAdminRole(sessionUser.role) : false;
 
-    if (user.banned && !isSelf && !isAdmin) {
+    if ((user.banned || user.deletionRequestedAt) && !isSelf && !isAdmin) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -56,12 +58,14 @@ export async function GET(request: NextRequest) {
         where: {
           authorId: user.id,
           visibility: "PUBLIC",
+          deletedAt: null,
         },
       }),
       prisma.post.aggregate({
         where: {
           authorId: user.id,
           visibility: "PUBLIC",
+          deletedAt: null,
         },
         _sum: { viewCount: true },
       }),
@@ -70,6 +74,7 @@ export async function GET(request: NextRequest) {
           post: {
             authorId: user.id,
             visibility: "PUBLIC",
+            deletedAt: null,
           },
         },
       }),

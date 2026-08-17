@@ -1,9 +1,8 @@
 import { randomBytes, createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getSiteOriginOrThrow } from "@/lib/site-url";
+import { getCurrentUser } from "@/lib/server-auth";
 
 const SHARE_SOURCES = {
   copy: "copy_web",
@@ -15,12 +14,6 @@ const SHARE_SOURCES = {
 } as const;
 
 type ShareChannel = keyof typeof SHARE_SOURCES;
-
-type SessionShape = {
-  user?: {
-    id?: string;
-  };
-} | null;
 
 function normalizeChannel(channel: unknown): ShareChannel {
   return typeof channel === "string" && channel in SHARE_SOURCES
@@ -52,7 +45,7 @@ function getShareTitle(post: { title: string | null; author: { name: string | nu
 
 export async function POST(request: NextRequest) {
   try {
-    const session = (await getServerSession(authOptions)) as SessionShape;
+    const currentUser = await getCurrentUser();
     const body = await request.json().catch(() => ({}));
     const postId = typeof body.postId === "string" ? body.postId.trim() : "";
     const channel = normalizeChannel(body.channel);
@@ -61,8 +54,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "postId is required" }, { status: 400 });
     }
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
+    const post = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
       select: {
         id: true,
         title: true,
@@ -78,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    const userId = session?.user?.id;
+    const userId = currentUser?.id;
     const vdSource = userId ? createUserVdSource(userId) : createAnonymousVdSource(request);
     const shareSource = SHARE_SOURCES[channel];
     const siteOrigin = getSiteOriginOrThrow({ request });

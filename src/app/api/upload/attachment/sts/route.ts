@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_ATTACHMENT_COUNT,
@@ -7,9 +7,9 @@ import {
   createAttachmentObjectKey,
   getAttachmentPublicConstraints,
   issueAttachmentTemporaryCredential,
-  cleanupAttachmentObject,
   validateAttachmentMetadata,
 } from "@/lib/attachment";
+import { enqueueMediaCleanupTaskFromUrl } from "@/lib/media-cleanup";
 
 type StsRequestBody = {
   fileName?: unknown;
@@ -20,10 +20,11 @@ type StsRequestBody = {
 
 export async function POST(request: Request) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const body = await request.json() as StsRequestBody;
     const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
@@ -76,8 +77,13 @@ export async function POST(request: Request) {
     try {
       credentials = await issueAttachmentTemporaryCredential(user.id);
     } catch (error) {
+      await enqueueMediaCleanupTaskFromUrl({
+        value: objectKey,
+        resourceType: "DRAFT_ASSET",
+        reason: "UPLOAD_EXPIRED",
+        ownerId: user.id,
+      });
       await prisma.draftAsset.delete({ where: { id: asset.id } });
-      await cleanupAttachmentObject(objectKey);
       throw error;
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,38 +26,56 @@ interface Post {
   createdAt: string;
 }
 
+interface MediaCleanupStats {
+  pending: number;
+  processing: number;
+  retrying: number;
+  failed: number;
+  succeeded: number;
+  latestFailure: {
+    objectKey: string;
+    resourceType: string;
+    lastError: string | null;
+    updatedAt: string;
+  } | null;
+}
+
 export default function AdminPanel() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [mediaCleanup, setMediaCleanup] = useState<MediaCleanupStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "posts">("users");
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    } else if (status === "authenticated" && session?.user) {
-      // 首先检查会话中的角色
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((session.user as any).role === "admin") {
-        fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/data");
+      const data = await response.json();
+      if (response.ok) {
+        setUsers(data.users);
+        setPosts(data.posts);
+        setMediaCleanup(data.mediaCleanup ?? null);
       } else {
-        // 如果会话中的角色不是管理员，检查服务器上的最新信息
-        checkServerForAdminRole();
+        setError(data.error || "Failed to fetch data");
       }
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
     }
-  }, [status, session, router]);
+  }, []);
 
-  const checkServerForAdminRole = async () => {
+  const checkServerForAdminRole = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const userData = await response.json();
         if (userData.role === "admin") {
           // 如果服务器上的角色是管理员，更新会话并允许访问
-          fetchData();
+          void fetchData();
           return;
         }
       }
@@ -67,24 +85,21 @@ export default function AdminPanel() {
       console.error("检查管理员权限时出错:", error);
       router.push("/");
     }
-  };
+  }, [fetchData, router]);
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/admin/data");
-      const data = await response.json();
-      if (response.ok) {
-        setUsers(data.users);
-        setPosts(data.posts);
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin");
+    } else if (status === "authenticated" && session?.user) {
+      // 首先检查会话中的角色
+      if (session.user.role === "admin") {
+        void fetchData();
       } else {
-        setError(data.error || "Failed to fetch data");
+        // 如果会话中的角色不是管理员，检查服务器上的最新信息
+        void checkServerForAdminRole();
       }
-    } catch {
-      setError("Network error");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [status, session, router, fetchData, checkServerForAdminRole]);
 
   const handleBanUser = async (userId: string, banned: boolean) => {
     try {
@@ -142,6 +157,24 @@ export default function AdminPanel() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">管理员面板</h1>
         </div>
+
+        {mediaCleanup && (
+          <div className="mb-6 rounded-lg bg-white p-5 shadow">
+            <h2 className="text-sm font-semibold text-gray-900">媒体清理状态</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
+              <div><p className="text-gray-500">待处理</p><p className="mt-1 text-lg font-semibold">{mediaCleanup.pending}</p></div>
+              <div><p className="text-gray-500">重试中</p><p className="mt-1 text-lg font-semibold">{mediaCleanup.retrying}</p></div>
+              <div><p className="text-gray-500">处理中</p><p className="mt-1 text-lg font-semibold">{mediaCleanup.processing}</p></div>
+              <div><p className="text-gray-500">失败</p><p className="mt-1 text-lg font-semibold text-red-600">{mediaCleanup.failed}</p></div>
+              <div><p className="text-gray-500">已完成</p><p className="mt-1 text-lg font-semibold text-emerald-600">{mediaCleanup.succeeded}</p></div>
+            </div>
+            {mediaCleanup.latestFailure && (
+              <p className="mt-3 truncate text-xs text-red-600" title={mediaCleanup.latestFailure.lastError || undefined}>
+                最近失败：{mediaCleanup.latestFailure.resourceType} / {mediaCleanup.latestFailure.objectKey} · {mediaCleanup.latestFailure.lastError || "未知错误"}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="border-b border-gray-200">

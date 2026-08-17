@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import FollowConnections from "./FollowConnections";
@@ -7,8 +8,8 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 async function getUser(id: string) {
-  return prisma.user.findUnique({
-    where: { id },
+  return prisma.user.findFirst({
+    where: { id, deletionRequestedAt: null },
     select: {
       id: true,
       name: true,
@@ -33,7 +34,7 @@ export default async function ConnectionsPage({
     return notFound();
   }
 
-  const session = await getServerSession(authOptions) as any;
+  const session = await getServerSession(authOptions) as Session | null;
   const user = await getUser(id);
 
   if (!user) {

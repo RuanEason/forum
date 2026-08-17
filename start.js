@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // 优化版的 start.js
 const { spawn } = require('child_process');
 
@@ -23,7 +24,7 @@ stopSignals.forEach(signal => {
         // 因为开启了 shell: true，我们需要杀掉整个进程组
         try {
             process.kill(-child.pid, signal); 
-        } catch (e) {
+        } catch {
             // 忽略错误，有时候子进程已经没了
         }
         process.exit();

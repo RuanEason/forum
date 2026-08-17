@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: {
         githubUserId: pending.githubUserId,
+        sessionVersion: { increment: 1 },
         ...(user.name ? {} : { name: pending.name }),
         ...(user.avatar ? {} : { avatar: pending.avatar }),
       },

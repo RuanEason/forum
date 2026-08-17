@@ -28,13 +28,12 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
           console.log("View tracker result:", result);
         }
         // 生产环境也显示简单的成功信息
-        if (result.success && result.debug) {
-          console.log("View tracked:", result.debug);
-        }
       })
       .catch((error) => {
         // 静默处理错误，不影响用户体验
-        console.error("Failed to track view:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to track view:", error);
+        }
       });
   }, [postId]);
 

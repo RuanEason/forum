@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import { linkMarkdownMentions } from "@/lib/mentions";
+import { isAdminRole } from "@/lib/server-auth";
 
 const MAX_COMMENT_LENGTH = 5000;
 const MAX_COMMENT_IMAGES = 9;
@@ -56,8 +57,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "postId is required" }, { status: 400 });
     }
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
+    const post = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
       select: { id: true },
     });
 
@@ -143,11 +144,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = (await request.json()) as CommentBody;
     const postId = typeof body.postId === "string" ? body.postId.trim() : "";
@@ -175,8 +176,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
+    const post = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
       select: {
         id: true,
         authorId: true,
@@ -294,11 +295,11 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-
-    if (!sessionUser?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const sessionUser = auth.user;
 
     const body = (await request.json()) as { id?: unknown };
     const id = typeof body.id === "string" ? body.id.trim() : "";
@@ -319,7 +320,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    if (comment.authorId !== sessionUser.id && sessionUser.role !== "admin") {
+    if (comment.authorId !== sessionUser.id && !isAdminRole(sessionUser.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

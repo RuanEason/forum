@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
       where: {
         ...(topicId ? { topicId } : {}),
         visibility: "PUBLIC",
+        deletedAt: null,
+        author: { deletionRequestedAt: null },
       },
       select: {
         id: true,

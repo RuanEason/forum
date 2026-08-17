@@ -19,7 +19,10 @@ const VIEW_COOLDOWN_SECONDS = 3600;
  */
 export async function incrementViewCount(
   postId: string
-): Promise<{ success: boolean; message: string; debug?: any }> {
+): Promise<{
+  success: boolean;
+  message: string;
+}> {
   try {
     // 验证输入
     if (!postId || typeof postId !== "string") {
@@ -27,7 +30,6 @@ export async function incrementViewCount(
       return {
         success: false,
         message: "Invalid post ID",
-        debug: { postId, type: typeof postId },
       };
     }
 
@@ -57,7 +59,6 @@ export async function incrementViewCount(
       return {
         success: false,
         message: "Post not found",
-        debug: { postId },
       };
     }
 
@@ -76,7 +77,6 @@ export async function incrementViewCount(
     const isProduction = process.env.NODE_ENV === "production";
 
     // 确定当前域名
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || "localhost:3000";
 
     try {
       cookieStore.set(cookieName, "true", {
@@ -90,8 +90,6 @@ export async function incrementViewCount(
       // Cookie 设置失败不应该影响阅读量更新
       console.error("Failed to set cookie:", {
         error: cookieError instanceof Error ? cookieError.message : String(cookieError),
-        isProduction,
-        baseUrl,
       });
     }
 
@@ -100,27 +98,10 @@ export async function incrementViewCount(
     return {
       success: true,
       message: "View count incremented",
-      debug: {
-        postId,
-        newCount: post.viewCount + 1,
-        isProduction,
-        baseUrl,
-      },
     };
   } catch (error) {
     // 详细记录错误信息，方便生产环境调试
-    const errorDetails = {
-      postId,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined,
-      env: process.env.NODE_ENV,
-      databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set",
-      hasPrisma: !!prisma,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.error("Failed to increment view count:", errorDetails);
+    console.error("Failed to increment view count:", { postId, error });
 
     // 在开发环境，抛出错误以便看到完整堆栈
     if (process.env.NODE_ENV === "development") {
@@ -130,7 +111,6 @@ export async function incrementViewCount(
     return {
       success: false,
       message: "Failed to increment view count",
-      debug: errorDetails,
     };
   }
 }

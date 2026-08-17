@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { UserPlus, UserMinus, Check } from "lucide-react";
+import { UserPlus, Check } from "lucide-react";
 
 interface FollowButtonProps {
   userId: string;
@@ -32,14 +32,9 @@ export default function FollowButton({
   const { data: session, status } = useSession();
   const [following, setFollowing] = useState(initialFollowing);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  const currentUserId = (session?.user as any)?.id;
+  const currentUserId = session?.user?.id;
   const isCurrentUser = currentUserId === userId;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     setFollowing(initialFollowing);
@@ -95,6 +90,7 @@ export default function FollowButton({
     <button
       onClick={handleToggleFollow}
       disabled={loading}
+      title={userName ? `${following ? "取消关注" : "关注"} ${userName}` : undefined}
       className={`inline-flex items-center px-4 py-2 rounded-full font-medium transition-all duration-200 ${
         following
           ? "bg-gray-100 text-gray-700 hover:bg-gray-200"

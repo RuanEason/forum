@@ -1,8 +1,7 @@
 import { createHash, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/server-auth";
 
 const MAX_CONTENT_LENGTH = 50;
 const DEFAULT_TIME_WINDOW_MS = 90_000;
@@ -13,12 +12,6 @@ const RATE_LIMIT_WINDOW_MS = 3_000;
 const DEFAULT_DANMAKU_COLOR = "#FFFFFF";
 const ANON_COOKIE_NAME = "anon_danmaku_id";
 const LIGHT_BLOCKED_WORDS = ["nmsl", "cnm", "sb"] as const;
-
-type SessionShape = {
-  user?: {
-    id?: string;
-  };
-} | null;
 
 type DanmakuPayload = {
   content?: unknown;
@@ -165,8 +158,8 @@ function normalizeColor(input: unknown): string {
 }
 
 async function ensureVideoPost(postId: string) {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
+  const post = await prisma.post.findFirst({
+    where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
     select: {
       id: true,
       postType: true,
@@ -272,7 +265,7 @@ export async function POST(
       return postGuard.response;
     }
 
-    const session = (await getServerSession(authOptions)) as SessionShape;
+    const currentUser = await getCurrentUser();
     const payload = (await request.json()) as DanmakuPayload;
 
     const normalizedContent = normalizeContent(payload.content);
@@ -285,7 +278,7 @@ export async function POST(
       return NextResponse.json({ error: "timeMs must be a non-negative number" }, { status: 400 });
     }
 
-    const userId = session?.user?.id || null;
+    const userId = currentUser?.id || null;
     const isLoggedIn = Boolean(userId);
     const { anonId, shouldSetCookie } = resolveAnonId(request);
 

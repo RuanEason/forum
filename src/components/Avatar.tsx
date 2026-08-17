@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface AvatarProps {
   src?: string | null;
   name?: string | null;
@@ -29,6 +27,8 @@ export default function Avatar({ src, name, size = 'md', className = '' }: Avata
 
   if (src) {
     return (
+      // Avatar URLs may come from external OAuth providers as well as our CDN.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         className={`rounded-full object-cover ${finalSizeClass} ${className}`}
         src={src}

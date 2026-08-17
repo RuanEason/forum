@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { PrismaClient } = require('./src/generated/index.js');
 const prisma = new PrismaClient();
 

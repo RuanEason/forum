@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
 
 /**
  * POST /api/pin/comment
@@ -15,7 +14,11 @@ import { prisma } from "@/lib/prisma";
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as any;
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
+    }
+    const session = { user: { id: auth.user.id } };
 
     if (!session?.user) {
       return NextResponse.json(
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // 只有帖子作者可以置顶评论
-    if (comment.post.authorId !== session.user.id) {
+    if (comment.post.authorId !== auth.user.id) {
       return NextResponse.json(
         { error: "无权执行此操作，仅帖子作者可置顶评论" },
         { status: 403 }

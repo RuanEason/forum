@@ -10,6 +10,8 @@ declare module "next-auth" {
       email?: string | null;
       name?: string | null;
       role: string;
+      banned: boolean;
+      sessionVersion: number;
       avatar?: string | null;
       postViewMode?: string;
       showUserData?: boolean;
@@ -24,6 +26,8 @@ declare module "next-auth" {
     email?: string | null;
     name?: string | null;
     role: string;
+    banned: boolean;
+    sessionVersion: number;
     avatar?: string | null;
     postViewMode?: string;
     showUserData?: boolean;
@@ -36,6 +40,9 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     role?: string;
+    banned?: boolean;
+    sessionVersion?: number;
+    sessionInvalid?: boolean;
     avatar?: string | null;
     postViewMode?: string;
     showUserData?: boolean;

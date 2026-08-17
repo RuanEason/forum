@@ -6,6 +6,10 @@ export type LoginUser = {
   email: string | null;
   name: string | null;
   role: string;
+  banned: boolean;
+  sessionVersion: number;
+  deletionRequestedAt: Date | null;
+  deletionScheduledAt: Date | null;
   avatar: string | null;
   postViewMode: string;
   showUserData: boolean;
@@ -23,7 +27,7 @@ export async function buildLoginUser(userId: string): Promise<LoginUser> {
     throw new Error("User not found after social login");
   }
 
-  if (user.banned) {
+  if (user.banned || user.deletionRequestedAt) {
     throw new Error("This account has been disabled");
   }
 
@@ -43,6 +47,10 @@ export async function buildLoginUser(userId: string): Promise<LoginUser> {
     email: user.email ?? null,
     name: user.name ?? null,
     role: user.role,
+    banned: user.banned,
+    sessionVersion: user.sessionVersion,
+    deletionRequestedAt: user.deletionRequestedAt,
+    deletionScheduledAt: user.deletionScheduledAt,
     avatar: user.avatar ?? null,
     postViewMode: user.postViewMode,
     showUserData: user.showUserData,

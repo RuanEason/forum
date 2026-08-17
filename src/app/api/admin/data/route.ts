@@ -1,44 +1,39 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
-
-type AdminSession = {
-  user?: {
-    id?: string;
-    role?: string;
-  };
-} | null;
+import { getMediaCleanupStats } from "@/lib/media-cleanup";
+import { requireAdminUser } from "@/lib/server-auth";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions) as AdminSession;
-
-    if (!session?.user?.id || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const auth = await requireAdminUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    const users = await prisma.user.findMany({
+    const [users, posts, mediaCleanup] = await Promise.all([
+      prisma.user.findMany({
       orderBy: {
         createdAt: "desc",
       },
-    });
-
-    const posts = await prisma.post.findMany({
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      }),
+      prisma.post.findMany({
+        where: { deletedAt: null },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      getMediaCleanupStats(),
+    ]);
 
     const summarizedPosts = posts.map(({ contentJson, contentFormat, ...post }) => ({
       ...post,
@@ -47,7 +42,7 @@ export async function GET() {
         : post.content,
     }));
 
-    return NextResponse.json({ users, posts: summarizedPosts }, { status: 200 });
+    return NextResponse.json({ users, posts: summarizedPosts, mediaCleanup }, { status: 200 });
   } catch (error) {
     console.error("Admin data fetch error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

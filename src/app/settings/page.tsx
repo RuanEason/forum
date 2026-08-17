@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import COS from "cos-js-sdk-v5";
 import {
@@ -58,6 +58,8 @@ type SettingsApiUser = {
   notifyReplies: boolean;
   notifyLikes: boolean;
   notifyFollows: boolean;
+  deletionRequestedAt?: string | null;
+  deletionScheduledAt?: string | null;
 };
 
 type SecuritySettings = {
@@ -151,6 +153,7 @@ export default function SettingsPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [coverUploadProgress, setCoverUploadProgress] = useState(0);
   const [coverUploadStatus, setCoverUploadStatus] = useState("");
+  const [deletionScheduledAt, setDeletionScheduledAt] = useState<string | null>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -197,6 +200,7 @@ export default function SettingsPage() {
     setNotifyReplies(user.notifyReplies);
     setNotifyLikes(user.notifyLikes);
     setNotifyFollows(user.notifyFollows);
+    setDeletionScheduledAt(user.deletionScheduledAt || null);
 
     await update({
       ...session,
@@ -506,19 +510,42 @@ export default function SettingsPage() {
   };
 
   const deleteAccount = async () => {
-    if (!window.confirm("确定要注销账号吗？此操作不可撤销。")) return;
+    if (!window.confirm("注销后会立即隐藏公开内容，并在 24 小时后永久删除。24 小时内可以取消，确定继续吗？")) return;
     setSavingState("delete", true);
     setError("");
     try {
       const response = await fetch("/api/auth/delete-account", { method: "DELETE" });
+      const data = (await response.json()) as { error?: string; deleteScheduledAt?: string };
       if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
         throw new Error(data.error || "注销账号失败");
       }
-      await signOut({ redirect: false });
-      window.location.href = "/";
+      setDeletionScheduledAt(data.deleteScheduledAt || null);
+      setSuccess(data.deleteScheduledAt
+        ? `账号已进入注销窗口，将于 ${new Date(data.deleteScheduledAt).toLocaleString()} 永久删除。`
+        : "账号已进入注销窗口。");
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "注销账号失败");
+    } finally {
+      setSavingState("delete", false);
+    }
+  };
+
+  const cancelAccountDeletion = async () => {
+    setSavingState("delete", true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch("/api/auth/delete-account/cancel", { method: "POST" });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || "取消注销失败");
+      }
+      setDeletionScheduledAt(null);
+      setSuccess("注销已取消，账号和公开内容已恢复。");
+      await fetchSettings();
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : "取消注销失败");
+    } finally {
       setSavingState("delete", false);
     }
   };
@@ -705,7 +732,7 @@ export default function SettingsPage() {
                     {security?.githubLinked ? <button type="button" onClick={() => setDisconnectModalOpen(true)} className="inline-flex h-9 items-center gap-2 self-start rounded-md px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 sm:self-auto"><Trash2 className="h-4 w-4" />解绑</button> : <Link href="/api/auth/github/connect" prefetch={false} className="inline-flex h-9 items-center gap-2 self-start rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:self-auto"><Github className="h-4 w-4" />绑定 GitHub</Link>}
                   </div>
                 </div>
-                <div className="rounded-lg bg-red-50 p-4 shadow-[0_0_0_1px_rgba(239,68,68,0.16)]"><div className="flex items-start gap-3"><Trash2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><div><h2 className="text-sm font-semibold text-red-800">注销账号</h2><p className="mt-1 text-sm text-red-700">永久删除帖子、评论、点赞等所有账户数据，此操作无法撤销。</p><button type="button" onClick={() => void deleteAccount()} disabled={isSaving("delete")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-red-600 px-3 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("delete") && <LoaderCircle className="h-4 w-4 animate-spin" />}注销账号</button></div></div></div>
+                <div className="rounded-lg bg-red-50 p-4 shadow-[0_0_0_1px_rgba(239,68,68,0.16)]"><div className="flex items-start gap-3"><Trash2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><div><h2 className="text-sm font-semibold text-red-800">注销账号</h2><p className="mt-1 text-sm text-red-700">注销会立即隐藏公开内容，并在 24 小时后删除账户数据。注销窗口内可以取消。</p>{deletionScheduledAt ? <><p className="mt-3 text-xs text-red-700">计划删除时间：{new Date(deletionScheduledAt).toLocaleString()}</p><button type="button" onClick={() => void cancelAccountDeletion()} disabled={isSaving("delete")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("delete") && <LoaderCircle className="h-4 w-4 animate-spin" />}取消注销</button></> : <button type="button" onClick={() => void deleteAccount()} disabled={isSaving("delete")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-red-600 px-3 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("delete") && <LoaderCircle className="h-4 w-4 animate-spin" />}注销账号</button>}</div></div></div>
               </section>
             )}
 

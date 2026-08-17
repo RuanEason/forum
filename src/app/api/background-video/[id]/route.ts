@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getBackgroundVideoPublicConstraints } from "@/lib/video";
+import { requireCurrentUser } from "@/lib/server-auth";
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = (await getServerSession(authOptions)) as { user?: { id?: string } } | null;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireCurrentUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await context.params;
@@ -40,7 +39,7 @@ export async function GET(
       },
     });
 
-    if (!videoAsset || videoAsset.ownerId !== session.user.id) {
+    if (!videoAsset || videoAsset.ownerId !== auth.user.id) {
       return NextResponse.json({ error: "Background video asset not found" }, { status: 404 });
     }
 

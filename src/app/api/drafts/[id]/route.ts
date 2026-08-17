@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteDraft, getDraftById, updateDraft } from "@/lib/draft";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import type { PostStyleConfig } from "@/types/post-style";
+import { isAdminRole } from "@/lib/server-auth";
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { id } = await context.params;
     if (!id) {
@@ -35,10 +37,11 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { id } = await context.params;
     if (!id) {
@@ -78,7 +81,7 @@ export async function PATCH(
     if (rawAnnouncement !== undefined && typeof rawAnnouncement !== "boolean") {
       return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
     }
-    if (rawAnnouncement !== undefined && user.role !== "admin") {
+    if (rawAnnouncement !== undefined && !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Only administrators can manage forum announcements" },
         { status: 403 },
@@ -105,10 +108,11 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { id } = await context.params;
     if (!id) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ListTree } from "lucide-react";
-import type { CatalogItem, CatalogGenerator } from "@/lib/catalog";
+import type { CatalogItem } from "@/lib/catalog";
 
 interface ArticleCatalogProps {
   items: CatalogItem[];
@@ -25,9 +25,14 @@ export default function ArticleCatalog({
   useEffect(() => {
     if (items.length === 0) return;
 
+    const article = document.querySelector(articleSelector);
     const headings = items
       .map((item) => document.getElementById(item.id))
-      .filter((el): el is HTMLElement => el !== null);
+      .filter(
+        (el): el is HTMLElement =>
+          el !== null &&
+          (!article || article.contains(el)),
+      );
 
     if (headings.length === 0) return;
 
@@ -58,7 +63,7 @@ export default function ArticleCatalog({
     return () => {
       window.removeEventListener("scroll", updateActiveHeading);
     };
-  }, [items, scrollOffset]);
+  }, [items, scrollOffset, articleSelector]);
 
   // 滚动目录容器，使当前激活项可见
   useEffect(() => {
@@ -118,7 +123,7 @@ export default function ArticleCatalog({
                     }}
                     href={`#${item.id}`}
                     className="catalog-link"
-                    onClick={(e) => {
+                    onClick={() => {
                       setActiveId(item.id);
                     }}
                     title={item.text}

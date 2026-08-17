@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // 测试 Prisma 连接池配置
 const { PrismaClient } = require('./src/generated');
 
@@ -25,7 +26,7 @@ async function testConnectionPool() {
     console.log('测试 2: 执行 10 个并行查询');
     const start2 = Date.now();
     const results = await Promise.all(
-      Array(10).fill(null).map((_, i) =>
+      Array(10).fill(null).map(() =>
         prisma.user.findFirst({ select: { id: true, name: true } })
       )
     );

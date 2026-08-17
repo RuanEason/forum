@@ -1,8 +1,7 @@
 import bcrypt from "bcryptjs";
-import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser, requireCurrentUser } from "@/lib/server-auth";
 
 type PasswordBody = {
   currentPassword?: unknown;
@@ -13,20 +12,15 @@ type GitHubDisconnectBody = {
   currentPassword?: unknown;
 };
 
-async function getCurrentUserId() {
-  const session = await getServerSession(authOptions) as { user?: { id?: string } } | null;
-  return session?.user?.id ?? null;
-}
-
 export async function GET() {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireCurrentUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: auth.user.id },
       select: {
         email: true,
         password: true,
@@ -51,9 +45,9 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as PasswordBody;
@@ -64,7 +58,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: auth.user.id },
       select: { password: true },
     });
 
@@ -80,8 +74,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     await prisma.user.update({
-      where: { id: userId },
-      data: { password: await bcrypt.hash(newPassword, 10) },
+      where: { id: auth.user.id },
+      data: {
+        password: await bcrypt.hash(newPassword, 10),
+        sessionVersion: { increment: 1 },
+      },
     });
 
     return NextResponse.json({
@@ -96,15 +93,15 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as GitHubDisconnectBody;
     const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: auth.user.id },
       select: { password: true, githubUserId: true },
     });
 
@@ -122,8 +119,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.user.update({
-      where: { id: userId },
-      data: { githubUserId: null },
+      where: { id: auth.user.id },
+      data: {
+        githubUserId: null,
+        sessionVersion: { increment: 1 },
+      },
     });
 
     return NextResponse.json({ message: "GitHub 已解绑", githubLinked: false });

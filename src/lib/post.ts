@@ -133,6 +133,8 @@ export async function getPosts(topicId?: string) {
     where: {
       ...(topicId ? { topicId } : {}),
       visibility: "PUBLIC",
+      deletedAt: null,
+      author: { deletionRequestedAt: null },
     },
     select: {
       id: true,
@@ -232,6 +234,8 @@ export async function getForumAnnouncements(limit = 5) {
       announcementAt: { not: null },
       postType: "TEXT",
       visibility: "PUBLIC",
+      deletedAt: null,
+      author: { deletionRequestedAt: null },
     },
     select: {
       id: true,
@@ -310,8 +314,12 @@ export async function createPost(
 }
 
 export async function getPostById(id: string) {
-  return prisma.post.findUnique({
-    where: { id },
+  return prisma.post.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+      author: { deletionRequestedAt: null },
+    },
     select: {
       id: true,
       title: true,
@@ -652,12 +660,6 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
         topic: true,
       },
     });
-  });
-}
-
-export async function deletePost(id: string) {
-  return prisma.post.delete({
-    where: { id },
   });
 }
 

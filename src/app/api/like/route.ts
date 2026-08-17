@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 
-type SessionShape = {
-  user?: {
-    id?: string;
-  };
-} | null;
+import { requireActiveUser } from "@/lib/server-auth";
 
 /**
  * 处理点赞和取消点赞
@@ -41,10 +35,10 @@ type SessionShape = {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireActiveUser();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { targetType, targetId }: { targetType: "post" | "comment", targetId: string } = await request.json();
@@ -53,9 +47,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "targetType and targetId are required" }, { status: 400 });
     }
 
-    const userId = session.user.id;
+    const userId = auth.user.id;
 
     if (targetType === "post") {
+      const post = await prisma.post.findFirst({
+        where: { id: targetId, deletedAt: null, author: { deletionRequestedAt: null } },
+        select: { id: true, authorId: true },
+      });
+      if (!post) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+
       const existingLike = await prisma.postLike.findUnique({
         where: {
           postId_userId: {
@@ -81,12 +83,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Notification: Like Post
-        const post = await prisma.post.findUnique({
-          where: { id: targetId },
-          select: { authorId: true }
-        });
-
-        if (post && post.authorId !== userId) {
+        if (post.authorId !== userId) {
           // Use findFirst to check for existing notification
           const existingNotif = await prisma.notification.findFirst({
             where: {

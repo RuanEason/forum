@@ -87,7 +87,10 @@ export default function PostAttachments({
   const canDelete = !!(session && (isAuthor || isAdmin));
 
   return (
-    <div className={isSidebar ? "post-attachments-sidebar" : "my-6"}>
+    <div
+      className={isSidebar ? "post-attachments-sidebar" : "my-6"}
+      data-post-id={postId}
+    >
       <div className={isSidebar ? "border-t border-gray-200 pt-4" : "border-t border-gray-100 pt-4"}>
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <FileText className="h-4 w-4" />

@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   VIDEO_ALLOWED_MIME_TYPES,
@@ -8,6 +6,7 @@ import {
   headVideoObject,
   normalizeObjectKey,
 } from "@/lib/video";
+import { requireActiveUser } from "@/lib/server-auth";
 
 type CommitRequestBody = {
   backgroundVideoAssetId?: unknown;
@@ -17,9 +16,9 @@ type CommitRequestBody = {
 
 export async function POST(request: Request) {
   try {
-    const session = (await getServerSession(authOptions)) as { user?: { id?: string } } | null;
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const body = (await request.json()) as CommitRequestBody;
@@ -50,7 +49,7 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!videoAsset || videoAsset.ownerId !== session.user.id) {
+    if (!videoAsset || videoAsset.ownerId !== auth.user.id) {
       return NextResponse.json({ error: "Background video asset not found" }, { status: 404 });
     }
 
@@ -114,4 +113,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

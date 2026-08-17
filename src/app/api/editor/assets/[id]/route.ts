@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { deleteFromCOS } from "@/lib/cos";
 import { prisma } from "@/lib/prisma";
-
-type SessionShape = { user?: { id?: string } } | null;
+import { enqueueMediaCleanupTask } from "@/lib/media-cleanup";
+import { requireActiveUser } from "@/lib/server-auth";
 
 export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions) as SessionShape;
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireActiveUser();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const userId = auth.user.id;
 
   try {
     const { id } = await context.params;
@@ -43,9 +39,14 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
       );
     }
 
-    await deleteFromCOS(asset.objectKey);
     const user = await prisma.$transaction(async (tx) => {
       await tx.editorImageAsset.delete({ where: { id: asset.id } });
+      await enqueueMediaCleanupTask({
+        objectKey: asset.objectKey,
+        resourceType: "EDITOR_IMAGE",
+        reason: "MANUAL",
+        ownerId: userId,
+      }, tx);
       return tx.user.update({
         where: { id: userId },
         data: { editorImageBytesUsed: { decrement: asset.fileSize } },

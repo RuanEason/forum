@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/server-auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions) as any;
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await params;
@@ -25,7 +23,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
     }
 
-    if (notification.receiverId !== session.user.id) {
+    if (notification.receiverId !== auth.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -46,10 +44,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions) as any;
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
     }
 
     const { id } = await params;
@@ -63,7 +60,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Notification not found" }, { status: 404 });
     }
 
-    if (notification.receiverId !== session.user.id) {
+    if (notification.receiverId !== auth.user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

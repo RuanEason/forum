@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
-
-type SessionShape = {
-  user?: {
-    id?: string;
-  };
-} | null;
+import { requireActiveUser, requireCurrentUser } from "@/lib/server-auth";
 
 /**
  * POST /api/follow
@@ -22,7 +15,11 @@ type SessionShape = {
  */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireActiveUser();
+    if (!auth.ok) {
+      return auth.response;
+    }
+    const session = { user: { id: auth.user.id } };
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -41,7 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const followerId = session.user.id;
+    const followerId = auth.user.id;
 
     // 不能关注自己
     if (followerId === followingId) {
@@ -157,7 +154,11 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as SessionShape;
+    const auth = await requireCurrentUser();
+    if (!auth.ok) {
+      return auth.response;
+    }
+    const session = { user: { id: auth.user.id } };
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -176,7 +177,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const followerId = session.user.id;
+    const followerId = auth.user.id;
 
     const follow = await prisma.follow.findUnique({
       where: {

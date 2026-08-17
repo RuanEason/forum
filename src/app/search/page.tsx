@@ -64,6 +64,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // 构建帖子搜索条件
   const postWhereCondition = {
     visibility: "PUBLIC" as const,
+    deletedAt: null,
+    author: { deletionRequestedAt: null },
     OR: [
       {
         title: {
@@ -84,6 +86,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       contains: query,
     },
     banned: false, // 排除被封禁的用户
+    deletionRequestedAt: null,
   };
 
   // 调试信息：输出查询条件

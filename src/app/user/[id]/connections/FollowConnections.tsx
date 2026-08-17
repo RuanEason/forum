@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
-import { UserPlus, } from "lucide-react";
 
 interface User {
   id: string;
@@ -68,8 +67,6 @@ export default function FollowConnections({
       )
     );
   };
-
-  const pageTitle = type === "following" ? "关注" : "粉丝";
 
   return (
     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-b sm:border-0 border-gray-200">

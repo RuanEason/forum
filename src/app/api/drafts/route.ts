@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDraft, listDrafts } from "@/lib/draft";
-import { getSessionUser } from "@/app/api/app/_shared/auth";
+import { requireSessionUser } from "@/app/api/app/_shared/auth";
 import type { PostStyleConfig } from "@/types/post-style";
+import { isAdminRole } from "@/lib/server-auth";
 
 function toUpperValue(value: string | null): string | null {
   if (!value) {
@@ -12,10 +13,11 @@ function toUpperValue(value: string | null): string | null {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const { searchParams } = new URL(request.url);
     const persistMode = toUpperValue(searchParams.get("persistMode"));
@@ -38,10 +40,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getSessionUser();
-    if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireSessionUser();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const user = auth.user;
 
     const body = await request.json() as {
       postType?: "TEXT" | "VIDEO";
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (rawAnnouncement !== undefined && typeof rawAnnouncement !== "boolean") {
       return NextResponse.json({ error: "isAnnouncement must be a boolean" }, { status: 400 });
     }
-    if (rawAnnouncement !== undefined && user.role !== "admin") {
+    if (rawAnnouncement !== undefined && !isAdminRole(user.role)) {
       return NextResponse.json(
         { error: "Only administrators can manage forum announcements" },
         { status: 403 },
