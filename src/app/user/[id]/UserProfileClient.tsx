@@ -386,12 +386,12 @@ export default function UserProfileClient({
           </div>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
-          <div className="px-4 sm:px-0">
+        <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 sm:py-6">
+          <div className="sm:px-0">
             {hasCover && (
               <CoverMedia
                 coverUrl={coverUrl}
-                className="relative h-48 w-full overflow-hidden rounded-t-lg sm:h-64"
+                className="relative h-48 w-full overflow-hidden sm:rounded-t-lg sm:h-64"
               />
             )}
             <div
