@@ -8,11 +8,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Menu, Plus, Search, Settings, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { PageTopProgressBar } from "@/components/PageLoadProgressProvider";
+import { useTopicHeader } from "@/components/TopicHeaderProvider";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const { topicHeader } = useTopicHeader();
   const currentUser = session?.user;
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -152,6 +154,11 @@ export default function Navbar() {
 
   const visibleUnreadCount = status === "authenticated" ? unreadCount : 0;
   const notificationBadge = visibleUnreadCount > 99 ? "99+" : visibleUnreadCount;
+  const isTopicRoute = pathname?.startsWith("/topic/") ?? false;
+  const currentTopicHeader =
+    isTopicRoute && topicHeader?.pathname === pathname ? topicHeader : null;
+  const showTopicHeader =
+    currentTopicHeader !== null && !currentTopicHeader.isVisible && !isSearchOpen;
 
   return (
     <>
@@ -173,6 +180,27 @@ export default function Navbar() {
               Slept论坛
             </span>
           </Link>
+
+          {isTopicRoute && (
+            <div className="min-w-0 flex-1 px-2 sm:px-4">
+              {currentTopicHeader && (
+                <a
+                  href="#topic-header"
+                  aria-label={`返回 #${currentTopicHeader.name} 话题头部`}
+                  aria-hidden={!showTopicHeader}
+                  tabIndex={showTopicHeader ? 0 : -1}
+                  className={`mx-auto flex min-w-0 max-w-full items-center justify-center gap-0.5 truncate text-sm font-semibold text-gray-700 transition-[opacity,transform] duration-300 ease-out hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 sm:text-base ${
+                    showTopicHeader
+                      ? "translate-y-0 opacity-100"
+                      : "pointer-events-none translate-y-1 opacity-0"
+                  }`}
+                >
+                  <span className="shrink-0 text-indigo-600">#</span>
+                  <span className="min-w-0 truncate">{currentTopicHeader.name}</span>
+                </a>
+              )}
+            </div>
+          )}
 
           <div
             ref={searchContainerRef}

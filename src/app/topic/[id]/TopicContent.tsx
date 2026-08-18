@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import { useTopicHeader } from "@/components/TopicHeaderProvider";
 import TopicParticipationEditor from "@/components/TopicParticipationEditor";
 import TopicPostList from "./TopicPostList";
 import styles from "./TopicPage.module.css";
@@ -31,6 +32,49 @@ export default function TopicContent({
 }) {
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
+  const topicHeaderRef = useRef<HTMLDivElement>(null);
+  const {
+    registerTopicHeader,
+    setTopicHeaderVisibility,
+    clearTopicHeader,
+  } = useTopicHeader();
+
+  useEffect(() => {
+    registerTopicHeader({
+      id: topic.id,
+      name: topic.name,
+      pathname: `/topic/${topic.id}`,
+    });
+
+    const header = topicHeaderRef.current;
+    if (!header) {
+      return () => clearTopicHeader(topic.id);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setTopicHeaderVisibility(topic.id, entry.isIntersecting);
+      },
+      {
+        // The global navbar is 4rem tall, so the card is hidden once it is underneath it.
+        rootMargin: "-64px 0px 0px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(header);
+
+    return () => {
+      observer.disconnect();
+      clearTopicHeader(topic.id);
+    };
+  }, [
+    clearTopicHeader,
+    registerTopicHeader,
+    setTopicHeaderVisibility,
+    topic.id,
+    topic.name,
+  ]);
 
   const handlePostDeleted = () => {
     setRefreshKey((prev) => prev + 1);
@@ -40,7 +84,11 @@ export default function TopicContent({
   return (
     <div className={`${styles.topicContent} md:col-span-3 space-y-6`}>
       {/* Header Card */}
-      <div className={`${styles.topicHero} bg-card p-6 shadow-sm`}>
+      <div
+        id="topic-header"
+        ref={topicHeaderRef}
+        className={`${styles.topicHero} bg-card p-6 shadow-sm`}
+      >
          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
