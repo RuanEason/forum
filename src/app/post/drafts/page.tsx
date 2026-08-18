@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  ArrowLeft,
   CheckCircle2,
   FileText,
   Image as ImageIcon,
@@ -93,6 +94,13 @@ type DraggingState = {
 const LONG_PRESS_DURATION_MS = 320;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 8;
 
+export type DraftsPanelProps = {
+  embedded?: boolean;
+  onBack?: () => void | Promise<void>;
+  onCreateNew?: () => void | Promise<void>;
+  onSelectDraft?: (draftId: string) => void | Promise<void>;
+};
+
 const statusLabel: Record<DraftStatus, string> = {
   EDITING: "编辑中",
   UPLOADING: "上传中",
@@ -117,6 +125,15 @@ function computeDistance(x1: number, y1: number, x2: number, y2: number) {
 }
 
 export default function DraftsPage() {
+  return <DraftsPanel />;
+}
+
+export function DraftsPanel({
+  embedded = false,
+  onBack,
+  onCreateNew,
+  onSelectDraft,
+}: DraftsPanelProps) {
   const router = useRouter();
   const toast = useToast();
   const [drafts, setDrafts] = useState<DraftItem[]>([]);
@@ -125,6 +142,22 @@ export default function DraftsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dragging, setDragging] = useState<DraggingState | null>(null);
   const [trashHot, setTrashHot] = useState(false);
+
+  const handleCreateNew = useCallback(() => {
+    if (onCreateNew) {
+      void onCreateNew();
+      return;
+    }
+    router.push("/post/create");
+  }, [onCreateNew, router]);
+
+  const handleSelectDraft = useCallback((draftId: string) => {
+    if (onSelectDraft) {
+      void onSelectDraft(draftId);
+      return;
+    }
+    router.push(`/post/create?draftId=${draftId}`);
+  }, [onSelectDraft, router]);
 
   const trashZoneRef = useRef<HTMLDivElement | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -317,7 +350,7 @@ export default function DraftsPage() {
     if (pending && pending.pointerId === event.pointerId) {
       pendingPressRef.current = null;
       suppressNextClickRef.current = true;
-      router.push(`/post/create?draftId=${pending.id}`);
+      handleSelectDraft(pending.id);
       return;
     }
 
@@ -334,7 +367,7 @@ export default function DraftsPage() {
     if (shouldDelete) {
       void removeDraft(dragDraftId);
     }
-  }, [clearLongPressTimer, dragging, isInTrashZone, removeDraft, router]);
+  }, [clearLongPressTimer, dragging, handleSelectDraft, isInTrashZone, removeDraft]);
 
   const handleCardPointerCancel = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -354,8 +387,8 @@ export default function DraftsPage() {
       suppressNextClickRef.current = false;
       return;
     }
-    router.push(`/post/create?draftId=${draftId}`);
-  }, [router]);
+    handleSelectDraft(draftId);
+  }, [handleSelectDraft]);
 
   if (loading) {
     return (
@@ -369,13 +402,27 @@ export default function DraftsPage() {
   }
 
   return (
-    <main className={`max-w-3xl mx-auto px-4 py-8 space-y-4 ${dragging ? "select-none" : ""}`}>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">草稿箱</h1>
+    <main className={`${
+      embedded
+        ? "mx-auto h-full min-h-0 w-full max-w-4xl overflow-y-auto bg-[#f7f9fc] px-4 py-6 sm:px-6 sm:py-8"
+        : "mx-auto max-w-3xl px-4 py-8"
+    } space-y-4 ${dragging ? "select-none" : ""}`}>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+        {onBack ? (
+          <button
+            type="button"
+            onClick={() => void onBack()}
+            className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+            返回编辑器
+          </button>
+        ) : <div aria-hidden="true" />}
+        <h1 className="text-center text-xl font-semibold text-gray-900">草稿箱</h1>
         <button
           type="button"
-          onClick={() => router.push("/post/create")}
-          className="px-3 py-1.5 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+          onClick={handleCreateNew}
+          className="ml-auto px-3 py-1.5 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600"
         >
           新建发布
         </button>

@@ -9,6 +9,7 @@ import type { JSONContent } from "@tiptap/core";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import TopicSelector from "@/components/TopicSelector";
 import CreatePostSheet from "@/components/CreatePostSheet";
+import { DraftsPanel } from "@/app/post/drafts/page";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { useToast } from "@/components/ui/Toast";
 import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
@@ -304,6 +305,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
+  const [sheetView, setSheetView] = useState<"editor" | "drafts">("editor");
   const [sheetCloseRequest, setSheetCloseRequest] = useState(0);
   const [autoSaveAt, setAutoSaveAt] = useState<string>("");
   const selectedAttachmentsRef = useRef<UploadedAttachment[]>(selectedAttachments);
@@ -328,13 +330,18 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   }, []);
 
   const navigateToDrafts = useCallback(() => {
+    if (presentation === "sheet") {
+      setSheetView("drafts");
+      return;
+    }
+
     finishPendingNavigationTask();
     pendingNavigationTaskRef.current = startTask("navigation");
     navigationTaskTimeoutRef.current = window.setTimeout(() => {
       finishPendingNavigationTask();
     }, 10000);
     router.push("/post/drafts");
-  }, [finishPendingNavigationTask, router, startTask]);
+  }, [finishPendingNavigationTask, presentation, router, startTask]);
 
   const navigateAfterPublish = useCallback((createdPostId?: string) => {
     const destination = createdPostId ? `/post/${createdPostId}` : "/";
@@ -495,6 +502,15 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
       setDraftLoading(false);
     }
   }, [hydrateFromDraft]);
+
+  const handleBackToEditor = useCallback(() => {
+    setSheetView("editor");
+  }, []);
+
+  const handleSelectDraftFromSheet = useCallback(async (id: string) => {
+    setSheetView("editor");
+    await fetchDraftDetail(id);
+  }, [fetchDraftDetail]);
 
   const ensureDraftId = useCallback(async (persistMode: DraftPersistMode = "EPHEMERAL") => {
     if (draftId) {
@@ -2520,10 +2536,23 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     </div>
   );
 
+  const sheetContent = (
+    <div key={sheetView} className="post-sheet-view-transition h-full min-h-0">
+      {sheetView === "drafts" ? (
+        <DraftsPanel
+          embedded
+          onBack={handleBackToEditor}
+          onCreateNew={handleBackToEditor}
+          onSelectDraft={handleSelectDraftFromSheet}
+        />
+      ) : pageContent}
+    </div>
+  );
+
   if (presentation === "sheet") {
     return (
       <CreatePostSheet onRequestClose={handleSheetRequestClose} closeRequest={sheetCloseRequest}>
-        {pageContent}
+        {sheetContent}
       </CreatePostSheet>
     );
   }

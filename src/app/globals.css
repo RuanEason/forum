@@ -926,6 +926,17 @@ body.editor-route [data-site-main="app"] {
   }
 }
 
+@keyframes postSheetViewIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-in {
   animation-duration: 0.2s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -942,6 +953,16 @@ body.editor-route [data-site-main="app"] {
 
 .sharebar-sheet {
   animation: sharebarSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.post-sheet-view-transition {
+  animation: postSheetViewIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-sheet-view-transition {
+    animation: none;
+  }
 }
 
 /* 彻底解决图片放大遮挡问题 */
