@@ -6,6 +6,13 @@ import bcrypt from "bcryptjs";
 import { getUserLevel, rewardDailyLoginExperience } from "@/lib/experience";
 import { findGitHubLinkedLoginUser } from "@/lib/github-auth";
 import type { GitHubIdentity } from "@/lib/github";
+import {
+  clearLoginFailureCounters,
+  getClientIpFromHeaders,
+  getLoginRateLimitState,
+  normalizeEmail,
+  recordLoginFailure,
+} from "@/lib/account-security";
 
 type AuthUserPayload = {
   id?: string;
@@ -42,28 +49,61 @@ export const authOptions: any = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+      async authorize(credentials, request) {
+        const email = typeof credentials?.email === "string"
+          ? normalizeEmail(credentials.email)
+          : "";
+        const password = typeof credentials?.password === "string"
+          ? credentials.password
+          : "";
+        const ip = getClientIpFromHeaders(request.headers);
+
+        if (!email || !password) {
           return null;
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email },
         });
 
-        if (!user || !user.password) {
+        const rateLimit = await getLoginRateLimitState({
+          email,
+          userId: user?.id,
+          ip,
+        });
+        if (!rateLimit.allowed) {
           return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!user || !user.password) {
+          try {
+            await recordLoginFailure({ email, userId: user?.id, ip });
+          } catch (error) {
+            console.error("Record login failure failed:", error);
+          }
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
+          try {
+            await recordLoginFailure({ email, userId: user.id, ip });
+          } catch (error) {
+            console.error("Record login failure failed:", error);
+          }
           return null;
         }
 
         if (user.banned || user.deletionRequestedAt) {
           // Use generic error message to avoid revealing user existence
           throw new Error("Invalid credentials");
+        }
+
+        try {
+          await clearLoginFailureCounters({ email, userId: user.id, ip });
+        } catch (error) {
+          console.error("Clear login failure counters failed:", error);
         }
 
         let currentExperience = user.experience;
@@ -143,7 +183,7 @@ export const authOptions: any = {
   },
     
   callbacks: {
-    async jwt({ token, user, trigger, session }: JwtCallbackParams) {
+    async jwt({ token, user, trigger }: JwtCallbackParams) {
       if (user) {
         token.role = user.role;
         token.banned = user.banned;
@@ -180,7 +220,10 @@ export const authOptions: any = {
         if (!existingUser) {
           token.sessionInvalid = true;
         } else {
-          if (token.sessionVersion === undefined) {
+          if (trigger === "update") {
+            token.sessionVersion = existingUser.sessionVersion;
+            token.sessionInvalid = false;
+          } else if (token.sessionVersion === undefined) {
             token.sessionVersion = existingUser.sessionVersion;
           } else if (token.sessionVersion !== existingUser.sessionVersion) {
             token.sessionInvalid = true;
@@ -199,26 +242,6 @@ export const authOptions: any = {
         }
       }
 
-      if (trigger === "update" && session?.user) {
-        token.name = session.user.name;
-        token.avatar = session.user.avatar;
-        // 确保 postViewMode 被更新，即使它是 undefined
-        if ('postViewMode' in session.user) {
-          token.postViewMode = session.user.postViewMode;
-        }
-        if ('showUserData' in session.user) {
-          token.showUserData = session.user.showUserData;
-        }
-        if ('coverImage' in session.user) {
-          token.coverImage = session.user.coverImage;
-        }
-        if ('experience' in session.user) {
-          token.experience = session.user.experience;
-        }
-        if ('level' in session.user) {
-          token.level = session.user.level;
-        }
-      }
       return token;
     },
     async session({ session, token }: SessionCallbackParams) {

@@ -478,9 +478,48 @@ type PageResult<T> = {
 
 ## 节点 5：补齐账号安全功能
 
-状态：待开始
+状态：已完成
+
+完成日期：2026-08-18
 
 本轮不包含 TOTP 二次验证，作为后续候选功能。
+
+完成内容：
+
+- 新增 `PasswordResetToken`、`EmailChangeToken` 和 `SecurityEvent` 数据模型及兼容式迁移；密码重置和邮箱变更令牌只保存 SHA-256 哈希值，30 分钟过期且只能使用一次。
+- 新增密码找回请求和确认接口：请求接口始终返回通用提示，按邮箱和 IP 限流；重置密码后递增 `sessionVersion` 并撤销其他未完成重置令牌。
+- 新增邮箱变更请求、确认和取消接口：要求当前登录会话和当前密码，新邮箱在请求与确认阶段分别检查唯一性，确认过程使用事务防止邮箱竞争，成功后递增 `sessionVersion`。
+- 新增全设备退出接口，递增 `sessionVersion`、记录安全事件并清除当前 NextAuth 会话 Cookie；设置页接入邮箱变更、取消邮箱变更和全设备退出。
+- 接入密码修改、GitHub 解绑、注销申请和取消注销的安全事件；密码修改、邮箱变更、注销申请等重要操作会撤销旧会话。
+- 登录失败按邮箱、账号和 IP 使用 Redis 限流，登录错误保持模糊；NextAuth JWT 更新时从数据库同步最新 `sessionVersion`，允许当前设置页完成必要收尾，同时拒绝旧设备会话。
+- 新增密码找回页、邮箱验证页和登录页入口；新增账号安全单元测试，覆盖令牌哈希、一次性比较、邮箱规范化、IP 提取、限流键和通用提示。
+
+验证结果：
+
+- 命令：`npx prisma generate`
+  - 结果：通过
+- 命令：`npx prisma migrate deploy`
+  - 结果：通过，已应用 `20260818100000_add_account_security_tokens_events`
+- 命令：`npx prisma migrate status`
+  - 结果：通过，数据库 schema is up to date
+- 命令：`npx prisma validate`
+  - 结果：通过，Prisma schema 有效
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx tsx --test tests/*.test.ts`
+  - 结果：通过，32/32
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npm run build`
+  - 结果：通过，生产构建成功，静态页面 96/96 生成
+
+后续观察：
+
+- 生产环境必须配置 SMTP 发送账号安全邮件，并确认站点 Origin 配置正确；未配置 SMTP 时，令牌会在发送失败后立即失效。
+- Redis 登录和账号安全限流采用 fail-closed 策略；上线前需确认生产 Redis 高可用、监控和恢复方案。
+- 本节点未实现 TOTP 二次验证，保留在节点 7 候选 backlog。
 
 实施内容：
 

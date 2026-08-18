@@ -1,15 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getClientIpFromHeaders,
+  getUserAgentFromHeaders,
+} from "@/lib/account-security";
 import { requireActiveUser } from "@/lib/server-auth";
 import { requestAccountDeletion } from "@/lib/media-cleanup";
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     const auth = await requireActiveUser();
     if (!auth.ok) {
       return auth.response;
     }
 
-    const deletion = await requestAccountDeletion(auth.user.id);
+    const deletion = await requestAccountDeletion(auth.user.id, new Date(), {
+      ipAddress: getClientIpFromHeaders(request.headers),
+      userAgent: getUserAgentFromHeaders(request.headers),
+    });
     if (!deletion) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

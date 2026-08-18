@@ -1,15 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getClientIpFromHeaders,
+  getUserAgentFromHeaders,
+} from "@/lib/account-security";
 import { cancelAccountDeletion } from "@/lib/media-cleanup";
 import { requireCurrentUser } from "@/lib/server-auth";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const auth = await requireCurrentUser();
     if (!auth.ok) {
       return auth.response;
     }
 
-    const result = await cancelAccountDeletion(auth.user.id);
+    const result = await cancelAccountDeletion(auth.user.id, new Date(), {
+      ipAddress: getClientIpFromHeaders(request.headers),
+      userAgent: getUserAgentFromHeaders(request.headers),
+    });
     if (!result.cancelled) {
       return NextResponse.json(
         {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import COS from "cos-js-sdk-v5";
 import {
@@ -32,7 +32,7 @@ import Toggle from "@/components/ui/Toggle";
 type PostViewMode = "both" | "title" | "content" | "titleAndContent";
 type SettingsSection = "profile" | "security" | "notifications" | "reading";
 type SavingKey = "profile" | "avatar" | "coverImage" | "postViewMode" | "showUserData"
-  | "notifyReplies" | "notifyLikes" | "notifyFollows" | "password" | "github" | "delete";
+  | "notifyReplies" | "notifyLikes" | "notifyFollows" | "password" | "email" | "github" | "sessions" | "delete";
 
 type SettingsPatchPayload = {
   name?: string;
@@ -66,6 +66,8 @@ type SecuritySettings = {
   email: string | null;
   hasPassword: boolean;
   githubLinked: boolean;
+  pendingEmail: string | null;
+  pendingEmailExpiresAt: string | null;
 };
 
 type BackgroundVideoStsResponse = {
@@ -145,6 +147,9 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [isEmailEditorOpen, setEmailEditorOpen] = useState(false);
   const [disconnectPassword, setDisconnectPassword] = useState("");
   const [isDisconnectModalOpen, setDisconnectModalOpen] = useState(false);
   const [error, setError] = useState("");
@@ -157,6 +162,8 @@ export default function SettingsPage() {
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const emailEditButtonRef = useRef<HTMLButtonElement>(null);
+  const newEmailInputRef = useRef<HTMLInputElement>(null);
   const coverPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initializedRef = useRef(false);
 
@@ -451,8 +458,8 @@ export default function SettingsPage() {
 
   const savePassword = async () => {
     if (isSaving("password")) return;
-    if (newPassword.length < 6) {
-      setError("新密码至少需要 6 个字符");
+    if (newPassword.length < 6 || newPassword.length > 128) {
+      setError("新密码长度需为 6 至 128 个字符");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -474,6 +481,7 @@ export default function SettingsPage() {
       });
       const data = (await response.json()) as { error?: string; message?: string; hasPassword?: boolean };
       if (!response.ok) throw new Error(data.error || "密码保存失败");
+      await update();
       setSecurity((previous) => previous ? { ...previous, hasPassword: Boolean(data.hasPassword) } : previous);
       setCurrentPassword("");
       setNewPassword("");
@@ -483,6 +491,89 @@ export default function SettingsPage() {
       setError(passwordError instanceof Error ? passwordError.message : "密码保存失败");
     } finally {
       setSavingState("password", false);
+    }
+  };
+
+  const requestEmailChange = async () => {
+    if (isSaving("email")) return;
+    const normalizedEmail = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("请输入有效的新邮箱地址");
+      return;
+    }
+    if (!emailPassword) {
+      setError("请输入当前密码以验证身份");
+      return;
+    }
+
+    setSavingState("email", true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch("/api/auth/email/change/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newEmail: normalizedEmail, currentPassword: emailPassword }),
+      });
+      const data = (await response.json()) as { error?: string; message?: string };
+      if (!response.ok) throw new Error(data.error || "邮箱变更请求失败");
+      setNewEmail("");
+      setEmailPassword("");
+      await refreshSecurity();
+      setEmailEditorOpen(false);
+      window.setTimeout(() => emailEditButtonRef.current?.focus(), 0);
+      setSuccess(data.message || "验证邮件已发送");
+    } catch (emailError) {
+      setError(emailError instanceof Error ? emailError.message : "邮箱变更请求失败");
+    } finally {
+      setSavingState("email", false);
+    }
+  };
+
+  const cancelEmailChange = async () => {
+    if (isSaving("email")) return;
+    setSavingState("email", true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch("/api/auth/email/change/cancel", { method: "POST" });
+      const data = (await response.json()) as { error?: string; message?: string };
+      if (!response.ok) throw new Error(data.error || "取消邮箱变更失败");
+      await refreshSecurity();
+      setSuccess(data.message || "邮箱变更已取消");
+    } catch (cancelError) {
+      setError(cancelError instanceof Error ? cancelError.message : "取消邮箱变更失败");
+    } finally {
+      setSavingState("email", false);
+    }
+  };
+
+  const closeEmailEditor = () => {
+    if (isSaving("email")) return;
+    setNewEmail("");
+    setEmailPassword("");
+    setEmailEditorOpen(false);
+    window.setTimeout(() => emailEditButtonRef.current?.focus(), 0);
+  };
+
+  const openEmailEditor = () => {
+    setEmailEditorOpen(true);
+  };
+
+  const revokeAllSessions = async () => {
+    if (isSaving("sessions")) return;
+    if (!window.confirm("这会让所有设备退出登录，包括当前设备。确定继续吗？")) return;
+
+    setSavingState("sessions", true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/sessions/revoke-all", { method: "POST" });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || "退出所有设备失败");
+      await signOut({ callbackUrl: "/auth/signin" });
+    } catch (sessionError) {
+      setError(sessionError instanceof Error ? sessionError.message : "退出所有设备失败");
+      setSavingState("sessions", false);
     }
   };
 
@@ -498,6 +589,7 @@ export default function SettingsPage() {
       });
       const data = (await response.json()) as { error?: string; message?: string; githubLinked?: boolean };
       if (!response.ok) throw new Error(data.error || "GitHub 解绑失败");
+      await update();
       setSecurity((previous) => previous ? { ...previous, githubLinked: Boolean(data.githubLinked) } : previous);
       setDisconnectPassword("");
       setDisconnectModalOpen(false);
@@ -519,6 +611,7 @@ export default function SettingsPage() {
       if (!response.ok) {
         throw new Error(data.error || "注销账号失败");
       }
+      await update();
       setDeletionScheduledAt(data.deleteScheduledAt || null);
       setSuccess(data.deleteScheduledAt
         ? `账号已进入注销窗口，将于 ${new Date(data.deleteScheduledAt).toLocaleString()} 永久删除。`
@@ -542,6 +635,7 @@ export default function SettingsPage() {
       }
       setDeletionScheduledAt(null);
       setSuccess("注销已取消，账号和公开内容已恢复。");
+      await update();
       await fetchSettings();
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : "取消注销失败");
@@ -554,6 +648,11 @@ export default function SettingsPage() {
     setActiveSection(section);
     router.replace(`/settings?section=${section}`, { scroll: false });
   };
+
+  useEffect(() => {
+    if (!isEmailEditorOpen) return;
+    newEmailInputRef.current?.focus();
+  }, [isEmailEditorOpen]);
 
   useEffect(() => () => stopCoverPolling(), []);
 
@@ -712,7 +811,100 @@ export default function SettingsPage() {
                 <div>
                   <h2 className="text-base font-semibold text-gray-950">登录邮箱</h2>
                   <div className="mt-3 h-px bg-gray-200" />
-                  <div className="mt-4 flex items-center gap-3 rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.08)]"><CircleUserRound className="h-5 w-5 text-gray-400" /><div><p className="text-sm font-medium text-gray-900">{security?.email || "未绑定邮箱"}</p><p className="mt-1 text-xs text-gray-500">登录邮箱暂不支持在此处修改。</p></div></div>
+                  <div className="mt-4 rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.08)]">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <CircleUserRound className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900">{security?.email || "未绑定邮箱"}</p>
+                          <p className="mt-1 text-xs text-gray-500">新邮箱需要通过验证邮件确认，确认后旧邮箱将不能继续登录。</p>
+                        </div>
+                      </div>
+                      {security?.hasPassword && (
+                        <div
+                          aria-hidden={isEmailEditorOpen}
+                          className={`shrink-0 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${
+                            isEmailEditorOpen ? "pointer-events-none max-w-0 translate-x-3 opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150" : "max-w-[7rem] translate-x-0 opacity-100"
+                          }`}
+                        >
+                          <button
+                            ref={emailEditButtonRef}
+                            type="button"
+                            onClick={openEmailEditor}
+                            aria-expanded={isEmailEditorOpen}
+                            aria-controls="email-change-form"
+                            tabIndex={isEmailEditorOpen ? -1 : 0}
+                            className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-colors duration-150 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px"
+                          >
+                            修改邮箱
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {security?.pendingEmail && (
+                      <div className="mt-4 rounded-md bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                        <p>待验证邮箱：{security.pendingEmail}</p>
+                        {security.pendingEmailExpiresAt && <p className="mt-1 text-xs">链接有效期至 {new Date(security.pendingEmailExpiresAt).toLocaleString()}</p>}
+                        <button type="button" onClick={() => void cancelEmailChange()} disabled={isSaving("email")} className="mt-2 text-sm font-medium text-amber-900 underline underline-offset-2 disabled:opacity-50">取消邮箱变更</button>
+                      </div>
+                    )}
+                    {security?.hasPassword ? (
+                      <div
+                        id="email-change-form"
+                        aria-hidden={!isEmailEditorOpen}
+                        className={`grid transition-[grid-template-rows] duration-400 ease-in-out motion-reduce:transition-none ${isEmailEditorOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                      >
+                        <div className="min-h-0 overflow-hidden">
+                          <div
+                            className={`space-y-4 border-t border-gray-100 pt-4 transition-[opacity,transform] duration-300 ease-out ${
+                              isEmailEditorOpen ? "translate-y-0 opacity-100 motion-reduce:transition-opacity motion-reduce:duration-150 motion-reduce:translate-y-0" : "-translate-y-2 opacity-0 motion-reduce:transition-opacity motion-reduce:duration-150 motion-reduce:translate-y-0"
+                            }`}
+                          >
+                            <Input
+                              id="new-email"
+                              ref={newEmailInputRef}
+                              label="新邮箱地址"
+                              type="email"
+                              value={newEmail}
+                              autoComplete="email"
+                              disabled={!isEmailEditorOpen || isSaving("email")}
+                              onChange={(event) => setNewEmail(event.target.value)}
+                            />
+                            <Input
+                              id="email-current-password"
+                              label="当前密码"
+                              type="password"
+                              value={emailPassword}
+                              autoComplete="current-password"
+                              disabled={!isEmailEditorOpen || isSaving("email")}
+                              onChange={(event) => setEmailPassword(event.target.value)}
+                            />
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={closeEmailEditor}
+                                disabled={!isEmailEditorOpen || isSaving("email")}
+                                className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-medium text-gray-600 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                取消
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void requestEmailChange()}
+                                disabled={!isEmailEditorOpen || isSaving("email")}
+                                className="inline-flex min-h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-indigo-600 px-3.5 text-sm font-medium text-white transition-[background-color,transform] duration-150 hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {isSaving("email") && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                                发送验证邮件
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-gray-500">请先设置本地密码后再修改邮箱。</p>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <h2 className="text-base font-semibold text-gray-950">{security?.hasPassword ? "修改密码" : "设置本地密码"}</h2>
@@ -730,6 +922,17 @@ export default function SettingsPage() {
                   <div className="mt-4 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3"><Github className="h-6 w-6 text-gray-900" /><div><p className="text-sm font-medium text-gray-900">GitHub</p><p className="mt-1 text-xs text-gray-500">{security?.githubLinked ? "已绑定，可使用 GitHub 登录" : "未绑定"}</p></div></div>
                     {security?.githubLinked ? <button type="button" onClick={() => setDisconnectModalOpen(true)} className="inline-flex h-9 items-center gap-2 self-start rounded-md px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 sm:self-auto"><Trash2 className="h-4 w-4" />解绑</button> : <Link href="/api/auth/github/connect" prefetch={false} className="inline-flex h-9 items-center gap-2 self-start rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:self-auto"><Github className="h-4 w-4" />绑定 GitHub</Link>}
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-950">会话管理</h2>
+                  <div className="mt-3 h-px bg-gray-200" />
+                  <div className="mt-4 flex flex-col gap-3 rounded-lg bg-white p-4 shadow-[0_0_0_1px_rgba(0,0,0,0.08)] sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">退出所有设备</p>
+                      <p className="mt-1 text-xs text-gray-500">撤销所有旧会话，当前设备也会退出并跳转到登录页。</p>
+                    </div>
+                    <button type="button" onClick={() => void revokeAllSessions()} disabled={isSaving("sessions")} className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("sessions") && <LoaderCircle className="h-4 w-4 animate-spin" />}退出所有设备</button>
                   </div>
                 </div>
                 <div className="rounded-lg bg-red-50 p-4 shadow-[0_0_0_1px_rgba(239,68,68,0.16)]"><div className="flex items-start gap-3"><Trash2 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><div><h2 className="text-sm font-semibold text-red-800">注销账号</h2><p className="mt-1 text-sm text-red-700">注销会立即隐藏公开内容，并在 24 小时后删除账户数据。注销窗口内可以取消。</p>{deletionScheduledAt ? <><p className="mt-3 text-xs text-red-700">计划删除时间：{new Date(deletionScheduledAt).toLocaleString()}</p><button type="button" onClick={() => void cancelAccountDeletion()} disabled={isSaving("delete")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("delete") && <LoaderCircle className="h-4 w-4 animate-spin" />}取消注销</button></> : <button type="button" onClick={() => void deleteAccount()} disabled={isSaving("delete")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-red-600 px-3 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">{isSaving("delete") && <LoaderCircle className="h-4 w-4 animate-spin" />}注销账号</button>}</div></div></div>

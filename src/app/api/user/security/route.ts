@@ -1,6 +1,12 @@
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { SecurityEventType } from "@/generated";
 import { prisma } from "@/lib/prisma";
+import {
+  getClientIpFromHeaders,
+  getUserAgentFromHeaders,
+  recordSecurityEvent,
+} from "@/lib/account-security";
 import { requireActiveUser, requireCurrentUser } from "@/lib/server-auth";
 
 type PasswordBody = {
@@ -25,6 +31,15 @@ export async function GET() {
         email: true,
         password: true,
         githubUserId: true,
+        emailChangeTokens: {
+          where: {
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { newEmail: true, expiresAt: true },
+        },
       },
     });
 
@@ -36,6 +51,8 @@ export async function GET() {
       email: user.email,
       hasPassword: Boolean(user.password),
       githubLinked: Boolean(user.githubUserId),
+      pendingEmail: user.emailChangeTokens[0]?.newEmail || null,
+      pendingEmailExpiresAt: user.emailChangeTokens[0]?.expiresAt || null,
     });
   } catch (error) {
     console.error("Get security settings error:", error);
@@ -73,12 +90,33 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    await prisma.user.update({
-      where: { id: auth.user.id },
-      data: {
-        password: await bcrypt.hash(newPassword, 10),
-        sessionVersion: { increment: 1 },
-      },
+    const now = new Date();
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: auth.user.id },
+        data: {
+          password: passwordHash,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      await tx.passwordResetToken.updateMany({
+        where: { userId: auth.user.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      await tx.emailChangeToken.updateMany({
+        where: { userId: auth.user.id, usedAt: null },
+        data: { usedAt: now },
+      });
+      await recordSecurityEvent(
+        {
+          userId: auth.user.id,
+          type: SecurityEventType.PASSWORD_CHANGED,
+          ipAddress: getClientIpFromHeaders(request.headers),
+          userAgent: getUserAgentFromHeaders(request.headers),
+        },
+        tx,
+      );
     });
 
     return NextResponse.json({
@@ -118,12 +156,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "当前密码不正确" }, { status: 400 });
     }
 
-    await prisma.user.update({
-      where: { id: auth.user.id },
-      data: {
-        githubUserId: null,
-        sessionVersion: { increment: 1 },
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: auth.user.id },
+        data: {
+          githubUserId: null,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      await recordSecurityEvent(
+        {
+          userId: auth.user.id,
+          type: SecurityEventType.SESSIONS_REVOKED,
+          ipAddress: getClientIpFromHeaders(request.headers),
+          userAgent: getUserAgentFromHeaders(request.headers),
+          metadata: { reason: "github-unlinked", provider: "github" },
+        },
+        tx,
+      );
     });
 
     return NextResponse.json({ message: "GitHub 已解绑", githubLinked: false });

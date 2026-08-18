@@ -10,7 +10,9 @@ import {
   MediaCleanupResourceType,
   MediaCleanupStatus,
   Prisma,
+  SecurityEventType,
 } from "@/generated";
+import { recordSecurityEvent } from "@/lib/account-security";
 
 export const MEDIA_CLEANUP_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const MEDIA_CLEANUP_DEFAULT_BATCH_SIZE = 50;
@@ -53,6 +55,11 @@ export type MediaCleanupTaskSummary = {
   resourceType: MediaCleanupResourceType;
   reason: MediaCleanupReason;
   status: MediaCleanupStatus;
+};
+
+type AccountSecurityContext = {
+  ipAddress?: string | null;
+  userAgent?: string | null;
 };
 
 export type MediaCleanupRunResult = {
@@ -487,7 +494,11 @@ export async function restorePost(postId: string, now = new Date()) {
   });
 }
 
-export async function requestAccountDeletion(userId: string, now = new Date()) {
+export async function requestAccountDeletion(
+  userId: string,
+  now = new Date(),
+  securityContext?: AccountSecurityContext,
+) {
   const scheduledAt = new Date(now.getTime() + MEDIA_CLEANUP_WINDOW_MS);
 
   return prisma.$transaction(async (tx) => {
@@ -641,8 +652,20 @@ export async function requestAccountDeletion(userId: string, now = new Date()) {
       data: {
         deletionRequestedAt: now,
         deletionScheduledAt: scheduledAt,
+        sessionVersion: { increment: 1 },
       },
     });
+
+    await recordSecurityEvent(
+      {
+        userId: user.id,
+        type: SecurityEventType.ACCOUNT_DELETION_REQUESTED,
+        ipAddress: securityContext?.ipAddress,
+        userAgent: securityContext?.userAgent,
+        metadata: { scheduledAt: scheduledAt.toISOString() },
+      },
+      tx,
+    );
 
     return {
       alreadyRequested: false,
@@ -651,7 +674,11 @@ export async function requestAccountDeletion(userId: string, now = new Date()) {
   });
 }
 
-export async function cancelAccountDeletion(userId: string, now = new Date()) {
+export async function cancelAccountDeletion(
+  userId: string,
+  now = new Date(),
+  securityContext?: AccountSecurityContext,
+) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
       where: { id: userId },
@@ -705,6 +732,16 @@ export async function cancelAccountDeletion(userId: string, now = new Date()) {
         lockedAt: null,
       },
     });
+
+    await recordSecurityEvent(
+      {
+        userId,
+        type: SecurityEventType.ACCOUNT_DELETION_CANCELLED,
+        ipAddress: securityContext?.ipAddress,
+        userAgent: securityContext?.userAgent,
+      },
+      tx,
+    );
 
     return { cancelled: true, reason: "cancelled" as const };
   });
