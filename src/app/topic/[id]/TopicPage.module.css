@@ -11,9 +11,47 @@
 
 .topicTopBand {
   position: relative;
+  isolation: isolate;
   height: clamp(8rem, 17vw, 13rem);
+  overflow: hidden;
   border-bottom: 1px solid var(--color-topic-rule);
-  background: var(--color-topic-surface-muted);
+  background-color: var(--color-topic-surface-muted);
+  background-image: linear-gradient(
+    125deg,
+    var(--color-topic-surface-muted) 0%,
+    color-mix(in oklch, var(--color-topic-accent-soft) 72%, var(--color-topic-surface-muted)) 48%,
+    var(--color-topic-paper) 100%
+  );
+}
+
+.topicTopBand::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 78% -18%,
+      color-mix(in oklch, var(--color-topic-accent) 14%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      112deg,
+      transparent 34%,
+      color-mix(in oklch, var(--color-topic-accent) 7%, transparent) 60%,
+      transparent 78%
+    );
+  content: "";
+  pointer-events: none;
+  z-index: 1;
+}
+
+.topicParticleField {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 2;
 }
 
 .topicTopBand::after {
@@ -21,13 +59,12 @@
   bottom: -1px;
   left: max(var(--space-topic-4), calc((100% - 1180px) / 2));
   width: var(--space-topic-20);
-  height: 2px;
+  height: 3px;
   background: var(--color-topic-accent);
   content: "";
-}
-
-.topicBandFade {
-  display: none;
+  box-shadow: calc(var(--space-topic-20) + var(--space-topic-2)) 0 0
+    color-mix(in oklch, var(--color-topic-accent-soft) 72%, transparent);
+  z-index: 3;
 }
 
 .topicShell {
@@ -51,7 +88,6 @@
   overflow: visible !important;
   padding: var(--space-topic-8) var(--space-topic-10) !important;
   border: 1px solid var(--color-topic-rule) !important;
-  border-radius: var(--radius-topic-card) !important;
   background: var(--color-topic-surface) !important;
   box-shadow: 0 1rem 2.5rem var(--color-topic-shadow) !important;
 }
@@ -178,7 +214,6 @@
 
 .topicPostList :global(.space-y-4) {
   display: grid;
-  gap: var(--space-topic-5);
 }
 
 .topicPostList :global(.space-y-4) > :global(.bg-white) {

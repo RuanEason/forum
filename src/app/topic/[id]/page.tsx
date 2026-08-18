@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import TopicContent from "./TopicContent";
+import TopicParticleField from "./TopicParticleField";
 import styles from "./TopicPage.module.css";
 
 async function getTopic(id: string) {
@@ -49,7 +50,7 @@ export default async function TopicDetailPage({
     <div className={styles.topicPage}>
       {/* Banner Section */}
       <div className={styles.topicTopBand}>
-        <div className={styles.topicBandFade} />
+        <TopicParticleField className={styles.topicParticleField} />
       </div>
 
       {/* Removed z-10 to prevent creating a stacking context that traps fixed overlays (like image zoom) below the Navbar */}
