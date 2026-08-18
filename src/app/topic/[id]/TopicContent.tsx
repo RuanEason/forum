@@ -6,6 +6,7 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import TopicParticipationEditor from "@/components/TopicParticipationEditor";
 import TopicPostList from "./TopicPostList";
+import styles from "./TopicPage.module.css";
 
 interface Topic {
   id: string;
@@ -31,20 +32,15 @@ export default function TopicContent({
   const router = useRouter();
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handlePostSuccess = () => {
-    setRefreshKey((prev) => prev + 1);
-    router.refresh();
-  };
-
   const handlePostDeleted = () => {
     setRefreshKey((prev) => prev + 1);
     router.refresh();
   };
 
   return (
-    <div className="md:col-span-3 space-y-6">
+    <div className={`${styles.topicContent} md:col-span-3 space-y-6`}>
       {/* Header Card */}
-      <div className="bg-card rounded-xl p-6 shadow-sm">
+      <div className={`${styles.topicHero} bg-card rounded-xl p-6 shadow-sm`}>
          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
@@ -77,13 +73,13 @@ export default function TopicContent({
                </div>
             </div>
             
-            <TopicParticipationEditor topic={topic} onPostSuccess={handlePostSuccess} />
+            <TopicParticipationEditor topic={topic} />
          </div>
       </div>
 
       {/* Posts List */}
-      <div>
-        <div className="flex items-center justify-between mb-4 px-2">
+      <div className={styles.topicFeed}>
+        <div className={`${styles.feedHeader} flex items-center justify-between mb-4 px-2`}>
            <h2 className="text-xl font-semibold">最新讨论</h2>
         </div>
         <TopicPostList

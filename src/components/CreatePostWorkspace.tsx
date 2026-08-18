@@ -255,6 +255,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const { startTask } = usePageLoadProgress();
   const toast = useToast();
   const draftIdFromUrl = searchParams.get("draftId");
+  const topicIdFromUrl = searchParams.get("topicId");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
@@ -280,13 +281,13 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const attachmentUploadTaskRef = useRef<AttachmentUploadTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(topicIdFromUrl);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [enableTitle, setEnableTitle] = useState(false);
   const [isAnnouncement, setIsAnnouncement] = useState(false);
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
-  const [videoTopicId, setVideoTopicId] = useState<string | null>(null);
+  const [videoTopicId, setVideoTopicId] = useState<string | null>(topicIdFromUrl);
   const [videoAttachments, setVideoAttachments] = useState<UploadedAttachment[]>([]);
   const [videoAssetId, setVideoAssetId] = useState<string | null>(null);
   const [videoStatus, setVideoStatus] = useState<VideoWorkflowStatus>("IDLE");

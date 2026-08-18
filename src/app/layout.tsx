@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { Providers } from "../components/providers";
 import ProfileCompletionCheck from "@/components/ProfileCompletionCheck";
 import Navbar from "@/components/Navbar";
@@ -9,16 +10,6 @@ import { PageLoadProgressProvider } from "@/components/PageLoadProgressProvider"
 import { defaultMetadata } from "@/lib/seo";
 import RouteChromeController from "@/components/RouteChromeController";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = defaultMetadata;
 
@@ -35,7 +26,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Slept" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
         <RouteChromeController />
         <Providers>

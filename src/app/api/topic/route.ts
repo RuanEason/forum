@@ -12,10 +12,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const view = searchParams.get("view");
+    const id = searchParams.get("id");
 
     if (view === "home") {
       const expanded = searchParams.get("expanded") === "1";
       return NextResponse.json(await getHomeTopics({ expanded }));
+    }
+
+    if (id) {
+      const topic = await prisma.topic.findUnique({
+        where: { id },
+      });
+      return NextResponse.json(topic ? [topic] : []);
     }
 
     const query = searchParams.get("q");

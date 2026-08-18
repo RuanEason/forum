@@ -1,0 +1,48 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Ecosystem Index · theme: Cobalt-inspired */
+/* Hallmark · pre-emit critique: P5 H5 E5 S4 R5 V5 */
+:root {
+  --color-topic-paper: oklch(98.5% 0.004 250);
+  --color-topic-surface: oklch(100% 0 0);
+  --color-topic-surface-muted: oklch(96.8% 0.008 250);
+  --color-topic-ink: oklch(24% 0.02 258);
+  --color-topic-ink-soft: oklch(38% 0.018 257);
+  --color-topic-muted: oklch(57% 0.012 257);
+  --color-topic-rule: oklch(90.5% 0.012 250);
+  --color-topic-rule-strong: oklch(82% 0.02 250);
+  --color-topic-accent: oklch(58% 0.18 255);
+  --color-topic-accent-ink: oklch(99% 0 0);
+  --color-topic-accent-soft: oklch(95% 0.025 255);
+  --color-topic-shadow: oklch(21% 0.02 258 / 0.08);
+
+  --font-topic-display: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-topic-body: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-topic-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --space-topic-1: 0.25rem;
+  --space-topic-2: 0.5rem;
+  --space-topic-3: 0.75rem;
+  --space-topic-4: 1rem;
+  --space-topic-5: 1.25rem;
+  --space-topic-6: 1.5rem;
+  --space-topic-8: 2rem;
+  --space-topic-10: 2.5rem;
+  --space-topic-12: 3rem;
+  --space-topic-20: 5rem;
+  --space-topic-shell-inline: 1.25rem;
+  --space-topic-overlap: 4.25rem;
+  --space-topic-overlap-md: 2.5rem;
+  --space-topic-overlap-sm: 2rem;
+
+  --text-topic-xs: 0.75rem;
+  --text-topic-sm: 0.875rem;
+  --text-topic-md: 1rem;
+  --text-topic-lg: 1.125rem;
+  --text-topic-xl: 1.5rem;
+
+  --ease-topic-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-topic-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-topic-micro: 120ms;
+  --dur-topic-short: 220ms;
+  --radius-topic-card: 1rem;
+  --radius-topic-pill: 999px;
+}

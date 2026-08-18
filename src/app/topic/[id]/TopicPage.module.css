@@ -1,0 +1,323 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Ecosystem Index · theme: Cobalt-inspired · enrichment: none · nav: preserve-existing · footer: preserve-existing */
+/* Hallmark · pre-emit critique: P5 H5 E5 S4 R5 V5 */
+
+.topicPage {
+  min-height: calc(100dvh - 4rem);
+  overflow-x: clip;
+  background: var(--color-topic-paper);
+  color: var(--color-topic-ink);
+  font-family: var(--font-topic-body);
+}
+
+.topicTopBand {
+  position: relative;
+  height: clamp(8rem, 17vw, 13rem);
+  border-bottom: 1px solid var(--color-topic-rule);
+  background: var(--color-topic-surface-muted);
+}
+
+.topicTopBand::after {
+  position: absolute;
+  bottom: -1px;
+  left: max(var(--space-topic-4), calc((100% - 1180px) / 2));
+  width: var(--space-topic-20);
+  height: 2px;
+  background: var(--color-topic-accent);
+  content: "";
+}
+
+.topicBandFade {
+  display: none;
+}
+
+.topicShell {
+  position: relative;
+  width: min(100%, 1180px);
+  margin: calc(var(--space-topic-overlap) * -1) auto 0;
+  padding: 0 var(--space-topic-shell-inline) var(--space-topic-12);
+}
+
+.topicLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.topicContent {
+  grid-column: 1 / -1 !important;
+  min-width: 0;
+}
+
+.topicHero {
+  overflow: visible !important;
+  padding: var(--space-topic-8) var(--space-topic-10) !important;
+  border: 1px solid var(--color-topic-rule) !important;
+  border-radius: var(--radius-topic-card) !important;
+  background: var(--color-topic-surface) !important;
+  box-shadow: 0 1rem 2.5rem var(--color-topic-shadow) !important;
+}
+
+.topicHero > div:first-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-topic-8);
+  align-items: center;
+  min-width: 0;
+}
+
+.topicHero > div:first-child > div:first-child {
+  min-width: 0;
+}
+
+.topicHero :global(h1) {
+  min-width: 0;
+  margin: 0 0 var(--space-topic-3) !important;
+  overflow-wrap: anywhere;
+  color: var(--color-topic-ink) !important;
+  font-family: var(--font-topic-display);
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.topicHero :global(h1 span) {
+  margin-right: 0.15em;
+  color: var(--color-topic-accent) !important;
+}
+
+.topicHero :global(p) {
+  max-width: 60ch;
+  margin-top: var(--space-topic-3);
+  color: var(--color-topic-ink-soft) !important;
+  font-size: var(--text-topic-md);
+  line-height: 1.65;
+}
+
+.topicHero > div:first-child > div:first-child > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-topic-3);
+  align-items: center;
+  margin-top: var(--space-topic-5);
+  color: var(--color-topic-muted) !important;
+  font-size: var(--text-topic-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.topicHero > div:first-child > div:first-child > div:last-child > span:nth-child(2) {
+  color: var(--color-topic-rule-strong) !important;
+}
+
+.topicHero :global(a) {
+  color: var(--color-topic-muted);
+  text-decoration: none;
+  transition: color var(--dur-topic-short) var(--ease-topic-out);
+}
+
+.topicHero :global(a:hover) {
+  color: var(--color-topic-accent);
+}
+
+.topicHero :global(a:focus-visible),
+.topicPostList :global(a:focus-visible),
+.topicHero :global(button:focus-visible) {
+  outline: 2px solid var(--color-topic-accent);
+  outline-offset: 3px;
+}
+
+.topicHero > div:first-child > :global(button) {
+  min-height: 2.75rem;
+  padding-inline: var(--space-topic-6) !important;
+  border: 0 !important;
+  border-radius: var(--radius-topic-pill) !important;
+  background: var(--color-topic-accent) !important;
+  box-shadow: none !important;
+  color: var(--color-topic-accent-ink) !important;
+  font-family: var(--font-topic-body);
+  font-size: var(--text-topic-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color var(--dur-topic-short) var(--ease-topic-out),
+    transform var(--dur-topic-micro) var(--ease-topic-out);
+}
+
+.topicHero > div:first-child > :global(button:hover) {
+  background: var(--color-topic-ink) !important;
+}
+
+.topicHero > div:first-child > :global(button:active) {
+  transform: translateY(1px);
+}
+
+.topicFeed {
+  min-width: 0;
+  margin-top: var(--space-topic-10);
+}
+
+.feedHeader {
+  margin-bottom: var(--space-topic-5) !important;
+  padding-bottom: var(--space-topic-4);
+  border-bottom: 1px solid var(--color-topic-rule);
+}
+
+.feedHeader :global(h2) {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-topic-ink);
+  font-family: var(--font-topic-display);
+  font-size: var(--text-topic-xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+
+.topicPostList {
+  min-width: 0;
+}
+
+.topicPostList :global(.space-y-4) {
+  display: grid;
+  gap: var(--space-topic-5);
+}
+
+.topicPostList :global(.space-y-4) > :global(.bg-white) {
+  overflow: hidden;
+  border: 1px solid var(--color-topic-rule) !important;
+  border-radius: var(--radius-topic-card) !important;
+  background: var(--color-topic-surface) !important;
+  box-shadow: none !important;
+  transition: border-color var(--dur-topic-short) var(--ease-topic-out);
+}
+
+.topicPostList :global(.space-y-4) > :global(.bg-white):hover {
+  border-color: var(--color-topic-rule-strong) !important;
+}
+
+.topicPostList :global(.space-y-4) > :global(.bg-white) > div:first-child {
+  padding: var(--space-topic-6) var(--space-topic-8) !important;
+}
+
+.topicPostList :global(.bg-white) :global(a.text-gray-900) {
+  color: var(--color-topic-ink) !important;
+  font-family: var(--font-topic-display);
+}
+
+.topicPostList :global(.bg-white) :global(h3) {
+  color: var(--color-topic-ink) !important;
+  font-family: var(--font-topic-display);
+  letter-spacing: -0.02em;
+}
+
+.topicPostList :global(.bg-white) :global(.prose) {
+  color: var(--color-topic-ink-soft);
+}
+
+.topicPostList :global(.bg-white) :global(.border-t) {
+  border-color: var(--color-topic-rule) !important;
+}
+
+.topicPostList :global(.bg-white) :global(.text-gray-400),
+.topicPostList :global(.bg-white) :global(.text-gray-500) {
+  color: var(--color-topic-muted) !important;
+}
+
+.topicPostList :global(.bg-white) :global(.text-gray-200) {
+  color: var(--color-topic-accent) !important;
+}
+
+.topicPostList > :global(.bg-card) {
+  min-height: 12rem;
+  padding: var(--space-topic-10) !important;
+  border: 1px solid var(--color-topic-rule) !important;
+  border-radius: var(--radius-topic-card) !important;
+  background: var(--color-topic-surface) !important;
+  box-shadow: none !important;
+  color: var(--color-topic-muted);
+}
+
+.topicLoading,
+.topicError {
+  min-height: 12rem;
+  padding: var(--space-topic-8);
+  border: 1px solid var(--color-topic-rule);
+  border-radius: var(--radius-topic-card);
+  background: var(--color-topic-surface);
+  color: var(--color-topic-muted);
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .topicShell {
+    margin-top: calc(var(--space-topic-overlap-md) * -1);
+    padding-inline: var(--space-topic-4);
+  }
+
+  .topicLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topicContent {
+    grid-column: 1 / -1 !important;
+  }
+
+  .topicHero {
+    padding: var(--space-topic-6) !important;
+  }
+
+  .topicHero > div:first-child {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-topic-6);
+  }
+
+}
+
+@media (max-width: 560px) {
+  .topicTopBand {
+    height: 8rem;
+  }
+
+  .topicTopBand::after {
+    left: var(--space-topic-4);
+  }
+
+  .topicShell {
+    margin-top: calc(var(--space-topic-overlap-sm) * -1);
+    padding-inline: var(--space-topic-3);
+    padding-bottom: var(--space-topic-12);
+  }
+
+  .topicHero {
+    padding: var(--space-topic-5) !important;
+  }
+
+  .topicHero :global(h1) {
+    font-size: clamp(1.75rem, 11vw, 2.5rem) !important;
+  }
+
+  .topicHero > div:first-child > :global(button) {
+    width: 100%;
+  }
+
+  .topicFeed {
+    margin-top: var(--space-topic-8);
+  }
+
+  .topicPostList :global(.space-y-4) > :global(.bg-white) > div:first-child {
+    padding: var(--space-topic-5) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topicHero :global(a),
+  .topicHero > div:first-child > :global(button),
+  .topicPostList :global(.space-y-4) > :global(.bg-white) {
+    transition: none;
+  }
+
+  .topicHero > div:first-child > :global(button:hover),
+  .topicHero > div:first-child > :global(button:active),
+  .topicPostList :global(.space-y-4) > :global(.bg-white):hover {
+    transform: none;
+  }
+}

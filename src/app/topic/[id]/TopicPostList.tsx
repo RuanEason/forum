@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import HomeContent, { type PostProps } from "@/components/HomeContent";
+import styles from "./TopicPage.module.css";
 
 export default function TopicPostList({
   topicId,
@@ -62,7 +63,7 @@ export default function TopicPostList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`${styles.topicPostList} space-y-4`}>
       {posts.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-lg shadow-sm">
           <p className="text-muted-foreground">该话题下暂无帖子。</p>

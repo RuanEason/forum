@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import TopicContent from "./TopicContent";
+import styles from "./TopicPage.module.css";
 
 async function getTopic(id: string) {
   const topic = await prisma.topic.findUnique({
@@ -45,32 +46,18 @@ export default async function TopicDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-8">
+    <div className={styles.topicPage}>
       {/* Banner Section */}
-      <div className="bg-gradient-to-r from-blue-100 to-white h-48 md:h-28 relative">
-        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-background to-transparent" />
+      <div className={styles.topicTopBand}>
+        <div className={styles.topicBandFade} />
       </div>
 
       {/* Removed z-10 to prevent creating a stacking context that traps fixed overlays (like image zoom) below the Navbar */}
-      <div className="container mx-auto max-w-6xl px-4 -mt-20 relative">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className={styles.topicShell}>
+        <div className={styles.topicLayout}>
           {/* Main Content Area */}
           <TopicContent topic={topic} currentUserId={session?.user?.id} />
 
-          {/* Sidebar */}
-          <div className="hidden md:block md:col-span-1 space-y-6">
-             <div className="bg-card rounded-xl p-4 shadow-sm sticky top-20">
-                <h3 className="font-semibold mb-4 text-lg">关于话题</h3>
-                <div className="text-sm text-muted-foreground space-y-3">
-                   <p>在这里讨论关于 #{topic.name} </p>
-                   <div className="h-px bg-border" />
-                   <div className="flex justify-between">
-                      <span>讨论</span>
-                      <span>{topic._count.posts}</span>
-                   </div>
-                </div>
-             </div>
-          </div>
         </div>
       </div>
     </div>
