@@ -39,7 +39,7 @@ const getUserLevel = (experience: number) =>
     return level;
   }, 0);
 
-interface PostProps {
+export interface PostProps {
   id: string;
   title: string | null;
   content: string;
@@ -54,15 +54,20 @@ interface PostProps {
     avatar: string | null;
     experience?: number | null;
   };
-  likes: {
+  likes?: {
     userId: string;
   }[];
-  reposts: {
+  reposts?: {
     userId: string;
   }[];
-  comments: {
+  comments?: {
     id: string;
   }[];
+  likeCount?: number;
+  repostCount?: number;
+  commentCount?: number;
+  likedByMe?: boolean;
+  repostedByMe?: boolean;
   images: {
     url: string;
   }[];
@@ -110,6 +115,10 @@ export default function HomeContent({
   initialTopics = [],
   initialTopicsHasMore = false,
   initialAnnouncements = [],
+  initialPostsNextCursor = null,
+  initialPostsHasMore = false,
+  topicId,
+  loadMorePosts: loadMorePostsOverride,
 }: {
   initialPosts: PostProps[];
   hideCreateButton?: boolean;
@@ -120,6 +129,14 @@ export default function HomeContent({
   initialTopics?: HomeTopic[];
   initialTopicsHasMore?: boolean;
   initialAnnouncements?: HomeAnnouncement[];
+  initialPostsNextCursor?: string | null;
+  initialPostsHasMore?: boolean;
+  topicId?: string;
+  loadMorePosts?: (cursor: string | null) => Promise<{
+    items: PostProps[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  }>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -127,6 +144,10 @@ export default function HomeContent({
   const toast = useToast();
   const { startTask } = usePageLoadProgress();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialPostsNextCursor);
+  const [hasMore, setHasMore] = useState(initialPostsHasMore);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [topicSidebarCollapsed, setTopicSidebarCollapsed] = useState(false);
   const [topicSidebarPreferenceReady, setTopicSidebarPreferenceReady] =
@@ -318,6 +339,84 @@ export default function HomeContent({
         post.id === postId ? { ...post, pinned } : post
       )
     );
+  };
+
+  const loadMore = async () => {
+    if (!hasMore || isLoadingMore) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+
+    try {
+      let page;
+      if (loadMorePostsOverride) {
+        page = await loadMorePostsOverride(nextCursor);
+      } else {
+        const params = new URLSearchParams({ limit: "20" });
+        if (topicId) {
+          params.set("topicId", topicId);
+        }
+        if (nextCursor) {
+          params.set("cursor", nextCursor);
+        }
+
+        const response = await fetch(`/api/post?${params.toString()}`, {
+          cache: "no-store",
+        });
+        const data = await response.json() as {
+          items?: PostProps[];
+          nextCursor?: string | null;
+          hasMore?: boolean;
+          error?: string;
+          code?: string;
+        };
+
+        if (!response.ok) {
+          if (data.code === "INVALID_CURSOR") {
+            params.delete("cursor");
+            const restartResponse = await fetch(`/api/post?${params.toString()}`, {
+              cache: "no-store",
+            });
+            const restartPage = await restartResponse.json() as {
+              items?: PostProps[];
+              nextCursor?: string | null;
+              hasMore?: boolean;
+            };
+            if (!restartResponse.ok || !Array.isArray(restartPage.items)) {
+              throw new Error("Failed to reload posts");
+            }
+            setPosts(restartPage.items);
+            setNextCursor(restartPage.nextCursor ?? null);
+            setHasMore(Boolean(restartPage.hasMore));
+            return;
+          }
+          throw new Error(data.error || "Failed to load more posts");
+        }
+
+        page = {
+          items: data.items ?? [],
+          nextCursor: data.nextCursor ?? null,
+          hasMore: Boolean(data.hasMore),
+        };
+      }
+
+      setPosts((currentPosts) => {
+        const existingIds = new Set(currentPosts.map((post) => post.id));
+        return [
+          ...currentPosts,
+          ...page.items.filter((post) => !existingIds.has(post.id)),
+        ];
+      });
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+    } catch (error) {
+      console.error("Failed to load more posts:", error);
+      setLoadMoreError("加载更多失败，请重试");
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   const markdownComponents: Components = {
@@ -567,16 +666,16 @@ export default function HomeContent({
                             <LikeButton
                               targetType="post"
                               targetId={post.id}
-                              initialLikesCount={post.likes.length}
-                              initialLikedByUser={
+                              initialLikesCount={post.likeCount ?? post.likes?.length ?? 0}
+                              initialLikedByUser={post.likedByMe ?? (
                                 currentUserId || session?.user?.id
-                                  ? post.likes.some(
+                                  ? Boolean(post.likes?.some(
                                       (like) =>
                                         like.userId ===
                                         (currentUserId || session?.user?.id)
-                                    )
+                                    ))
                                   : false
-                              }
+                              )}
                             />
                           </div>
                           {/* 评论按钮 */}
@@ -586,7 +685,9 @@ export default function HomeContent({
                           >
                             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200" />
                             <span className="text-xs sm:text-sm font-medium ml-1 tabular-nums">
-                              {post.comments.length > 0 ? post.comments.length : null}
+                              {(post.commentCount ?? post.comments?.length ?? 0) > 0
+                                ? (post.commentCount ?? post.comments?.length)
+                                : null}
                             </span>
                           </Link>
                           {/* 分享按钮 */}
@@ -605,6 +706,21 @@ export default function HomeContent({
                   </div>
                 </div>
               ))
+            )}
+            {(hasMore || loadMoreError) && (
+              <div className="flex flex-col items-center gap-2 py-4">
+                {loadMoreError && (
+                  <p className="text-sm text-red-500">{loadMoreError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void loadMore()}
+                  disabled={isLoadingMore}
+                  className="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm text-gray-600 shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isLoadingMore ? "加载中..." : loadMoreError ? "重试" : "加载更多"}
+                </button>
+              </div>
             )}
           </div>
           </section>

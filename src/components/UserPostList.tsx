@@ -26,15 +26,19 @@ interface PostProps {
   viewCount?: number;
   pinned?: boolean;
   pinnedAt?: Date | null;
-  createdAt: Date;
+  createdAt: Date | string;
   author: {
     id: string;
     name: string | null;
     avatar: string | null;
   };
-  likes: { userId: string }[];
-  reposts: { userId: string }[];
-  comments: { id: string }[];
+  likes?: { userId: string }[];
+  reposts?: { userId: string }[];
+  comments?: { id: string }[];
+  likeCount?: number;
+  repostCount?: number;
+  commentCount?: number;
+  likedByMe?: boolean;
   images?: { url: string }[];
   topic?: { id: string; name: string } | null;
 }
@@ -42,23 +46,58 @@ interface PostProps {
 export default function UserPostList({
   initialPosts,
   currentUserId,
+  userId,
+  initialHasMore = false,
 }: {
   initialPosts: PostProps[];
   currentUserId?: string;
+  userId: string;
+  initialHasMore?: boolean;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
   const toast = useToast();
   const activeUserId = currentUserId ?? session?.user?.id;
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(Boolean(initialHasMore));
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
   const viewMode = session?.user?.postViewMode || "both"; // title, content, both
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    setLoadError(null);
+    try {
+      const response = await fetch(
+        `/api/app/user/posts?userId=${userId}&page=${page + 1}&pageSize=20`,
+        { cache: "no-store" },
+      );
+      const data = await response.json() as {
+        list?: PostProps[];
+        pagination?: { hasMore?: boolean };
+      };
+      if (!response.ok) throw new Error("Failed to load posts");
+      setPosts((current) => {
+        const existingIds = new Set(current.map((post) => post.id));
+        return [...current, ...(data.list ?? []).filter((post) => !existingIds.has(post.id))];
+      });
+      setPage(page + 1);
+      setHasMore(Boolean(data.pagination?.hasMore));
+    } catch (error) {
+      console.error("Failed to load user posts:", error);
+      setLoadError("加载更多帖子失败，请重试");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleDeletePost = async (postId: string): Promise<boolean> => {
     try {
@@ -256,14 +295,12 @@ export default function UserPostList({
                   <LikeButton
                     targetType="post"
                     targetId={post.id}
-                    initialLikesCount={post.likes.length}
-                    initialLikedByUser={
+                    initialLikesCount={post.likeCount ?? post.likes?.length ?? 0}
+                    initialLikedByUser={post.likedByMe ?? (
                       activeUserId
-                        ? post.likes.some(
-                            (like) => like.userId === activeUserId
-                          )
+                        ? Boolean(post.likes?.some((like) => like.userId === activeUserId))
                         : false
-                    }
+                    )}
                   />
                   <Link
                     href={`/post/${post.id}`}
@@ -284,7 +321,7 @@ export default function UserPostList({
                       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                     </svg>
                     <span className="text-sm font-medium">
-                      {post.comments.length > 0 ? post.comments.length : "评论"}
+                      {post.commentCount ?? post.comments?.length ?? "评论"}
                     </span>
                   </Link>
                   <RepostButton
@@ -300,6 +337,19 @@ export default function UserPostList({
           </div>
         </div>
       ))}
+      {(hasMore || loadError) && (
+        <div className="flex flex-col items-center gap-2 py-4">
+          {loadError && <p className="text-sm text-red-500">{loadError}</p>}
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="rounded-full border border-gray-200 px-5 py-2 text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-60"
+          >
+            {loadingMore ? "加载中..." : loadError ? "重试" : "加载更多"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { getForumAnnouncements, getPosts } from "@/lib/post";
+import { getForumAnnouncements, getPostsPage } from "@/lib/post";
 import HomeContent from "@/components/HomeContent";
 import { getServerSession } from "next-auth/next";
 import type { Session } from "next-auth";
@@ -8,15 +8,15 @@ import { getHomeTopics } from "@/lib/topic";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [posts, homeTopics, announcements] = await Promise.all([
-    getPosts(),
+  const session = await getServerSession(authOptions) as Session | null;
+  const [postsPage, homeTopics, announcements] = await Promise.all([
+    getPostsPage({ viewerId: session?.user?.id }),
     getHomeTopics(),
     getForumAnnouncements(),
   ]);
-  const session = await getServerSession(authOptions) as Session | null;
   
   // Serialize dates to strings to pass to client component
-  const serializedPosts = posts.map(post => ({
+  const serializedPosts = postsPage.items.map(post => ({
     ...post,
     createdAt: post.createdAt.toISOString(),
     pinnedAt: post.pinnedAt ? post.pinnedAt.toISOString() : null,
@@ -29,6 +29,8 @@ export default async function Home() {
   return (
     <HomeContent
       initialPosts={serializedPosts}
+      initialPostsNextCursor={postsPage.nextCursor}
+      initialPostsHasMore={postsPage.hasMore}
       initialAnnouncements={serializedAnnouncements}
       initialTopics={homeTopics.topics}
       initialTopicsHasMore={homeTopics.hasMore}

@@ -7,6 +7,14 @@ import {
   getRichTextSummaryWithMentions,
   parseRichTextDocument,
 } from "@/lib/rich-text/content";
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  MAX_LIST_PAGE_SIZE,
+  decodeCursor,
+  encodeCursor,
+  InvalidCursorError,
+  type CursorPage,
+} from "@/lib/pagination";
 
 type PostAttachmentInput = {
   url: string;
@@ -129,13 +137,91 @@ function sameAttachments(
 }
 
 export async function getPosts(topicId?: string) {
+  return (await getPostsPage({ topicId, limit: MAX_LIST_PAGE_SIZE })).items;
+}
+
+export type PostListItem = {
+  id: string;
+  title: string | null;
+  content: string;
+  contentFormat: "RICH_TEXT" | "PLAIN_TEXT";
+  styleConfig: unknown;
+  styleCss: string | null;
+  postType: "TEXT" | "VIDEO";
+  visibility: "PUBLIC" | "UNLISTED";
+  viewCount: number;
+  pinned: boolean;
+  pinnedAt: Date | null;
+  createdAt: Date;
+  author: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+    experience: number;
+  };
+  likeCount: number;
+  repostCount: number;
+  commentCount: number;
+  likedByMe: boolean;
+  repostedByMe: boolean;
+  images: { url: string }[];
+  attachments: {
+    id: string;
+    url: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    downloadCount: number;
+  }[];
+  topic: { id: string; name: string } | null;
+  video: {
+    id: string;
+    status: "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
+    hlsMasterUrl: string | null;
+    coverUrl: string | null;
+    durationSec: number | null;
+    width: number | null;
+    height: number | null;
+  } | null;
+};
+
+type GetPostsPageOptions = {
+  topicId?: string;
+  cursor?: string | null;
+  limit?: number;
+  viewerId?: string | null;
+};
+
+export async function getPostsPage({
+  topicId,
+  cursor = null,
+  limit = DEFAULT_LIST_PAGE_SIZE,
+  viewerId = null,
+}: GetPostsPageOptions = {}): Promise<CursorPage<PostListItem>> {
+  const pageSize = Math.min(Math.max(Math.trunc(limit), 1), MAX_LIST_PAGE_SIZE);
+  const where = {
+    ...(topicId ? { topicId } : {}),
+    visibility: "PUBLIC" as const,
+    deletedAt: null,
+    author: { deletionRequestedAt: null },
+  };
+  const cursorId = decodeCursor(cursor);
+
+  if (cursorId) {
+    const cursorPost = await prisma.post.findFirst({
+      where: { ...where, id: cursorId },
+      select: { id: true },
+    });
+
+    if (!cursorPost) {
+      throw new InvalidCursorError();
+    }
+  }
+
   const posts = await prisma.post.findMany({
-    where: {
-      ...(topicId ? { topicId } : {}),
-      visibility: "PUBLIC",
-      deletedAt: null,
-      author: { deletionRequestedAt: null },
-    },
+    where,
+    ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+    take: pageSize + 1,
     select: {
       id: true,
       title: true,
@@ -158,19 +244,11 @@ export async function getPosts(topicId?: string) {
           experience: true,
         },
       },
-      likes: {
+      _count: {
         select: {
-          userId: true,
-        },
-      },
-      reposts: {
-        select: {
-          userId: true,
-        },
-      },
-      comments: {
-        select: {
-          id: true,
+          likes: true,
+          reposts: true,
+          comments: true,
         },
       },
       images: {
@@ -207,13 +285,34 @@ export async function getPosts(topicId?: string) {
       },
     },
     orderBy: [
-      { pinned: 'desc' },    // 置顶的帖子排在前面
-      { pinnedAt: 'desc' },  // 按置顶时间降序
-      { createdAt: 'desc' }, // 非置顶帖子按创建时间降序
+      { pinned: "desc" },
+      { pinnedAt: "desc" },
+      { createdAt: "desc" },
+      { id: "desc" },
     ],
   });
 
-  return posts.map(({ contentJson, contentFormat, ...post }) => ({
+  const hasMore = posts.length > pageSize;
+  const page = hasMore ? posts.slice(0, pageSize) : posts;
+  const postIds = page.map((post) => post.id);
+
+  const [likedPosts, repostedPosts] = viewerId && postIds.length > 0
+    ? await Promise.all([
+        prisma.postLike.findMany({
+          where: { userId: viewerId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+        prisma.repost.findMany({
+          where: { userId: viewerId, postId: { in: postIds } },
+          select: { postId: true },
+        }),
+      ])
+    : [[], []];
+
+  const likedPostIds = new Set(likedPosts.map((like) => like.postId));
+  const repostedPostIds = new Set(repostedPosts.map((repost) => repost.postId));
+
+  const items = page.map(({ contentJson, contentFormat, _count, ...post }) => ({
     ...post,
     contentFormat,
     content: contentFormat === "RICH_TEXT"
@@ -223,7 +322,155 @@ export async function getPosts(topicId?: string) {
         })
         : "")
       : post.content,
+    likeCount: _count.likes,
+    repostCount: _count.reposts,
+    commentCount: _count.comments,
+    likedByMe: likedPostIds.has(post.id),
+    repostedByMe: repostedPostIds.has(post.id),
   }));
+
+  return {
+    items,
+    nextCursor: hasMore && page.length > 0 ? encodeCursor(page[page.length - 1].id) : null,
+    hasMore,
+  };
+}
+
+export type CommentListItem = {
+  id: string;
+  content: string;
+  postId: string;
+  parentId: string | null;
+  replyToId: string | null;
+  replyTo: {
+    id: string;
+    author: {
+      id: string;
+      name: string | null;
+    };
+  } | null;
+  pinned: boolean;
+  pinnedAt: Date | null;
+  createdAt: Date;
+  author: {
+    id: string;
+    name: string | null;
+    avatar: string | null;
+  };
+  likeCount: number;
+  likedByMe: boolean;
+  replies: CommentListItem[];
+  replyCount: number;
+  repliesHasMore: boolean;
+  repliesNextCursor: string | null;
+};
+
+type GetCommentsPageOptions = {
+  postId: string;
+  parentId?: string | null;
+  cursor?: string | null;
+  limit?: number;
+  viewerId?: string | null;
+};
+
+export async function getCommentsPage({
+  postId,
+  parentId = null,
+  cursor = null,
+  limit = DEFAULT_LIST_PAGE_SIZE,
+  viewerId = null,
+}: GetCommentsPageOptions): Promise<CursorPage<CommentListItem> & { total: number }> {
+  const pageSize = Math.min(Math.max(Math.trunc(limit), 1), MAX_LIST_PAGE_SIZE);
+  const where = { postId, parentId };
+  const cursorId = decodeCursor(cursor);
+
+  if (cursorId) {
+    const cursorComment = await prisma.comment.findFirst({
+      where: { ...where, id: cursorId },
+      select: { id: true },
+    });
+
+    if (!cursorComment) {
+      throw new InvalidCursorError();
+    }
+  }
+
+  const [total, comments] = await Promise.all([
+    prisma.comment.count({ where }),
+    prisma.comment.findMany({
+      where,
+      ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+      take: pageSize + 1,
+      select: {
+        id: true,
+        content: true,
+        postId: true,
+        parentId: true,
+        replyToId: true,
+        pinned: true,
+        pinnedAt: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        replyTo: {
+          select: {
+            id: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
+        },
+      },
+      orderBy: [
+        { pinned: "desc" },
+        { pinnedAt: "desc" },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ],
+    }),
+  ]);
+
+  const hasMore = comments.length > pageSize;
+  const page = hasMore ? comments.slice(0, pageSize) : comments;
+  const commentIds = page.map((comment) => comment.id);
+  const likedComments = viewerId && commentIds.length > 0
+    ? await prisma.commentLike.findMany({
+        where: { userId: viewerId, commentId: { in: commentIds } },
+        select: { commentId: true },
+      })
+    : [];
+  const likedCommentIds = new Set(likedComments.map((like) => like.commentId));
+
+  const items = page.map(({ _count, ...comment }) => ({
+    ...comment,
+    likeCount: _count.likes,
+    likedByMe: likedCommentIds.has(comment.id),
+    replies: [],
+    replyCount: _count.replies,
+    repliesHasMore: _count.replies > 0,
+    repliesNextCursor: null,
+  }));
+
+  return {
+    items,
+    total,
+    nextCursor: hasMore && page.length > 0 ? encodeCursor(page[page.length - 1].id) : null,
+    hasMore,
+  };
 }
 
 export async function getForumAnnouncements(limit = 5) {
@@ -347,6 +594,11 @@ export async function getPostById(id: string) {
         },
       },
       viewCount: true,
+      _count: {
+        select: {
+          comments: true,
+        },
+      },
       author: {
         select: {
           id: true,
@@ -395,74 +647,6 @@ export async function getPostById(id: string) {
           width: true,
           height: true,
         },
-      },
-      comments: {
-        select: {
-          id: true,
-          content: true,
-          postId: true,
-          createdAt: true,
-          pinned: true,
-          pinnedAt: true,
-          parentId: true,
-          replyToId: true,
-          author: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          likes: {
-            select: {
-              userId: true,
-            },
-          },
-          replies: {
-            select: {
-              id: true,
-              content: true,
-              postId: true,
-              createdAt: true,
-              parentId: true,
-              replyToId: true,
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
-              likes: {
-                select: {
-                  userId: true,
-                },
-              },
-              replyTo: {
-                select: {
-                  id: true,
-                  author: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
-              },
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          },
-        },
-        where: {
-          parentId: null,
-        },
-        orderBy: [
-          { pinned: 'desc' },
-          { pinnedAt: 'desc' },
-          { createdAt: 'desc' },
-        ],
       },
     },
   });

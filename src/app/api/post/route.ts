@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createPost, updatePost, getPosts } from "@/lib/post";
+import { createPost, updatePost, getPostsPage } from "@/lib/post";
 import { prisma } from "@/lib/prisma";
 import {
   enqueueMediaCleanupTaskFromUrl,
@@ -15,7 +15,12 @@ import {
 } from "@/lib/rich-text/content";
 import { renderRichTextHtml } from "@/lib/rich-text/server";
 import { linkMarkdownMentions, linkRichTextMentions } from "@/lib/mentions";
-import { isAdminRole, requireActiveUser } from "@/lib/server-auth";
+import { getCurrentUser, isAdminRole, requireActiveUser } from "@/lib/server-auth";
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  InvalidCursorError,
+  parseListPageSize,
+} from "@/lib/pagination";
 
 /**
  * 甯栧瓙瀛楁鏈€澶ч暱搴﹂檺鍒?
@@ -74,11 +79,31 @@ async function scheduleCosFileCleanup(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const topicId = searchParams.get('topicId');
+    const topicId = searchParams.get("topicId")?.trim() || undefined;
+    const cursor = searchParams.get("cursor");
+    const limit = parseListPageSize(searchParams.get("limit"), DEFAULT_LIST_PAGE_SIZE);
+    const viewer = await getCurrentUser();
+    const page = await getPostsPage({
+      topicId,
+      cursor,
+      limit,
+      viewerId: viewer?.id,
+    });
 
-    const posts = await getPosts(topicId || undefined);
-    return NextResponse.json(posts);
+    // Keep a bounded array response for older clients that have not opted into
+    // the cursor contract yet. First-party clients always pass `limit`.
+    return NextResponse.json(
+      searchParams.has("cursor") || searchParams.has("limit")
+        ? page
+        : page.items,
+    );
   } catch (error) {
+    if (error instanceof InvalidCursorError) {
+      return NextResponse.json(
+        { error: "Invalid cursor", code: "INVALID_CURSOR" },
+        { status: 400 },
+      );
+    }
     console.error("Get posts error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -38,7 +38,7 @@ export interface CommentProps {
   id: string;
   content: string;
   author: AuthorProps;
-  createdAt: Date;
+  createdAt: Date | string;
   parentId: string | null;
   replyToId?: string | null;
   replyTo?: {
@@ -49,8 +49,13 @@ export interface CommentProps {
     };
   } | null;
   postId: string;
-  likes: { userId: string }[];
+  likes?: { userId: string }[];
+  likeCount?: number;
+  likedByMe?: boolean;
   replies: ReplyComment[];
+  replyCount?: number;
+  repliesHasMore?: boolean;
+  repliesNextCursor?: string | null;
   pinned?: boolean;
   pinnedAt?: Date | null;
 }
@@ -61,9 +66,19 @@ interface PostCommentsProps {
   comments: CommentProps[];
   postId: string;
   postAuthorId: string;
+  nextCursor?: string | null;
+  hasMore?: boolean;
+  total?: number;
 }
 
-export default function PostComments({ comments, postId, postAuthorId }: PostCommentsProps) {
+export default function PostComments({
+  comments,
+  postId,
+  postAuthorId,
+  nextCursor: initialNextCursor = null,
+  hasMore: initialHasMore = false,
+  total = comments.length,
+}: PostCommentsProps) {
   const { data: session } = useSession();
   const toast = useToast();
   const router = useRouter();
@@ -71,9 +86,88 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [deleteConfirmCommentId, setDeleteConfirmCommentId] = useState<string | null>(null);
   const [pinningCommentId, setPinningCommentId] = useState<string | null>(null);
+  const [commentItems, setCommentItems] = useState<CommentProps[]>(comments);
+  const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(initialNextCursor);
+  const [commentsHasMore, setCommentsHasMore] = useState(initialHasMore);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [commentsLoadError, setCommentsLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCommentItems(comments);
+    setCommentsNextCursor(initialNextCursor);
+    setCommentsHasMore(initialHasMore);
+  }, [comments, initialHasMore, initialNextCursor]);
 
   const refreshComments = () => {
     router.refresh();
+  };
+
+  const loadMoreComments = async () => {
+    if (!commentsHasMore || loadingMoreComments) return;
+
+    setLoadingMoreComments(true);
+    setCommentsLoadError(null);
+    try {
+      const params = new URLSearchParams({ postId, limit: "20" });
+      if (commentsNextCursor) params.set("cursor", commentsNextCursor);
+      const response = await fetch(`/api/comment?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const data = await response.json() as {
+        items?: CommentProps[];
+        nextCursor?: string | null;
+        hasMore?: boolean;
+        code?: string;
+      };
+
+      if (!response.ok) {
+        if (data.code === "INVALID_CURSOR") {
+          router.refresh();
+          return;
+        }
+        throw new Error("Failed to load comments");
+      }
+
+      setCommentItems((current) => {
+        const existingIds = new Set(current.map((comment) => comment.id));
+        return [...current, ...(data.items ?? []).filter((comment) => !existingIds.has(comment.id))];
+      });
+      setCommentsNextCursor(data.nextCursor ?? null);
+      setCommentsHasMore(Boolean(data.hasMore));
+    } catch (error) {
+      console.error("Failed to load more comments:", error);
+      setCommentsLoadError("加载更多评论失败，请重试");
+    } finally {
+      setLoadingMoreComments(false);
+    }
+  };
+
+  const loadMoreReplies = async (commentId: string, cursor: string | null) => {
+    const params = new URLSearchParams({ postId, parentId: commentId, limit: "20" });
+    if (cursor) params.set("cursor", cursor);
+    const response = await fetch(`/api/comment?${params.toString()}`, { cache: "no-store" });
+    const data = await response.json() as {
+      items?: ReplyComment[];
+      nextCursor?: string | null;
+      hasMore?: boolean;
+    };
+    if (!response.ok) {
+      throw new Error("Failed to load replies");
+    }
+
+    setCommentItems((current) => current.map((comment) => {
+      if (comment.id !== commentId) return comment;
+      const existingIds = new Set((comment.replies ?? []).map((reply) => reply.id));
+      return {
+        ...comment,
+        replies: [
+          ...(comment.replies ?? []),
+          ...(data.items ?? []).filter((reply) => !existingIds.has(reply.id)),
+        ],
+        repliesNextCursor: data.nextCursor ?? null,
+        repliesHasMore: Boolean(data.hasMore),
+      };
+    }));
   };
 
   const requestDeleteComment = (commentId: string) => {
@@ -144,12 +238,16 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
   };
 
   // 排序评论：置顶的在前，然后按创建时间
-  const sortedComments = [...comments].sort((a, b) => {
+  const sortedComments = [...commentItems].sort((a, b) => {
     // 置顶的评论排在前面
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     // 同是置顶或同非置顶，按创建时间排序
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    const pinnedAtDifference = (b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0)
+      - (a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0);
+    if (pinnedAtDifference !== 0) return pinnedAtDifference;
+    const createdAtDifference = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    return createdAtDifference !== 0 ? createdAtDifference : b.id.localeCompare(a.id);
   });
 
   const activeDeleteCommentId = deletingCommentId ?? deleteConfirmCommentId;
@@ -162,11 +260,11 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
       >
         <div className="p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-            评论 ({comments.length})
+            评论 ({total})
           </h2>
           {/* Comment Form */}
           <CommentForm postId={postId} onCommentPosted={refreshComments} />
-          {comments.length === 0 ? (
+          {commentItems.length === 0 ? (
             <p className="text-gray-500 text-sm sm:text-base">
               还没有评论，快来发表第一条评论吧！
             </p>
@@ -179,12 +277,26 @@ export default function PostComments({ comments, postId, postAuthorId }: PostCom
                   currentUserId={currentUserId}
                   postAuthorId={postAuthorId}
                   onCommentPosted={refreshComments}
+                  onLoadReplies={loadMoreReplies}
                   onDeleteComment={requestDeleteComment}
                   onPinComment={handlePinComment}
                   deletingCommentId={activeDeleteCommentId}
                   pinningCommentId={pinningCommentId}
                 />
               ))}
+              {(commentsHasMore || commentsLoadError) && (
+                <div className="flex flex-col items-center gap-2 pt-2">
+                  {commentsLoadError && <p className="text-sm text-red-500">{commentsLoadError}</p>}
+                  <button
+                    type="button"
+                    onClick={() => void loadMoreComments()}
+                    disabled={loadingMoreComments}
+                    className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:border-blue-300 hover:text-blue-600 disabled:opacity-60"
+                  >
+                    {loadingMoreComments ? "加载中..." : commentsLoadError ? "重试" : "加载更多评论"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -780,12 +892,12 @@ function ReplyItem({
               <LikeButton
                 targetType="comment"
                 targetId={reply.id}
-                initialLikesCount={reply.likes.length}
-                initialLikedByUser={
+                initialLikesCount={reply.likeCount ?? reply.likes?.length ?? 0}
+                initialLikedByUser={reply.likedByMe ?? (
                   currentUserId
-                    ? reply.likes.some((like) => like.userId === currentUserId)
+                    ? Boolean(reply.likes?.some((like) => like.userId === currentUserId))
                     : false
-                }
+                )}
               />
               <button
                 type="button"
@@ -819,6 +931,7 @@ function CommentItem({
   currentUserId,
   postAuthorId,
   onCommentPosted,
+  onLoadReplies,
   onDeleteComment,
   onPinComment,
   deletingCommentId,
@@ -828,6 +941,7 @@ function CommentItem({
   currentUserId: string | null;
   postAuthorId: string;
   onCommentPosted: () => void;
+  onLoadReplies: (commentId: string, cursor: string | null) => Promise<void>;
   onDeleteComment: (id: string) => void | Promise<void>;
   onPinComment: (id: string, pinned: boolean) => void | Promise<void>;
   deletingCommentId: string | null;
@@ -839,6 +953,7 @@ function CommentItem({
     name: string | null;
   } | null>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [loadingReplies, setLoadingReplies] = useState(false);
   const [replyIdToFocus, setReplyIdToFocus] = useState<string | null>(null);
   const [highlightedReplyId, setHighlightedReplyId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -849,10 +964,21 @@ function CommentItem({
   const displayedReplies = showAllReplies
     ? comment.replies
     : comment.replies?.slice(0, 1);
-  const remainingRepliesCount = (comment.replies?.length || 0) - 1;
+  const replyCount = comment.replyCount ?? comment.replies?.length ?? 0;
+  const remainingRepliesCount = Math.max(replyCount - (comment.replies?.length || 0), 0);
+
+  const handleLoadReplies = async () => {
+    if (loadingReplies || !comment.repliesHasMore) return;
+    setLoadingReplies(true);
+    try {
+      await onLoadReplies(comment.id, comment.repliesNextCursor ?? null);
+      setShowAllReplies(true);
+    } finally {
+      setLoadingReplies(false);
+    }
+  };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -1025,12 +1151,12 @@ function CommentItem({
               <LikeButton
                 targetType="comment"
                 targetId={comment.id}
-                initialLikesCount={comment.likes.length}
-                initialLikedByUser={
+                initialLikesCount={comment.likeCount ?? comment.likes?.length ?? 0}
+                initialLikedByUser={comment.likedByMe ?? (
                   currentUserId
-                    ? comment.likes.some((like) => like.userId === currentUserId)
+                    ? Boolean(comment.likes?.some((like) => like.userId === currentUserId))
                     : false
-                }
+                )}
               />
               <button
                 type="button"
@@ -1072,7 +1198,7 @@ function CommentItem({
         </div>
       )}
 
-      {comment.replies?.length > 0 && (
+      {replyCount > 0 && (
         <div className="ml-8 mt-4 space-y-3">
           {displayedReplies.map((reply) => (
             <ReplyItem
@@ -1089,15 +1215,22 @@ function CommentItem({
               pinningCommentId={pinningCommentId}
             />
           ))}
-          {!showAllReplies && remainingRepliesCount > 0 ? (
+          {comment.repliesHasMore ? (
             <button
-              onClick={() => setShowAllReplies(true)}
-              className="text-sm text-blue-500 hover:underline"
+              type="button"
+              onClick={() => void handleLoadReplies()}
+              disabled={loadingReplies}
+              className="text-sm text-blue-500 hover:underline disabled:opacity-60"
             >
-              点击以展开{remainingRepliesCount}个回复
+              {loadingReplies
+                ? "加载回复中..."
+                : comment.replies.length === 0
+                  ? `查看${replyCount}个回复`
+                  : `加载更多回复（剩余${remainingRepliesCount}个）`}
             </button>
-          ) : showAllReplies && remainingRepliesCount > 0 ? (
+          ) : showAllReplies && comment.replies.length > 0 ? (
             <button
+              type="button"
               onClick={() => setShowAllReplies(false)}
               className="text-sm text-blue-500 hover:underline"
             >

@@ -49,14 +49,30 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"users" | "posts">("users");
+  const [listPage, setListPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (
+    tab: "users" | "posts" = activeTab,
+    page = 1,
+    append = false,
+  ) => {
     try {
-      const response = await fetch("/api/admin/data");
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      const response = await fetch(`/api/admin/data?type=${tab}&page=${page}&pageSize=20`, {
+        cache: "no-store",
+      });
       const data = await response.json();
       if (response.ok) {
-        setUsers(data.users);
-        setPosts(data.posts);
+        if (tab === "users") {
+          setUsers((current) => append ? [...current, ...data.users] : data.users);
+        } else {
+          setPosts((current) => append ? [...current, ...data.posts] : data.posts);
+        }
+        setListPage(page);
+        setHasMore(Boolean(data.hasMore));
         setMediaCleanup(data.mediaCleanup ?? null);
       } else {
         setError(data.error || "Failed to fetch data");
@@ -65,8 +81,9 @@ export default function AdminPanel() {
       setError("Network error");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, []);
+  }, [activeTab]);
 
   const checkServerForAdminRole = useCallback(async () => {
     try {
@@ -75,7 +92,7 @@ export default function AdminPanel() {
         const userData = await response.json();
         if (userData.role === "admin") {
           // 如果服务器上的角色是管理员，更新会话并允许访问
-          void fetchData();
+          void fetchData(activeTab, 1, false);
           return;
         }
       }
@@ -85,7 +102,7 @@ export default function AdminPanel() {
       console.error("检查管理员权限时出错:", error);
       router.push("/");
     }
-  }, [fetchData, router]);
+  }, [activeTab, fetchData, router]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -93,13 +110,13 @@ export default function AdminPanel() {
     } else if (status === "authenticated" && session?.user) {
       // 首先检查会话中的角色
       if (session.user.role === "admin") {
-        void fetchData();
+        void fetchData(activeTab, 1, false);
       } else {
         // 如果会话中的角色不是管理员，检查服务器上的最新信息
         void checkServerForAdminRole();
       }
     }
-  }, [status, session, router, fetchData, checkServerForAdminRole]);
+  }, [status, session, router, fetchData, checkServerForAdminRole, activeTab]);
 
   const handleBanUser = async (userId: string, banned: boolean) => {
     try {
@@ -317,6 +334,18 @@ export default function AdminPanel() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {hasMore && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void fetchData(activeTab, listPage + 1, true)}
+                  disabled={loadingMore}
+                  className="rounded-full border border-gray-200 px-5 py-2 text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-60"
+                >
+                  {loadingMore ? "加载中..." : "加载更多"}
+                </button>
               </div>
             )}
           </div>

@@ -35,23 +35,46 @@ interface Notification {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    fetchNotifications();
+    void fetchNotifications(1, false);
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (nextPage: number, append: boolean) => {
     try {
-      const res = await fetch("/api/notifications");
+      if (append) setLoadingMore(true);
+      setError(null);
+      const res = await fetch(`/api/notifications?page=${nextPage}&pageSize=20`, {
+        cache: "no-store",
+      });
       if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications);
+        const data = await res.json() as {
+          items?: Notification[];
+          notifications?: Notification[];
+          hasMore?: boolean;
+        };
+        const items = data.items ?? data.notifications ?? [];
+        setNotifications((current) => {
+          if (!append) return items;
+          const existingIds = new Set(current.map((notification) => notification.id));
+          return [...current, ...items.filter((notification) => !existingIds.has(notification.id))];
+        });
+        setPage(nextPage);
+        setHasMore(Boolean(data.hasMore));
+      } else {
+        setError("获取通知失败");
       }
     } catch (error) {
       console.error("Failed to fetch notifications", error);
+      setError("获取通知失败");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -258,6 +281,19 @@ export default function NotificationsPage() {
               </div>
             </div>
           ))}
+          {(hasMore || error) && (
+            <div className="flex flex-col items-center gap-2 py-4">
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              <button
+                type="button"
+                onClick={() => void fetchNotifications(error ? page : page + 1, true)}
+                disabled={loadingMore}
+                className="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-60"
+              >
+                {loadingMore ? "加载中..." : error ? "重试" : "加载更多"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/server-auth";
+import { parseListPageSize, parsePage, getPageResult } from "@/lib/pagination";
 
 type Connection = {
   user: {
@@ -27,13 +28,6 @@ export async function GET(request: Request) {
       return auth.response;
     }
 
-    if (!auth.ok) {
-      return NextResponse.json(
-        { error: "请先登录" },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId") || auth.user.id;
     const type = searchParams.get("type"); // "following" or "followers"
@@ -47,6 +41,9 @@ export async function GET(request: Request) {
 
     const currentUserId = auth.user.id;
     const isOwnProfile = currentUserId === userId;
+    const page = parsePage(searchParams.get("page"));
+    const pageSize = parseListPageSize(searchParams.get("pageSize"));
+    const skip = (page - 1) * pageSize;
 
     // 获取用户信息
     const user = await prisma.user.findUnique({
@@ -93,13 +90,20 @@ export async function GET(request: Request) {
         orderBy: {
           createdAt: "desc",
         },
+        skip,
+        take: pageSize,
       });
 
       connections = result.map((follow) => ({
         user: follow.following,
         followedAt: follow.createdAt,
       }));
-      total = result.length;
+      total = await prisma.follow.count({
+        where: {
+          followerId: userId,
+          following: { deletionRequestedAt: null },
+        },
+      });
     } else {
       // 获取粉丝列表
       const result = await prisma.follow.findMany({
@@ -120,18 +124,25 @@ export async function GET(request: Request) {
         orderBy: {
           createdAt: "desc",
         },
+        skip,
+        take: pageSize,
       });
 
       connections = result.map((follow) => ({
         user: follow.follower,
         followedAt: follow.createdAt,
       }));
-      total = result.length;
+      total = await prisma.follow.count({
+        where: {
+          followingId: userId,
+          follower: { deletionRequestedAt: null },
+        },
+      });
     }
 
     // 获取当前用户对这些用户的关注状态
     let followStatus: Record<string, boolean> = {};
-    if (isOwnProfile && connections.length > 0) {
+    if (connections.length > 0) {
       const userIds = connections.map((c) => c.user.id);
       const follows = await prisma.follow.findMany({
         where: {
@@ -156,6 +167,7 @@ export async function GET(request: Request) {
       type,
       connections: connectionsWithStatus,
       total,
+      pagination: getPageResult(connectionsWithStatus, page, pageSize, total),
       isOwnProfile,
     });
   } catch (error) {

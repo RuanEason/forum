@@ -352,7 +352,9 @@
 
 ## 节点 4：统一列表分页与查询负载
 
-状态：待开始
+状态：已完成
+
+完成日期：2026-08-17
 
 目标：避免首页、搜索、话题、评论和后台一次性加载全部数据。
 
@@ -436,6 +438,43 @@ type PageResult<T> = {
 - 查询不再返回完整点赞/评论/转发关系。
 - 关键页面首屏和数据库查询耗时有对比记录。
 - 完成后标记为已完成。
+
+实施记录：
+
+- 新增 `src/lib/pagination.ts`，统一游标分页、页码分页、默认 20 条、最大 50 条、游标编码/校验和响应类型。
+- 首页和话题帖子流改为游标分页，固定使用 `pinned DESC`、`pinnedAt DESC`、`createdAt DESC`、`id DESC`；前端支持加载更多、重复去重、游标失效后重新加载首屏和失败重试。
+- Web/App 帖子列表改为数量与当前用户状态：`likeCount`、`repostCount`、`commentCount`、`likedByMe`、`repostedByMe`；旧数组接口保留最大 50 条兼容响应。
+- 评论根列表和回复均改为游标分页，首屏仅查询有限评论和聚合数量；评论与回复支持独立加载更多，移除列表查询中的完整点赞用户 ID。
+- 新增 `/api/search` 页码分页，搜索页面的帖子和用户分开加载；管理后台用户/帖子分开分页；用户主页帖子、关注/粉丝和通知列表均增加页码边界与加载更多。
+- 新增分页数据库索引 migration `20260817150000_add_pagination_indexes`，覆盖帖子流、话题流、评论、通知和关注关系排序字段。
+- 新增 `tests/pagination.test.ts`，覆盖页大小边界、游标往返/非法游标和页码响应元数据。
+
+验证结果：
+
+- 命令：`npx prisma migrate deploy`
+  - 结果：通过，已应用 `20260817150000_add_pagination_indexes`
+- 命令：`npx prisma migrate status`
+  - 结果：通过，数据库 schema 已是最新
+- 命令：`npx prisma validate`
+  - 结果：通过
+- 命令：`npx tsc --noEmit`
+  - 结果：通过
+- 命令：`npx tsx --test tests/pagination.test.ts tests/feature-flags.test.ts tests/server-auth.test.ts tests/healthcheck.test.ts tests/media-cleanup.test.ts tests/mentions.test.ts tests/rich-text-content.test.ts tests/rich-text-paste.test.ts`
+  - 结果：通过，27/27
+- 命令：`npm run lint`
+  - 结果：通过，0 errors、0 warnings
+- 命令：`git diff --check`
+  - 结果：通过
+- 命令：`npm run build`
+  - 结果：通过，Prisma Client 生成成功，Next 生产构建成功，静态页面 88/88 生成
+- 只读分页烟测：`npx tsx -e ... getPostsPage/getCommentsPage ...`
+  - 结果：帖子首屏 8/20 条、无下一页；第二页 0 条；评论首屏 1/20 条、无下一页。首屏帖子查询 109.63ms，评论首屏查询 49.28ms；查询结果均受单页边界限制。
+
+后续观察：
+
+- 生产数据量增长后继续记录首页、话题、评论、搜索和后台首屏耗时，与本节点烟测数据对比；重点观察游标分页在新帖插入、置顶变化和删除时是否出现重复或漏项。
+- 第一方 App 客户端需要使用 `limit`/`cursor` 参数切换到新响应；旧兼容响应暂时保留最大 50 条限制。
+- 继续观察评论回复分页、通知/关注列表加载更多及后台分页在真实登录会话中的重复请求和失败重试行为。
 
 ## 节点 5：补齐账号安全功能
 

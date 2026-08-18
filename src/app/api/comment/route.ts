@@ -1,11 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCommentsPage } from "@/lib/post";
+import { getCurrentUser, requireActiveUser, isAdminRole } from "@/lib/server-auth";
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  InvalidCursorError,
+  parseListPageSize,
+} from "@/lib/pagination";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { linkMarkdownMentions } from "@/lib/mentions";
-import { requireActiveUser, isAdminRole } from "@/lib/server-auth";
 
 const MAX_COMMENT_IMAGES = 9;
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get("postId")?.trim();
+    if (!postId) {
+      return NextResponse.json({ error: "postId is required" }, { status: 400 });
+    }
+
+    const post = await prisma.post.findFirst({
+      where: { id: postId, deletedAt: null, author: { deletionRequestedAt: null } },
+      select: { id: true },
+    });
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    const parentIdParam = searchParams.get("parentId");
+    const page = await getCommentsPage({
+      postId,
+      parentId: parentIdParam ? parentIdParam.trim() || null : null,
+      cursor: searchParams.get("cursor"),
+      limit: parseListPageSize(searchParams.get("limit"), DEFAULT_LIST_PAGE_SIZE),
+      viewerId: (await getCurrentUser())?.id,
+    });
+
+    return NextResponse.json({ postId, ...page });
+  } catch (error) {
+    if (error instanceof InvalidCursorError) {
+      return NextResponse.json(
+        { error: "Invalid cursor", code: "INVALID_CURSOR" },
+        { status: 400 },
+      );
+    }
+
+    console.error("Get comments error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
 function normalizeImageUrls(images: unknown): string[] {
   if (!Array.isArray(images)) {

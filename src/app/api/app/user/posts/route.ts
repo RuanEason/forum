@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
   try {
     const sessionUser = await getSessionUser();
     const { searchParams } = new URL(request.url);
-
     const userId = getTrimmedParam(searchParams, "userId") ?? sessionUser?.id;
     if (!userId) {
       return NextResponse.json(
@@ -30,21 +29,10 @@ export async function GET(request: NextRequest) {
       min: 1,
       max: MAX_PAGE_SIZE,
     });
-
-    const [targetUser, total] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, banned: true, deletionRequestedAt: true },
-      }),
-      prisma.post.count({
-        where: {
-          authorId: userId,
-          visibility: "PUBLIC",
-          deletedAt: null,
-        },
-      }),
-    ]);
-
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, banned: true, deletionRequestedAt: true },
+    });
     if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -55,84 +43,76 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const skip = (page - 1) * pageSize;
+    const where = {
+      authorId: userId,
+      ...(isSelf || isAdmin ? {} : { visibility: "PUBLIC" as const }),
+      deletedAt: null,
+      author: { deletionRequestedAt: null },
+    };
+    const [total, posts] = await Promise.all([
+      prisma.post.count({ where }),
+      prisma.post.findMany({
+        where,
+        orderBy: [
+          { pinned: "desc" },
+          { pinnedAt: "desc" },
+          { createdAt: "desc" },
+          { id: "desc" },
+        ],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          contentJson: true,
+          contentFormat: true,
+          postType: true,
+          visibility: true,
+          viewCount: true,
+          pinned: true,
+          pinnedAt: true,
+          createdAt: true,
+          author: {
+            select: { id: true, name: true, avatar: true },
+          },
+          _count: {
+            select: { likes: true, reposts: true, comments: true },
+          },
+          images: {
+            select: { url: true },
+          },
+          topic: {
+            select: { id: true, name: true },
+          },
+        },
+      }),
+    ]);
 
-    const posts = await prisma.post.findMany({
-      where: {
-        authorId: userId,
-        visibility: "PUBLIC",
-        deletedAt: null,
-      },
-      orderBy: [{ pinned: "desc" }, { pinnedAt: "desc" }, { createdAt: "desc" }],
-      skip,
-      take: pageSize,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        contentJson: true,
-        contentFormat: true,
-        postType: true,
-        visibility: true,
-        viewCount: true,
-        pinned: true,
-        pinnedAt: true,
-        createdAt: true,
-        topic: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        images: {
-          select: {
-            url: true,
-          },
-        },
-        attachments: {
-          select: {
-            id: true,
-            url: true,
-            fileName: true,
-            fileSize: true,
-            mimeType: true,
-            downloadCount: true,
-          },
-        },
-        likes: {
-          select: {
-            userId: true,
-          },
-        },
-        reposts: {
-          select: {
-            userId: true,
-          },
-        },
-        comments: {
-          select: {
-            id: true,
-          },
-        },
-        video: {
-          select: {
-            coverUrl: true,
-          },
-        },
-      },
-    });
+    const postIds = posts.map((post) => post.id);
+    const likedIds = sessionUser && postIds.length > 0
+      ? new Set((await prisma.postLike.findMany({
+          where: { userId: sessionUser.id, postId: { in: postIds } },
+          select: { postId: true },
+        })).map((like) => like.postId))
+      : new Set<string>();
 
-    const summarizedPosts = posts.map(({ contentJson, contentFormat, ...post }) => ({
+    const list = posts.map(({ contentJson, contentFormat, _count, ...post }) => ({
       ...post,
       contentFormat,
       content: contentFormat === "RICH_TEXT"
         ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
         : post.content,
+      likeCount: _count.likes,
+      repostCount: _count.reposts,
+      commentCount: _count.comments,
+      likedByMe: likedIds.has(post.id),
+      repostedByMe: false,
     }));
 
     return NextResponse.json({
       userId,
-      list: summarizedPosts,
+      list,
       pagination: getPaginationMeta(page, pageSize, total),
     });
   } catch (error) {

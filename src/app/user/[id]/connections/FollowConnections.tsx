@@ -31,33 +31,50 @@ export default function FollowConnections({
 }: FollowConnectionsProps) {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchConnections() {
+    async function fetchConnections(pageToLoad = 1, append = false) {
       try {
-        setLoading(true);
+        if (append) setLoadingMore(true);
+        else setLoading(true);
         setError(null);
 
         const res = await fetch(
-          `/api/follow/connections?userId=${user.id}&type=${type}`
+          `/api/follow/connections?userId=${user.id}&type=${type}&page=${pageToLoad}&pageSize=20`
         );
 
         if (!res.ok) {
           throw new Error("获取关注列表失败");
         }
 
-        const data = await res.json();
-        setConnections(data.connections || []);
+        const data = await res.json() as {
+          connections?: Connection[];
+          pagination?: { hasMore?: boolean };
+        };
+        setConnections((current) => {
+          if (!append) return data.connections || [];
+          const existingIds = new Set(current.map((connection) => connection.user.id));
+          return [
+            ...current,
+            ...(data.connections || []).filter((connection) => !existingIds.has(connection.user.id)),
+          ];
+        });
+        setPage(pageToLoad);
+        setHasMore(Boolean(data.pagination?.hasMore));
       } catch (err) {
         setError("获取关注列表失败");
         console.error("获取关注列表失败:", err);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     }
 
-    fetchConnections();
+    void fetchConnections();
   }, [user.id, type]);
 
   const handleFollowChange = (index: number, isFollowing: boolean) => {
@@ -168,6 +185,47 @@ export default function FollowConnections({
           ))
         )}
       </div>
+
+      {/* 返回链接 */}
+      {(hasMore || error) && (
+        <div className="flex flex-col items-center gap-2 border-t border-gray-100 p-4 sm:p-6">
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          <button
+            type="button"
+            onClick={() => {
+              // The effect owns the initial request; subsequent pages use the same endpoint.
+              void (async () => {
+                try {
+                  setLoadingMore(true);
+                  setError(null);
+                  const res = await fetch(
+                    `/api/follow/connections?userId=${user.id}&type=${type}&page=${error ? page : page + 1}&pageSize=20`,
+                  );
+                  const data = await res.json() as {
+                    connections?: Connection[];
+                    pagination?: { hasMore?: boolean };
+                  };
+                  if (!res.ok) throw new Error("failed");
+                  setConnections((current) => {
+                    const existingIds = new Set(current.map((connection) => connection.user.id));
+                    return [...current, ...(data.connections || []).filter((connection) => !existingIds.has(connection.user.id))];
+                  });
+                  setPage(error ? page : page + 1);
+                  setHasMore(Boolean(data.pagination?.hasMore));
+                } catch {
+                  setError("获取关注列表失败");
+                } finally {
+                  setLoadingMore(false);
+                }
+              })();
+            }}
+            disabled={loadingMore}
+            className="rounded-full border border-gray-200 px-5 py-2 text-sm text-gray-600 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-60"
+          >
+            {loadingMore ? "加载中..." : error ? "重试" : "加载更多"}
+          </button>
+        </div>
+      )}
 
       {/* 返回链接 */}
       <div className="p-4 sm:p-6 border-t border-gray-100">

@@ -45,6 +45,9 @@ interface VideoPostDetailProps {
     } | null;
     likes: { userId: string }[];
     comments: CommentProps[];
+    commentCount?: number;
+    commentsNextCursor?: string | null;
+    commentsHasMore?: boolean;
     attachments: Array<{
       id: string;
       url: string;
@@ -227,7 +230,14 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
         </div>
       </div>
 
-      <PostComments comments={post.comments} postId={post.id} postAuthorId={post.author.id} />
+      <PostComments
+        comments={post.comments}
+        postId={post.id}
+        postAuthorId={post.author.id}
+        nextCursor={post.commentsNextCursor}
+        hasMore={post.commentsHasMore}
+        total={post.commentCount ?? post.comments.length}
+      />
     </>
   );
 }

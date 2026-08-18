@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { getPostById } from "@/lib/post";
+import { getCommentsPage, getPostById } from "@/lib/post";
 import { cache } from "react";
 
 import Link from "next/link";
@@ -150,6 +150,18 @@ export default async function PostDetailPage({
     );
   }
 
+  const commentsPage = await getCommentsPage({
+    postId,
+    viewerId: session?.user?.id,
+  });
+  const postWithComments = {
+    ...post,
+    comments: commentsPage.items,
+    commentCount: commentsPage.total,
+    commentsNextCursor: commentsPage.nextCursor,
+    commentsHasMore: commentsPage.hasMore,
+  };
+
   const isVideoPost = post.postType === "VIDEO";
   const canEditPost = Boolean(
     session?.user?.id
@@ -209,7 +221,7 @@ export default async function PostDetailPage({
       {
         "@type": "InteractionCounter",
         interactionType: "https://schema.org/CommentAction",
-        userInteractionCount: post.comments.length,
+        userInteractionCount: commentsPage.total,
       },
     ],
     hasPart: post.attachments.map((att) => ({
@@ -230,7 +242,7 @@ export default async function PostDetailPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0">
-          <VideoPostDetail post={post} sessionUser={session?.user} />
+        <VideoPostDetail post={postWithComments} sessionUser={session?.user} />
         </div>
       </div>
     );
@@ -382,7 +394,14 @@ export default async function PostDetailPage({
             </div>
 
             {/* Comments Section */}
-            <PostComments comments={post.comments} postId={post.id} postAuthorId={post.author.id} />
+            <PostComments
+              comments={commentsPage.items}
+              postId={post.id}
+              postAuthorId={post.author.id}
+              nextCursor={commentsPage.nextCursor}
+              hasMore={commentsPage.hasMore}
+              total={commentsPage.total}
+            />
         </div>
         {showToc && (
           <div className="post-detail-toc">

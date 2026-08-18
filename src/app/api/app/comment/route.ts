@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
-import { requireSessionUser } from "@/app/api/app/_shared/auth";
+import { getSessionUser, requireSessionUser } from "@/app/api/app/_shared/auth";
 import { linkMarkdownMentions } from "@/lib/mentions";
 import { isAdminRole } from "@/lib/server-auth";
+import { getCommentsPage } from "@/lib/post";
+import {
+  DEFAULT_LIST_PAGE_SIZE,
+  InvalidCursorError,
+  parseListPageSize,
+} from "@/lib/pagination";
 
 const MAX_COMMENT_LENGTH = 5000;
 const MAX_COMMENT_IMAGES = 9;
@@ -66,77 +72,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    const comments = await prisma.comment.findMany({
-      where: {
-        postId,
-        parentId: null,
-      },
-      orderBy: [{ pinned: "desc" }, { pinnedAt: "desc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-        content: true,
-        postId: true,
-        parentId: true,
-        replyToId: true,
-        pinned: true,
-        pinnedAt: true,
-        createdAt: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        likes: {
-          select: {
-            userId: true,
-          },
-        },
-        replies: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          select: {
-            id: true,
-            content: true,
-            postId: true,
-            parentId: true,
-            replyToId: true,
-            createdAt: true,
-            author: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-            likes: {
-              select: {
-                userId: true,
-              },
-            },
-            replyTo: {
-              select: {
-                id: true,
-                author: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+    const parentIdParam = searchParams.get("parentId");
+    const parentId = parentIdParam ? parentIdParam.trim() || null : null;
+    const viewer = await getSessionUser();
+    const page = await getCommentsPage({
+      postId,
+      parentId,
+      cursor: searchParams.get("cursor"),
+      limit: parseListPageSize(searchParams.get("limit"), DEFAULT_LIST_PAGE_SIZE),
+      viewerId: viewer?.id,
     });
 
-    return NextResponse.json({
-      postId,
-      comments,
-    });
+    return NextResponse.json({ postId, ...page, comments: page.items });
+
   } catch (error) {
+    if (error instanceof InvalidCursorError) {
+      return NextResponse.json(
+        { error: "Invalid cursor", code: "INVALID_CURSOR" },
+        { status: 400 },
+      );
+    }
     console.error("App comment list error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

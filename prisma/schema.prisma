@@ -208,6 +208,8 @@ model Post {
   @@index([visibility])
   @@index([topicId])
   @@index([pinned, pinnedAt])
+  @@index([visibility, deletedAt, pinned, pinnedAt, createdAt, id], map: "Post_feed_page_idx")
+  @@index([topicId, visibility, deletedAt, pinned, pinnedAt, createdAt, id], map: "Post_topic_feed_idx")
   @@index([isAnnouncement, announcementAt])
   @@index([deletedAt, deleteScheduledAt])
 }
@@ -432,6 +434,7 @@ model Comment {
   @@index([parentId])
   @@index([replyToId])
   @@index([pinned, pinnedAt])
+  @@index([postId, parentId, pinned, pinnedAt, createdAt, id], map: "Comment_page_idx")
 }
 
 model PostLike {
@@ -469,6 +472,7 @@ model Notification {
 
   @@index([receiverId])
   @@index([receiverId, isRead, createdAt])
+  @@index([receiverId, createdAt, id], map: "Notification_page_idx")
   @@index([senderId, receiverId, type, postId, isRead])
   @@index([senderId, receiverId, type, commentId, isRead])
 }
@@ -582,4 +586,6 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+  @@index([followerId, createdAt, id], map: "Follow_follower_page_idx")
+  @@index([followingId, createdAt, id], map: "Follow_following_page_idx")
 }

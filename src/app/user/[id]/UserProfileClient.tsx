@@ -241,6 +241,10 @@ interface UserProfileClientProps {
   user: User;
   isCurrentUser: boolean;
   stats: UserStatsData;
+  postsPagination: {
+    total: number;
+    hasMore: boolean;
+  };
   isFollowing?: boolean;
   currentUserId?: string;
 }
@@ -251,6 +255,7 @@ export default function UserProfileClient({
   user,
   isCurrentUser,
   stats,
+  postsPagination,
   isFollowing = false,
   currentUserId,
 }: UserProfileClientProps) {
@@ -310,10 +315,15 @@ export default function UserProfileClient({
               <h1 className="mb-5 flex items-center gap-2 px-1 text-xl font-bold text-gray-900">
                 发布的帖子
                 <span className="rounded-full bg-gray-200 px-2 py-0.5 text-sm font-normal text-gray-500">
-                  {user.posts.length}
+                  {postsPagination.total}
                 </span>
               </h1>
-              <UserPostList initialPosts={posts} currentUserId={currentUserId} />
+              <UserPostList
+                initialPosts={posts}
+                currentUserId={currentUserId}
+                userId={user.id}
+                initialHasMore={postsPagination.hasMore}
+              />
             </section>
 
             <aside className="sticky top-24 self-start max-h-[calc(100vh-6rem)] space-y-6 overflow-y-auto pr-1">
@@ -510,9 +520,14 @@ export default function UserProfileClient({
                 shouldShowUserStatsAndLevel ? "" : "mt-6 sm:mt-8"
               }`}
             >
-              发布的帖子 ({user.posts.length})
+              发布的帖子 ({postsPagination.total})
             </h2>
-            <UserPostList initialPosts={posts} currentUserId={currentUserId} />
+            <UserPostList
+              initialPosts={posts}
+              currentUserId={currentUserId}
+              userId={user.id}
+              initialHasMore={postsPagination.hasMore}
+            />
           </div>
         </div>
       )}
