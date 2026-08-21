@@ -12,6 +12,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
+import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isAllowedRichTextLineHeight } from "@/lib/rich-text/content";
 
 export const RICH_TEXT_FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"] as const;
@@ -143,12 +144,52 @@ export const RichTextImage = Image.extend({
   },
 });
 
+export const RichTextEmoji = Image.extend({
+  name: "emoji",
+  inline: true,
+  group: "inline",
+  selectable: false,
+  draggable: false,
+  addAttributes() {
+    return {
+      src: { default: null },
+      alt: { default: "自定义表情" },
+      title: { default: null },
+    };
+  },
+  parseHTML() {
+    return [{
+      tag: "img[data-custom-emoji]",
+      priority: 100,
+      getAttrs: (element: HTMLElement) => {
+        const src = element.getAttribute("src");
+        return src && isCustomEmojiUrl(src) ? {
+          src,
+          alt: element.getAttribute("alt") || "自定义表情",
+          title: element.getAttribute("title"),
+        } : false;
+      },
+    }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["img", {
+      ...HTMLAttributes,
+      "data-custom-emoji": "true",
+      class: "rich-text-emoji",
+      width: CUSTOM_EMOJI_RENDER_SIZE,
+      height: CUSTOM_EMOJI_RENDER_SIZE,
+    }];
+  },
+});
+
 export function createRichTextExtensions(options?: {
   placeholder?: string;
   imageExtension?: AnyExtension;
+  emojiExtension?: AnyExtension;
   disableHistory?: boolean;
 }) {
   const imageExtension = options?.imageExtension ?? RichTextImage;
+  const emojiExtension = options?.emojiExtension ?? RichTextEmoji;
 
   return [
     StarterKit.configure({
@@ -186,6 +227,10 @@ export function createRichTextExtensions(options?: {
     }),
     imageExtension.configure({
       inline: false,
+      allowBase64: false,
+    }),
+    emojiExtension.configure({
+      inline: true,
       allowBase64: false,
     }),
     Placeholder.configure({

@@ -320,12 +320,13 @@ export default function Navbar() {
                   >
                     <Search className="h-5 w-5" />
                   </button>
-                  <Link
+                  <a
                     href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
+                    data-track-global-loading="true"
                     className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50 hover:text-indigo-600"
                   >
                     登录
-                  </Link>
+                  </a>
                   <Link
                     href={`/auth/signup?redirect=${encodeURIComponent(pathname || "/")}`}
                     className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow"
@@ -463,13 +464,14 @@ export default function Navbar() {
                   <p className="px-1 text-sm text-gray-500">
                     登录后可以发布帖子、接收通知并管理个人资料。
                   </p>
-                  <Link
+                  <a
                     href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
+                    data-track-global-loading="true"
                     onClick={closeMobileMenu}
                     className="flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                   >
                     登录
-                  </Link>
+                  </a>
                   <Link
                     href={`/auth/signup?redirect=${encodeURIComponent(pathname || "/")}`}
                     onClick={closeMobileMenu}

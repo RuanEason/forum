@@ -40,6 +40,7 @@ export default function PostContentImagePreview({
     if (!container) return [];
 
     return Array.from(container.querySelectorAll<HTMLImageElement>("img"))
+      .filter((image) => image.dataset.customEmoji !== "true")
       .map((image) => ({
         src: getImageSource(image),
         alt: image.alt,
@@ -65,7 +66,11 @@ export default function PostContentImagePreview({
     if (!(target instanceof Element)) return;
 
     const image = target.closest("img");
-    if (!(image instanceof HTMLImageElement) || !event.currentTarget.contains(image)) {
+    if (
+      !(image instanceof HTMLImageElement)
+      || image.dataset.customEmoji === "true"
+      || !event.currentTarget.contains(image)
+    ) {
       return;
     }
 
@@ -88,6 +93,9 @@ export default function PostContentImagePreview({
     if (!container) return;
 
     container.querySelectorAll<HTMLImageElement>("img").forEach((image) => {
+      if (image.dataset.customEmoji === "true") {
+        return;
+      }
       image.classList.add("post-content-image");
       image.tabIndex = 0;
       image.setAttribute("role", "button");

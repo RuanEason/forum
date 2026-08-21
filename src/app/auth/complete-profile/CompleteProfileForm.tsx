@@ -5,6 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import Button from "@/components/ui/Button";
+import EmojiPicker from "@/components/EmojiPicker";
+import { customEmojiToMarkdown } from "@/lib/emoji";
+import { insertTextAtSelection } from "@/lib/insert-text";
 
 type CompleteProfileFormProps = {
   redirectPath: string;
@@ -18,8 +21,46 @@ export default function CompleteProfileForm({ redirectPath }: CompleteProfileFor
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bioInputRef = useRef<HTMLTextAreaElement>(null);
+  const bioSelectionRef = useRef({ start: 0, end: 0 });
   const { data: session, update } = useSession();
   const router = useRouter();
+
+  const rememberBioSelection = () => {
+    const textarea = bioInputRef.current;
+    if (!textarea) return;
+
+    bioSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  };
+
+  const insertBioEmoji = (emoji: string) => {
+    const textarea = bioInputRef.current;
+    const selection = textarea && document.activeElement === textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : bioSelectionRef.current;
+    const insertion = insertTextAtSelection(bio, selection.start, selection.end, emoji);
+    if (insertion.value.length > 500) {
+      setError("个人简介不能超过 500 个字符");
+      return;
+    }
+
+    const nextBio = insertion.value;
+
+    setBio(nextBio);
+    bioSelectionRef.current = {
+      start: Math.min(insertion.selectionStart, nextBio.length),
+      end: Math.min(insertion.selectionEnd, nextBio.length),
+    };
+
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(bioSelectionRef.current.start, bioSelectionRef.current.end);
+    });
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,14 +197,31 @@ export default function CompleteProfileForm({ redirectPath }: CompleteProfileFor
                 个人简介（可选）
               </label>
               <textarea
+                ref={bioInputRef}
                 id="bio"
                 name="bio"
                 rows={3}
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="简单介绍一下自己..."
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  bioSelectionRef.current = {
+                    start: e.target.selectionStart,
+                    end: e.target.selectionEnd,
+                  };
+                }}
+                onClick={rememberBioSelection}
+                onKeyUp={rememberBioSelection}
+                onSelect={rememberBioSelection}
               />
+              <div className="mt-2 flex justify-end">
+                <EmojiPicker
+                  onSelect={insertBioEmoji}
+                  onSelectCustomEmoji={(emoji) => insertBioEmoji(customEmojiToMarkdown(emoji))}
+                  placement="top"
+                />
+              </div>
             </div>
           </div>
 

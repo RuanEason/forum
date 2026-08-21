@@ -28,6 +28,9 @@ import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Textarea from "@/components/ui/Textarea";
 import Toggle from "@/components/ui/Toggle";
+import EmojiPicker from "@/components/EmojiPicker";
+import { customEmojiToMarkdown } from "@/lib/emoji";
+import { insertTextAtSelection } from "@/lib/insert-text";
 
 type PostViewMode = "both" | "title" | "content" | "titleAndContent";
 type SettingsSection = "profile" | "security" | "notifications" | "reading";
@@ -164,6 +167,8 @@ export default function SettingsPage() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const emailEditButtonRef = useRef<HTMLButtonElement>(null);
   const newEmailInputRef = useRef<HTMLInputElement>(null);
+  const bioInputRef = useRef<HTMLTextAreaElement>(null);
+  const bioSelectionRef = useRef({ start: 0, end: 0 });
   const coverPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initializedRef = useRef(false);
 
@@ -176,6 +181,42 @@ export default function SettingsPage() {
   const coverPreviewUrl = isCoverVideo
     ? coverImage.replace(/\.(mp4|mov|avi|webm)(\?.*)?$/i, "_preview.webp$2")
     : coverImage;
+
+  const rememberBioSelection = () => {
+    const textarea = bioInputRef.current;
+    if (!textarea) return;
+
+    bioSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  };
+
+  const insertBioEmoji = (emoji: string) => {
+    const textarea = bioInputRef.current;
+    const selection = textarea && document.activeElement === textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : bioSelectionRef.current;
+    const insertion = insertTextAtSelection(bio, selection.start, selection.end, emoji);
+    if (insertion.value.length > 500) {
+      setError("个人简介不能超过 500 个字符");
+      return;
+    }
+
+    const nextBio = insertion.value;
+
+    setBio(nextBio);
+    bioSelectionRef.current = {
+      start: Math.min(insertion.selectionStart, nextBio.length),
+      end: Math.min(insertion.selectionEnd, nextBio.length),
+    };
+
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(bioSelectionRef.current.start, bioSelectionRef.current.end);
+    });
+  };
 
   const setSavingState = (key: SavingKey, value: boolean) => {
     setSaving((previous) => ({ ...previous, [key]: value }));
@@ -768,7 +809,31 @@ export default function SettingsPage() {
                   <div className="mt-5 space-y-5">
                     <Input id="settings-name" label="昵称" value={name} maxLength={50} onChange={(event) => setName(event.target.value)} />
                     <div>
-                      <Textarea id="settings-bio" label="个人简介" rows={4} value={bio} maxLength={500} onChange={(event) => setBio(event.target.value)} />
+                      <Textarea
+                        ref={bioInputRef}
+                        id="settings-bio"
+                        label="个人简介"
+                        rows={4}
+                        value={bio}
+                        maxLength={500}
+                        onChange={(event) => {
+                          setBio(event.target.value);
+                          bioSelectionRef.current = {
+                            start: event.target.selectionStart,
+                            end: event.target.selectionEnd,
+                          };
+                        }}
+                        onClick={rememberBioSelection}
+                        onKeyUp={rememberBioSelection}
+                        onSelect={rememberBioSelection}
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <EmojiPicker
+                          onSelect={insertBioEmoji}
+                          onSelectCustomEmoji={(emoji) => insertBioEmoji(customEmojiToMarkdown(emoji))}
+                          placement="top"
+                        />
+                      </div>
                       <p className="mt-1 text-xs text-gray-500">简短介绍一下自己，将展示在个人主页。</p>
                     </div>
                     <div className="flex justify-end">

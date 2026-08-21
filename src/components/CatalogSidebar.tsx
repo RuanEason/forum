@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ListTree } from "lucide-react";
 import PostAttachments, {
   type PostAttachmentItem,
 } from "@/components/PostAttachments";
+import { usePostToc } from "@/components/PostTocLayout";
 
 interface CatalogItem {
   id: string;
@@ -28,6 +30,7 @@ export default function CatalogSidebar({
 }: CatalogSidebarPropsNew) {
   const dirRef = useRef<HTMLDivElement>(null);
   const hasAttachments = attachments.length > 0 && Boolean(postId && authorId);
+  const { isOpen, toggle } = usePostToc();
 
   useEffect(() => {
     const article = document.querySelector('.prose');
@@ -99,17 +102,19 @@ export default function CatalogSidebar({
   return (
     <aside className="catalog-sidebar">
       <div className="catalog-sidebar-inner">
-        <p className="catalog-sidebar-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
+        <div className="catalog-sidebar-title">
+          <button
+            type="button"
+            onClick={toggle}
+            className="catalog-sidebar-toggle"
+            aria-label={isOpen ? "收起目录" : "打开目录"}
+            aria-expanded={isOpen}
+            title={isOpen ? "收起目录" : "打开目录"}
+          >
+            <ListTree className="catalog-sidebar-toggle-icon" aria-hidden="true" />
+          </button>
           {title}
-        </p>
+        </div>
         <div className="catalog-hr"></div>
       </div>
       <div ref={dirRef} className="catalog-dir">

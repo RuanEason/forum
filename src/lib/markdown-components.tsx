@@ -2,6 +2,7 @@ import { cloneElement, createElement, isValidElement, type ComponentPropsWithout
 import type { Components } from "react-markdown";
 import MarkdownCodeBlock from "@/components/markdown/MarkdownCodeBlock";
 import { createHeadingIdGenerator, isInternalUserLink } from "@/lib/markdown";
+import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { cn } from "@/lib/utils";
 
 type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
@@ -90,6 +91,39 @@ export function createMarkdownComponents({
         <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
           {children}
         </a>
+      );
+    },
+    img: ({ src, alt, title, className, ...props }) => {
+      if (typeof src !== "string" || !src) {
+        return null;
+      }
+
+      if (isCustomEmojiUrl(src)) {
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            {...props}
+            src={src}
+            alt={alt || "自定义表情"}
+            title={title}
+            data-custom-emoji="true"
+            className={cn("custom-emoji inline-block align-middle object-contain", className)}
+            style={{ width: CUSTOM_EMOJI_RENDER_SIZE, height: CUSTOM_EMOJI_RENDER_SIZE }}
+            loading="lazy"
+          />
+        );
+      }
+
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...props}
+          src={src}
+          alt={alt || ""}
+          title={title}
+          className={cn("max-w-full", className)}
+          loading="lazy"
+        />
       );
     },
     pre: ({ children }) => {

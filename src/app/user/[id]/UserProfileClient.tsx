@@ -10,6 +10,7 @@ import UserStats from "@/components/UserStats";
 import FollowButton from "@/components/FollowButton";
 import { signOut } from "next-auth/react";
 import BackButton from "@/components/BackButton";
+import ProfileBio from "@/components/ProfileBio";
 
 interface UserStatsData {
   daysJoined: number;
@@ -384,9 +385,7 @@ export default function UserProfileClient({
                   </p>
 
                   {user.bio && (
-                    <p className="mt-4 w-full bg-gray-50 px-3 py-3 text-sm text-gray-600">
-                      {user.bio}
-                    </p>
+                    <ProfileBio bio={user.bio} className="mt-4 w-full bg-gray-50 px-3 py-3 text-sm text-gray-600" />
                   )}
                 </div>
               </section>
@@ -482,7 +481,7 @@ export default function UserProfileClient({
                       加入于 {format(new Date(user.createdAt), "yyyy年M月d日")}
                     </p>
                     {user.bio && (
-                      <p className="mt-2 text-sm sm:text-base text-gray-700">{user.bio}</p>
+                      <ProfileBio bio={user.bio} className="mt-2 text-sm sm:text-base text-gray-700" />
                     )}
                   </div>
                 </div>

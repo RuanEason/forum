@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
 import LikeButton from "@/components/LikeButton";
@@ -14,6 +13,8 @@ import RepostButton from "@/components/RepostButton";
 import PostListMoreMenu from "@/components/PostListMoreMenu";
 import PostImages from "@/components/PostImages";
 import { useToast } from "@/components/ui/Toast";
+import type { Components } from "react-markdown";
+import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isInternalUserLink } from "@/lib/markdown";
 import { Eye, Lock } from "lucide-react";
 
@@ -138,26 +139,27 @@ export default function UserPostList({
     a: ({ href, children, ...props }) => {
       const isAnchorLink = typeof href === "string" && href.startsWith("#");
 
-      if (isAnchorLink) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
+      if (isAnchorLink || isInternalUserLink(href)) {
+        return <a href={href} {...props}>{children}</a>;
       }
 
-      if (isInternalUserLink(href)) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
-      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+    },
+    img: ({ src, alt, title, className, ...props }) => {
+      if (typeof src !== "string" || !src) return null;
 
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-          {children}
-        </a>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...props}
+          src={src}
+          alt={alt || (isCustomEmojiUrl(src) ? "自定义表情" : "")}
+          title={title}
+          data-custom-emoji={isCustomEmojiUrl(src) ? "true" : undefined}
+          className={isCustomEmojiUrl(src) ? `custom-emoji inline-block align-middle object-contain ${className || ""}` : className}
+          style={isCustomEmojiUrl(src) ? { width: CUSTOM_EMOJI_RENDER_SIZE, height: CUSTOM_EMOJI_RENDER_SIZE } : undefined}
+          loading="lazy"
+        />
       );
     },
   };
@@ -184,7 +186,7 @@ export default function UserPostList({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span className="text-sm font-bold text-gray-900 truncate">
                       {post.author.name || "匿名用户"}{post.visibility === "UNLISTED" && (
                         <div
@@ -198,7 +200,7 @@ export default function UserPostList({
                     {post.topic && (
                       <Link
                         href={`/topic/${post.topic.id}`}
-                        className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                        className="hidden shrink-0 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors sm:inline-flex sm:items-center"
                       >
                         #{post.topic.name}
                       </Link>
@@ -221,6 +223,16 @@ export default function UserPostList({
                   </div>
                 </div>
                 {/* 置顶标识 */}
+                {post.topic && (
+                  <div className="mt-1.5 sm:hidden">
+                    <Link
+                      href={`/topic/${post.topic.id}`}
+                      className="inline-flex max-w-full text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
+                    >
+                      <span className="whitespace-nowrap">#{post.topic.name}</span>
+                    </Link>
+                  </div>
+                )}
                 {post.pinned && (
                   <div className="flex items-center gap-1 text-orange-500 text-xs font-medium mb-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">

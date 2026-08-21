@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import FollowButton from "@/components/FollowButton";
+import ProfileBio from "@/components/ProfileBio";
 
 interface User {
   id: string;
@@ -157,9 +158,7 @@ export default function FollowConnections({
                       </h3>
                     </Link>
                     {conn.user.bio && (
-                      <p className="text-sm text-gray-500 truncate mt-1">
-                        {conn.user.bio}
-                      </p>
+                      <ProfileBio bio={conn.user.bio} className="mt-1 truncate text-sm text-gray-500" />
                     )}
                     <p className="text-xs text-gray-400 mt-1">
                       {type === "following" ? "关注于" : "成为粉丝于"}{" "}

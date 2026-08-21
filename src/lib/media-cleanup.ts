@@ -13,6 +13,7 @@ import {
   SecurityEventType,
 } from "@/generated";
 import { recordSecurityEvent } from "@/lib/account-security";
+import { deleteAllCustomEmojisForUser } from "@/lib/custom-emoji";
 
 export const MEDIA_CLEANUP_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const MEDIA_CLEANUP_DEFAULT_BATCH_SIZE = 50;
@@ -970,6 +971,19 @@ async function finalizeDueAccounts(now: Date, batchSize: number): Promise<number
 
   let deleted = 0;
   for (const user of users) {
+    try {
+      await deleteAllCustomEmojisForUser(user.id);
+    } catch (error) {
+      // Keep the account until the next cleanup run if its owned emoji cannot
+      // be removed, so a transient COS failure does not leave an untracked
+      // emoji prefix behind.
+      console.error("Failed to delete account custom emojis", {
+        userId: user.id,
+        error,
+      });
+      continue;
+    }
+
     const result = await prisma.user.deleteMany({
       where: {
         id: user.id,
@@ -1200,7 +1214,7 @@ export function getCOSOrphanAuditPrefixes(): string[] {
       .map((value) => normalizePrefix(value))
       .filter(Boolean);
   }
-  return ["images/", "attachments/", "videos/", "backgrounds/", "editor-pool/"];
+  return ["images/", "attachments/", "videos/", "backgrounds/", "editor-pool/", "emoji/"];
 }
 
 export async function auditCOSOrphans(options?: { limit?: number }) {
@@ -1249,6 +1263,14 @@ export async function auditCOSOrphans(options?: { limit?: number }) {
   const allKeys: string[] = [];
   for (const prefix of prefixes) {
     allKeys.push(...await listCOSKeys(prefix));
+  }
+
+  // Custom emojis are catalogued directly from COS rather than referenced by a
+  // database row, so valid objects in the emoji prefix are not orphan media.
+  for (const key of allKeys) {
+    if (key.startsWith("emoji/")) {
+      referenced.add(key);
+    }
   }
 
   const orphanKeys = allKeys.filter((key) => !referenced.has(key)).slice(0, limit);

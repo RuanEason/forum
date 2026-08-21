@@ -17,6 +17,7 @@ import ViewTracker from "@/components/ViewTracker";
 import PostAttachments from "@/components/PostAttachments";
 import MobileArticleCatalog from "@/components/MobileArticleCatalog";
 import CatalogSidebar from "@/components/CatalogSidebar";
+import PostTocLayout, { PostTocReopenButton } from "@/components/PostTocLayout";
 import PostContentRenderer from "@/components/PostContentRenderer";
 import VideoPostDetail from "@/components/VideoPostDetail";
 import { extractMarkdownHeadings } from "@/lib/markdown";
@@ -258,14 +259,18 @@ export default async function PostDetailPage({
       />
       {showToc && <MobileArticleCatalog items={catalogItems} />}
 
-      <div
-        className={
-          showToc
-            ? "post-detail-layout"
-            : "max-w-4xl mx-auto sm:px-6 lg:px-8 py-6 px-0"
+      <PostTocLayout
+        enabled={showToc}
+        toc={
+          <CatalogSidebar
+            items={catalogItems}
+            attachments={post.attachments}
+            postId={post.id}
+            authorId={post.author.id}
+          />
         }
       >
-        <div className={showToc ? "post-detail-main px-0" : "px-0"}>
+        <div className="post-detail-content-frame">
             {/* Post Content */}
             <div className="bg-white shadow-sm sm:rounded-lg mb-6 border-b sm:border-0 border-gray-200">
               <div className="p-4 sm:p-6" data-style-scope={`post-${post.id}`}>
@@ -307,7 +312,10 @@ export default async function PostDetailPage({
                       </div>
                     </div>
                   </div>
-                  <PostMoreMenu post={editablePost} canEdit={canEditPost} />
+                  <div className="post-detail-header-actions">
+                    <PostMoreMenu post={editablePost} canEdit={canEditPost} />
+                    <PostTocReopenButton />
+                  </div>
                 </div>
 
 
@@ -403,17 +411,7 @@ export default async function PostDetailPage({
               total={commentsPage.total}
             />
         </div>
-        {showToc && (
-          <div className="post-detail-toc">
-            <CatalogSidebar
-              items={catalogItems}
-              attachments={post.attachments}
-              postId={post.id}
-              authorId={post.author.id}
-            />
-          </div>
-        )}
-      </div>
+      </PostTocLayout>
     </div>
   );
 }

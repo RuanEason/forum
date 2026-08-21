@@ -51,6 +51,7 @@ test("orphan audit uses bounded, explicit prefixes by default", () => {
       "videos/",
       "backgrounds/",
       "editor-pool/",
+      "emoji/",
     ]);
   } finally {
     if (previous === undefined) delete process.env.COS_ORPHAN_AUDIT_PREFIXES;

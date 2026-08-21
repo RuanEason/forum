@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import LikeButton from "@/components/LikeButton";
@@ -23,6 +22,8 @@ import Badge from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import type { HomeTopic } from "@/types/topic";
+import type { Components } from "react-markdown";
+import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isInternalUserLink } from "@/lib/markdown";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
@@ -423,26 +424,27 @@ export default function HomeContent({
     a: ({ href, children, ...props }) => {
       const isAnchorLink = typeof href === "string" && href.startsWith("#");
 
-      if (isAnchorLink) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
+      if (isAnchorLink || isInternalUserLink(href)) {
+        return <a href={href} {...props}>{children}</a>;
       }
 
-      if (isInternalUserLink(href)) {
-        return (
-          <a href={href} {...props}>
-            {children}
-          </a>
-        );
-      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+    },
+    img: ({ src, alt, title, className, ...props }) => {
+      if (typeof src !== "string" || !src) return null;
 
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-          {children}
-        </a>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...props}
+          src={src}
+          alt={alt || (isCustomEmojiUrl(src) ? "自定义表情" : "")}
+          title={title}
+          data-custom-emoji={isCustomEmojiUrl(src) ? "true" : undefined}
+          className={isCustomEmojiUrl(src) ? `custom-emoji inline-block align-middle object-contain ${className || ""}` : className}
+          style={isCustomEmojiUrl(src) ? { width: CUSTOM_EMOJI_RENDER_SIZE, height: CUSTOM_EMOJI_RENDER_SIZE } : undefined}
+          loading="lazy"
+        />
       );
     },
   };
@@ -522,7 +524,7 @@ export default function HomeContent({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
                             <Link
                               href={`/user/${post.author.id}`}
                               className="text-sm font-bold text-gray-900 hover:underline truncate"
@@ -535,8 +537,11 @@ export default function HomeContent({
                               </span>
                             )}
                             {post.topic && (
-                              <Link href={`/topic/${post.topic.id}`}>
-                                <Badge variant="primary" size="sm">
+                              <Link
+                                href={`/topic/${post.topic.id}`}
+                                className="hidden shrink-0 sm:inline-flex"
+                              >
+                                <Badge variant="primary" size="sm" className="whitespace-nowrap">
                                   #{post.topic.name}
                                 </Badge>
                               </Link>
@@ -558,6 +563,18 @@ export default function HomeContent({
                             />
                           </div>
                         </div>
+                        {post.topic && (
+                          <div className="mt-1.5 sm:hidden">
+                            <Link
+                              href={`/topic/${post.topic.id}`}
+                              className="inline-flex max-w-full"
+                            >
+                              <Badge variant="primary" size="sm" className="max-w-full whitespace-nowrap">
+                                #{post.topic.name}
+                              </Badge>
+                            </Link>
+                          </div>
+                        )}
                         <div className="mt-2 text-sm text-gray-800">
                           {/* 置顶标识 */}
                           {post.pinned && (

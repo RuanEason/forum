@@ -9,6 +9,8 @@ import type { JSONContent } from "@tiptap/core";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 import TopicSelector from "@/components/TopicSelector";
 import CreatePostSheet from "@/components/CreatePostSheet";
+import EmojiPicker from "@/components/EmojiPicker";
+import { insertTextAtSelection } from "@/lib/insert-text";
 import { DraftsPanel } from "@/app/post/drafts/page";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { useToast } from "@/components/ui/Toast";
@@ -262,6 +264,8 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const videoAttachmentInputRef = useRef<HTMLInputElement>(null);
   const videoCoverInputRef = useRef<HTMLInputElement>(null);
+  const videoDescriptionRef = useRef<HTMLTextAreaElement>(null);
+  const videoDescriptionSelectionRef = useRef({ start: 0, end: 0 });
   const videoPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoCosRef = useRef<unknown>(null);
   const videoTaskIdRef = useRef<string | null>(null);
@@ -315,6 +319,45 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   const [imageInsertRequest, setImageInsertRequest] = useState<{ id: number; url: string; alt?: string } | null>(null);
   const hasAnyContentRef = useRef(false);
   selectedAttachmentsRef.current = selectedAttachments;
+
+  const rememberVideoDescriptionSelection = () => {
+    const textarea = videoDescriptionRef.current;
+    if (!textarea) return;
+
+    videoDescriptionSelectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  };
+
+  const insertVideoDescriptionEmoji = (emoji: string) => {
+    const textarea = videoDescriptionRef.current;
+    const selection = textarea && document.activeElement === textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : videoDescriptionSelectionRef.current;
+    const insertion = insertTextAtSelection(
+      videoDescription,
+      selection.start,
+      selection.end,
+      emoji,
+    );
+    const nextDescription = insertion.value.slice(0, MAX_VIDEO_DESC_LENGTH);
+
+    setVideoDescription(nextDescription);
+    videoDescriptionSelectionRef.current = {
+      start: Math.min(insertion.selectionStart, nextDescription.length),
+      end: Math.min(insertion.selectionEnd, nextDescription.length),
+    };
+
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(
+        videoDescriptionSelectionRef.current.start,
+        videoDescriptionSelectionRef.current.end,
+      );
+    });
+  };
 
   const finishPendingNavigationTask = useCallback(() => {
     if (navigationTaskTimeoutRef.current !== null) {
@@ -2362,13 +2405,26 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
                   </span>
                 </div>
                 <textarea
+                  ref={videoDescriptionRef}
                   id="video-desc"
                   value={videoDescription}
-                  onChange={(e) => setVideoDescription(e.target.value.slice(0, MAX_VIDEO_DESC_LENGTH))}
+                  onChange={(e) => {
+                    setVideoDescription(e.target.value.slice(0, MAX_VIDEO_DESC_LENGTH));
+                    videoDescriptionSelectionRef.current = {
+                      start: e.target.selectionStart,
+                      end: e.target.selectionEnd,
+                    };
+                  }}
+                  onClick={rememberVideoDescriptionSelection}
+                  onKeyUp={rememberVideoDescriptionSelection}
+                  onSelect={rememberVideoDescriptionSelection}
                   placeholder="补充一点视频说明，帮助大家更快理解内容"
                   rows={6}
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
                 />
+                <div className="flex justify-end">
+                  <EmojiPicker onSelect={insertVideoDescriptionEmoji} placement="top" />
+                </div>
               </div>
 
               <div className="space-y-2">

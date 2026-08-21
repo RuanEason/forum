@@ -27,6 +27,9 @@ import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { isInternalUserLink } from "@/lib/markdown";
+import { CUSTOM_EMOJI_RENDER_SIZE, customEmojiToMarkdown, isCustomEmojiUrl } from "@/lib/emoji";
+import EmojiPicker from "@/components/EmojiPicker";
+import { insertTextAtSelection } from "@/lib/insert-text";
 
 interface AuthorProps {
   id: string;
@@ -256,7 +259,7 @@ export default function PostComments({
     <>
       <div
         id="comments-section"
-        className="bg-white overflow-hidden shadow-sm sm:rounded-lg border-t border-gray-100"
+        className="bg-white overflow-visible shadow-sm sm:rounded-lg border-t border-gray-100"
       >
         <div className="p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
@@ -372,27 +375,9 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
   const [previewImageIndex, setPreviewImageIndex] = useState<number | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
   const pathname = usePathname();
-
-  useEffect(() => {
-    if (!isComposerActive) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!composerRef.current) return;
-
-      if (composerRef.current.contains(event.target as Node)) {
-        return;
-      }
-
-      setIsComposerActive(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [isComposerActive]);
 
   const uploadImage = async (file: File) => {
     setIsUploadingImage(true);
@@ -502,6 +487,36 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
     }
   };
 
+  const rememberSelection = () => {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+
+    selectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const textarea = contentRef.current;
+    const selection = textarea && document.activeElement === textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : selectionRef.current;
+    const insertion = insertTextAtSelection(content, selection.start, selection.end, emoji);
+
+    setContent(insertion.value);
+    selectionRef.current = {
+      start: insertion.selectionStart,
+      end: insertion.selectionEnd,
+    };
+
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(insertion.selectionStart, insertion.selectionEnd);
+    });
+  };
+
   const isBusy = loading || isUploadingImage;
 
   if (!session) {
@@ -571,6 +586,7 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
             </div>
           )}
           <textarea
+            ref={contentRef}
             className="w-full px-4 py-2.5 bg-slate-100 rounded-lg text-xs sm:text-sm text-slate-700 border-transparent focus:bg-white focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
             rows={1}
             placeholder={
@@ -579,14 +595,36 @@ function CommentForm({ postId, parentId, replyToId, replyToName, onCommentPosted
                 : "与其赞同别人的话语，不如自己畅所欲言。"
             }
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              selectionRef.current = {
+                start: e.target.selectionStart,
+                end: e.target.selectionEnd,
+              };
+            }}
+            onClick={rememberSelection}
+            onKeyUp={rememberSelection}
+            onSelect={rememberSelection}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsComposerActive(true)}
+            onBlur={(event) => {
+              const nextFocusedElement = event.relatedTarget as Node | null;
+              if (!nextFocusedElement || !composerRef.current?.contains(nextFocusedElement)) {
+                setIsComposerActive(false);
+              }
+            }}
             disabled={loading}
           ></textarea>
           {isComposerActive && (
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-1">
+                <EmojiPicker
+                  disabled={isBusy}
+                  onSelect={insertEmoji}
+                  onSelectCustomEmoji={(emoji) => insertEmoji(customEmojiToMarkdown(emoji))}
+                  placement="top"
+                  buttonClassName="h-8 w-8"
+                />
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
@@ -813,6 +851,20 @@ function ReplyItem({
     },
     img: ({ src, alt }) => {
       if (typeof src !== "string" || !src) return null;
+
+      if (isCustomEmojiUrl(src)) {
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={alt || "自定义表情"}
+            data-custom-emoji="true"
+            className="custom-emoji inline-block align-middle object-contain"
+            style={{ width: CUSTOM_EMOJI_RENDER_SIZE, height: CUSTOM_EMOJI_RENDER_SIZE }}
+            loading="lazy"
+          />
+        );
+      }
 
       return (
         <button
@@ -1078,6 +1130,20 @@ function CommentItem({
     },
     img: ({ src, alt }) => {
       if (typeof src !== "string" || !src) return null;
+
+      if (isCustomEmojiUrl(src)) {
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={alt || "自定义表情"}
+            data-custom-emoji="true"
+            className="custom-emoji inline-block align-middle object-contain"
+            style={{ width: CUSTOM_EMOJI_RENDER_SIZE, height: CUSTOM_EMOJI_RENDER_SIZE }}
+            loading="lazy"
+          />
+        );
+      }
 
       return (
         <button

@@ -156,6 +156,18 @@ function isCreatePostRoute(rawUrl: string | URL | null | undefined): boolean {
   }
 }
 
+function isSignInRoute(rawUrl: string | URL | null | undefined): boolean {
+  if (!rawUrl) {
+    return false;
+  }
+
+  try {
+    return new URL(String(rawUrl), window.location.href).pathname === "/auth/signin";
+  } catch {
+    return false;
+  }
+}
+
 function countFullScreenTasks(tasks: Map<number, string>): number {
   let count = 0;
   for (const label of tasks.values()) {
@@ -262,8 +274,8 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     }, 10000);
   }, [revealFullScreenOverlay, startTask]);
 
-  const scheduleNavigationTaskStart = useCallback((rawUrl?: string | URL | null) => {
-    if (isCreatePostRoute(rawUrl)) {
+  const scheduleNavigationTaskStart = useCallback((rawUrl?: string | URL | null, trackSignInPage = false) => {
+    if (isCreatePostRoute(rawUrl) || (isSignInRoute(rawUrl) && !trackSignInPage)) {
       return;
     }
 
@@ -422,7 +434,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
         if (url.origin !== window.location.origin || isSamePath(url)) {
           return;
         }
-        scheduleNavigationTaskStart(url);
+        scheduleNavigationTaskStart(url, anchor.dataset.trackGlobalLoading === "true");
       } catch {
         // Ignore malformed URLs.
       }
@@ -444,6 +456,9 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     const handlePopState = () => {
       const nextRouteKey = window.location.pathname;
       if (nextRouteKey === routeKey) {
+        return;
+      }
+      if (routeKey === "/auth/signin") {
         return;
       }
       scheduleNavigationTaskStart(nextRouteKey);

@@ -1,5 +1,5 @@
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import { RichTextImage } from "@/lib/rich-text/extensions";
+import { RichTextEmoji, RichTextImage } from "@/lib/rich-text/extensions";
 import RichTextImageView from "@/components/editor/RichTextImageView";
 
 export const EditableRichTextImage = RichTextImage.extend({
@@ -7,3 +7,5 @@ export const EditableRichTextImage = RichTextImage.extend({
     return ReactNodeViewRenderer(RichTextImageView);
   },
 });
+
+export const EditableRichTextEmoji = RichTextEmoji;

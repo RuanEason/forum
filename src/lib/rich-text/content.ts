@@ -1,4 +1,5 @@
 import type { JSONContent } from "@tiptap/core";
+import { isCustomEmojiUrl } from "@/lib/emoji";
 
 export const MAX_RICH_TEXT_JSON_LENGTH = 1_000_000;
 
@@ -38,6 +39,7 @@ const ALLOWED_NODE_TYPES = new Set([
   "codeBlock",
   "horizontalRule",
   "image",
+  "emoji",
 ]);
 
 const ALLOWED_MARK_TYPES = new Set([
@@ -114,6 +116,10 @@ function getTextFromNode(node: JSONContent): string {
 
   if (node.type === "image") {
     return node.attrs?.alt ? `[${String(node.attrs.alt)}]` : "";
+  }
+
+  if (node.type === "emoji") {
+    return node.attrs?.alt ? String(node.attrs.alt) : "custom emoji";
   }
 
   if (!node.content?.length) {
@@ -206,6 +212,21 @@ function validateNode(node: JSONContent, depth: number): boolean {
       return false;
     }
     if (align !== null && align !== undefined && !ALLOWED_IMAGE_ALIGNMENTS.has(String(align))) {
+      return false;
+    }
+  }
+
+  if (node.type === "emoji") {
+    const src = node.attrs?.src;
+    const alt = node.attrs?.alt;
+    const title = node.attrs?.title;
+    if (!isCustomEmojiUrl(src)) {
+      return false;
+    }
+    if (alt !== null && alt !== undefined && (typeof alt !== "string" || alt.length > 200)) {
+      return false;
+    }
+    if (title !== null && title !== undefined && (typeof title !== "string" || title.length > 200)) {
       return false;
     }
   }
@@ -351,6 +372,11 @@ export function hasRichTextContent(document: JSONContent | null | undefined): bo
       return;
     }
 
+    if (node.type === "emoji") {
+      hasContent = true;
+      return;
+    }
+
     node.content?.forEach(visit);
   };
 
@@ -422,6 +448,18 @@ function getRichTextSummaryParts(node: JSONContent): RichTextSummaryPart[] {
     const text = node.attrs?.alt ? `[${String(node.attrs.alt)}]` : "";
     return [{
       markdown: escapeSummaryMarkdownText(text),
+      text,
+      isMention: false,
+    }];
+  }
+
+  if (node.type === "emoji") {
+    const text = node.attrs?.alt ? String(node.attrs.alt) : "custom emoji";
+    const src = typeof node.attrs?.src === "string" ? node.attrs.src : "";
+    return [{
+      markdown: src
+        ? `![${escapeSummaryMarkdownText(text)}](<${src}>)`
+        : escapeSummaryMarkdownText(text),
       text,
       isMention: false,
     }];

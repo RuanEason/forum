@@ -67,7 +67,7 @@ export function renderRichTextHtml(document: JSONContent): string {
       h2: ["id", "style", "data-line-height", "data-text-align"],
       h3: ["id", "style", "data-line-height", "data-text-align"],
       h4: ["id", "style", "data-line-height", "data-text-align"],
-      img: ["src", "alt", "title", "data-width", "data-align", "style"],
+      img: ["src", "alt", "title", "data-width", "data-align", "data-custom-emoji", "class", "style"],
       ul: ["data-type"],
       span: ["style"],
       li: ["data-type", "data-checked"],

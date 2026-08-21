@@ -51,8 +51,10 @@ import {
   RICH_TEXT_FONT_SIZES,
 } from "@/lib/rich-text/extensions";
 import { parseMarkdownHeadingPaste } from "@/lib/rich-text/paste";
-import { EditableRichTextImage } from "@/components/editor/rich-text-editor-extensions";
+import { EditableRichTextEmoji, EditableRichTextImage } from "@/components/editor/rich-text-editor-extensions";
 import type { EditorImageInsertRequest, EditorOutlineItem } from "@/components/editor/types";
+import EmojiPicker from "@/components/EmojiPicker";
+import type { CustomEmoji } from "@/types/emoji";
 
 interface RichTextEditorProps {
   content?: string;
@@ -697,6 +699,18 @@ function RichTextToolbar({
         <Redo2 className="h-4 w-4" />
       </ToolbarButton>
 
+      <EmojiPicker
+        onSelect={(emoji) => editor.chain().focus().insertContent(emoji).run()}
+        onSelectCustomEmoji={(emoji: CustomEmoji) => {
+          editor.chain().focus().insertContent({
+            type: "emoji",
+            attrs: { src: emoji.url, alt: emoji.name, title: emoji.name },
+          }).run();
+        }}
+        placement="bottom"
+        buttonClassName="h-8 w-8"
+      />
+
       <ToolbarDivider />
 
       <select
@@ -943,6 +957,7 @@ export default function RichTextEditor({
   const editor = useEditor({
     extensions: createRichTextExtensions({
       imageExtension: EditableRichTextImage,
+      emojiExtension: EditableRichTextEmoji,
       placeholder,
       disableHistory: localHistoryEnabled,
     }),

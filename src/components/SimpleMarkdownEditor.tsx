@@ -2,6 +2,8 @@
 
 import { useRef, useCallback } from "react";
 import "./SimpleMarkdownEditor.css";
+import EmojiPicker from "@/components/EmojiPicker";
+import { insertTextAtSelection } from "@/lib/insert-text";
 
 interface SimpleMarkdownEditorProps {
   value: string;
@@ -49,6 +51,17 @@ export default function SimpleMarkdownEditor({
   onOpenEditor,
 }: SimpleMarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
+
+  const rememberSelection = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    selectionRef.current = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  }, []);
 
   // Insert text at cursor position or wrap selected text
   const insertText = useCallback(
@@ -56,8 +69,11 @@ export default function SimpleMarkdownEditor({
       const textarea = textareaRef.current;
       if (!textarea) return;
 
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
+      const activeSelection = document.activeElement === textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : selectionRef.current;
+      const start = activeSelection.start;
+      const end = activeSelection.end;
       const selectedText = value.substring(start, end);
       const textToInsert = selectedText || defaultText;
 
@@ -73,16 +89,40 @@ export default function SimpleMarkdownEditor({
       // Restore focus and set cursor position
       setTimeout(() => {
         textarea.focus();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const newCursorPos = start + before.length + textToInsert.length + after.length;
-        textarea.setSelectionRange(
-          start + before.length,
-          start + before.length + textToInsert.length
-        );
+        const nextStart = start + before.length;
+        const nextEnd = nextStart + textToInsert.length;
+        textarea.setSelectionRange(nextStart, nextEnd);
+        selectionRef.current = { start: nextEnd, end: nextEnd };
       }, 0);
     },
     [value, onChange]
   );
+
+  const insertEmoji = useCallback((emoji: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const activeSelection = document.activeElement === textarea
+      ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+      : selectionRef.current;
+    const insertion = insertTextAtSelection(
+      value,
+      activeSelection.start,
+      activeSelection.end,
+      emoji,
+    );
+
+    onChange(insertion.value);
+    selectionRef.current = {
+      start: insertion.selectionStart,
+      end: insertion.selectionEnd,
+    };
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(insertion.selectionStart, insertion.selectionEnd);
+    }, 0);
+  }, [onChange, value]);
 
   // Handle keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -112,7 +152,16 @@ export default function SimpleMarkdownEditor({
       <textarea
         ref={textareaRef}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          selectionRef.current = {
+            start: e.target.selectionStart,
+            end: e.target.selectionEnd,
+          };
+        }}
+        onClick={rememberSelection}
+        onKeyUp={rememberSelection}
+        onSelect={rememberSelection}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="simple-md-editor-textarea"
@@ -132,6 +181,12 @@ export default function SimpleMarkdownEditor({
             <div className={`flex items-center justify-between w-full ${variant === "composer" ? "gap-3" : ""}`}>
               {/* 左侧：图片按钮、附件按钮、Markdown切换按钮 */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                <EmojiPicker
+                  disabled={isUploading}
+                  onSelect={insertEmoji}
+                  placement="top"
+                />
+
                 {/* 图片按钮 */}
                 {onImageClick && (
                   <button

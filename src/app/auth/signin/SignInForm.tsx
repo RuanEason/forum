@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
+import SignInModal from "@/components/SignInModal";
 import { getAuthPageRedirectPath } from "@/lib/auth-redirect";
 
 type SignInFormProps = {
   redirectPath: string;
+  presentation?: "page" | "modal";
 };
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -32,12 +34,17 @@ function GitHubIcon({ className }: { className?: string }) {
   );
 }
 
-export default function SignInForm({ redirectPath }: SignInFormProps) {
+export default function SignInForm({ redirectPath, presentation = "page" }: SignInFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const isModal = presentation === "modal";
+
+  const handleClose = useCallback(() => {
+    router.back();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +63,11 @@ export default function SignInForm({ redirectPath }: SignInFormProps) {
         return;
       }
 
-      router.push(redirectPath);
+      if (isModal) {
+        router.replace(redirectPath);
+      } else {
+        router.push(redirectPath);
+      }
       router.refresh();
     } catch {
       setError("网络错误，请稍后重试");
@@ -69,85 +80,116 @@ export default function SignInForm({ redirectPath }: SignInFormProps) {
     redirectPath === "/"
       ? "/auth/signup"
       : `/auth/signup?redirect=${encodeURIComponent(redirectPath)}`;
+  const resetPasswordPath = "/auth/reset-password";
   const thirdPartyLoginPath = `/api/auth/github/login?redirect=${encodeURIComponent(
     getAuthPageRedirectPath(redirectPath),
   )}`;
 
-  return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="max-w-md w-full space-y-8 p-8">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            登录到 Slept 论坛
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            欢迎回来，请登录您的账号
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <Input
-              id="email"
-              name="email"
-              label="邮箱地址"
-              type="email"
-              required
-              placeholder="请输入您的邮箱"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Input
-              id="password"
-              name="password"
-              label="密码"
-              type="password"
-              required
-              placeholder="请输入您的密码"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <div className="-mt-2 text-right text-sm">
-              <Link href="/auth/reset-password" className="font-medium text-indigo-600 hover:text-indigo-500">
+  const formContent = (
+    <>
+      <div>
+        <h2 className={isModal ? "text-center text-2xl font-bold text-gray-900" : "mt-2 text-center text-3xl font-extrabold text-gray-900"}>
+          登录到 Slept 论坛
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          欢迎回来，请登录您的账号
+        </p>
+      </div>
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <Input
+            id={isModal ? "modal-email" : "email"}
+            name="email"
+            label="邮箱地址"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="请输入您的邮箱"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Input
+            id={isModal ? "modal-password" : "password"}
+            name="password"
+            label="密码"
+            type="password"
+            autoComplete="current-password"
+            required
+            placeholder="请输入您的密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <div className="-mt-2 text-right text-sm">
+            {isModal ? (
+              <a href={resetPasswordPath} className="font-medium text-indigo-600 hover:text-indigo-500">
+                忘记密码？
+              </a>
+            ) : (
+              <Link href={resetPasswordPath} className="font-medium text-indigo-600 hover:text-indigo-500">
                 忘记密码？
               </Link>
+            )}
+          </div>
+        </div>
+
+        {error && <div className="text-center text-sm text-red-600">{error}</div>}
+
+        <div>
+          <Button type="submit" variant="primary" fullWidth disabled={loading}>
+            {loading ? "登录中..." : "登录"}
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">或使用 GitHub 登录</span>
             </div>
           </div>
-
-          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-
-          <div>
-            <Button type="submit" variant="primary" fullWidth disabled={loading}>
-              {loading ? "登录中..." : "登录"}
+          <a href={thirdPartyLoginPath} className="flex justify-center">
+            <Button
+              type="button"
+              variant="secondary"
+              aria-label="使用 GitHub 登录"
+              className="border-0 bg-transparent p-0 text-gray-900 shadow-none hover:bg-transparent hover:shadow-none focus:ring-0 focus:ring-offset-0"
+            >
+              <GitHubIcon className="h-9 w-9" />
             </Button>
-          </div>
+          </a>
+        </div>
 
-          <div className="space-y-3">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">or</span>
-              </div>
-            </div>
-            <a href={thirdPartyLoginPath} className="flex justify-center">
-              <Button
-                type="button"
-                variant="secondary"
-                aria-label="Continue with GitHub"
-                className="border-0 bg-transparent p-0 text-gray-900 shadow-none hover:bg-transparent hover:shadow-none focus:ring-0 focus:ring-offset-0"
-              >
-                <GitHubIcon className="h-9 w-9" />
-              </Button>
+        <div className="text-center">
+          {isModal ? (
+            <a href={signupPath} className="font-medium text-indigo-600 hover:text-indigo-500">
+              还没有账号？注册
             </a>
-          </div>
-
-          <div className="text-center">
+          ) : (
             <Link href={signupPath} className="font-medium text-indigo-600 hover:text-indigo-500">
               还没有账号？注册
             </Link>
-          </div>
-        </form>
+          )}
+        </div>
+      </form>
+    </>
+  );
+
+  if (isModal) {
+    return (
+      <SignInModal onRequestClose={handleClose}>
+        <div className="space-y-8 px-6 pb-7 pt-12 sm:px-8 sm:pb-8">
+          {formContent}
+        </div>
+      </SignInModal>
+    );
+  }
+
+  return (
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md space-y-8 p-8">
+        {formContent}
       </Card>
     </div>
   );

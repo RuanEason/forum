@@ -424,6 +424,27 @@ body.editor-route [data-site-main="app"] {
   border-radius: 0.4rem;
 }
 
+.custom-emoji {
+  width: 80px !important;
+  height: 80px !important;
+  max-width: 80px !important;
+  max-height: 80px !important;
+  object-fit: contain !important;
+}
+
+.rich-text-prose img.rich-text-emoji,
+.editor-style-body .rich-text-prose img.rich-text-emoji {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  max-width: 80px;
+  max-height: 80px;
+  margin: 0 0.1rem;
+  vertical-align: middle;
+  object-fit: contain;
+  border-radius: 0;
+}
+
 .post-content-image-preview img {
   cursor: zoom-in;
 }
@@ -1116,9 +1137,18 @@ body.editor-route [data-site-main="app"] {
 
 /* 主内容区域 */
 .post-detail-main {
+  position: relative;
+  z-index: 1;
   max-width: 768px;
+  width: 100%;
   margin: 0 auto;
   padding-right: 280px; /* 为右侧固定目录预留空间 */
+  transition:
+    width 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-left 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-right 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding-right 460ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 固定在右侧的目录容器 */
@@ -1136,6 +1166,15 @@ body.editor-route [data-site-main="app"] {
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 1rem;
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  will-change: transform, opacity;
+  transition:
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 260ms ease,
+    visibility 0s linear 0s;
 }
 
 /* 大屏幕优化 */
@@ -1160,6 +1199,89 @@ body.editor-route [data-site-main="app"] {
   }
 }
 
+.post-detail-layout--toc-collapsed .post-detail-main {
+  width: min(100%, 70rem);
+  max-width: 70rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-right: 0;
+}
+
+.post-detail-layout--toc-collapsed .post-detail-toc {
+  z-index: 0;
+  transform: translateX(calc(-100% - 1.25rem));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition-delay: 0s, 0s, 460ms;
+}
+
+.post-detail-layout:not(.post-detail-layout--toc-collapsed) .post-detail-toc {
+  transition-delay: 120ms, 120ms, 0s;
+}
+
+.post-detail-header-actions {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.post-toc-reopen-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  width: 0;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(0.75rem);
+  pointer-events: none;
+  transition:
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.post-detail-layout--toc-collapsed .post-toc-reopen-toggle {
+  width: 2rem;
+  max-width: 2rem;
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  transition-delay: 180ms;
+}
+
+.post-toc-reopen-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: #6b7280;
+  background: transparent;
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.post-toc-reopen-button:hover {
+  color: var(--primary-color);
+  background-color: var(--bg-hover);
+}
+
+.post-toc-reopen-button:active {
+  transform: scale(0.92);
+}
+
+.post-toc-reopen-button:focus-visible,
+.catalog-sidebar-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
 /* 移动端隐藏 TOC */
 @media (max-width: 767px) {
   .post-detail-main {
@@ -1167,6 +1289,10 @@ body.editor-route [data-site-main="app"] {
   }
 
   .post-detail-toc {
+    display: none;
+  }
+
+  .post-toc-reopen-toggle {
     display: none;
   }
 }
@@ -1484,6 +1610,7 @@ html {
 
 /* 标题样式 */
 .catalog-sidebar-title {
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-main);
@@ -1491,6 +1618,34 @@ html {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
+}
+
+.catalog-sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.catalog-sidebar-toggle-icon {
+  width: 1rem;
+  height: 1rem;
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), color 180ms ease;
+}
+
+.catalog-sidebar-toggle:hover .catalog-sidebar-toggle-icon,
+.catalog-sidebar-toggle:focus-visible .catalog-sidebar-toggle-icon {
+  color: var(--primary-color);
+  transform: translateX(-2px) rotate(-5deg) scale(1.06);
+}
+
+.catalog-sidebar-toggle:active .catalog-sidebar-toggle-icon {
+  transform: translateX(-1px) scale(0.92);
 }
 
 /* 激活状态 */
@@ -1502,6 +1657,17 @@ html {
 .catalog-active a {
   color: var(--primary-color) !important;
   font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-detail-main,
+  .post-detail-toc,
+  .post-toc-reopen-toggle,
+  .post-toc-reopen-button,
+  .catalog-sidebar-toggle-icon {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
 }
 
 /* 暗色模式适配 */
