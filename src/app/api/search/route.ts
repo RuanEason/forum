@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/prisma";
 import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 import { getPageResult, parseListPageSize, parsePage } from "@/lib/pagination";
+import { toPublicUser } from "@/lib/public-user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,11 +35,14 @@ export async function GET(request: NextRequest) {
             name: true,
             avatar: true,
             experience: true,
+            role: true,
             _count: { select: { posts: true } },
           },
         }),
       ]);
-      return NextResponse.json(getPageResult(users, page, pageSize, total));
+      return NextResponse.json(
+        getPageResult(users.map((user) => toPublicUser(user)), page, pageSize, total),
+      );
     }
 
     const where = {
@@ -76,7 +80,7 @@ export async function GET(request: NextRequest) {
           pinnedAt: true,
           createdAt: true,
           author: {
-            select: { id: true, name: true, avatar: true, experience: true },
+            select: { id: true, name: true, avatar: true, experience: true, role: true },
           },
           _count: { select: { likes: true, reposts: true, comments: true } },
           images: { select: { url: true } },
@@ -93,8 +97,9 @@ export async function GET(request: NextRequest) {
           select: { postId: true },
         })).map((like) => like.postId))
       : new Set<string>();
-    const items = posts.map(({ contentJson, contentFormat, _count, ...post }) => ({
+    const items = posts.map(({ contentJson, contentFormat, _count, author, ...post }) => ({
       ...post,
+      author: toPublicUser(author),
       contentFormat,
       content: contentFormat === "RICH_TEXT"
         ? getRichTextSummary(parseRichTextDocument(contentJson), 300)
@@ -112,4 +117,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

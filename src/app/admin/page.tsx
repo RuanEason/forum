@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
+import { isAdminRole } from "@/lib/roles";
 
 interface User {
   id: string;
@@ -90,7 +91,7 @@ export default function AdminPanel() {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
         const userData = await response.json();
-        if (userData.role === "admin") {
+        if (isAdminRole(userData.role)) {
           // 如果服务器上的角色是管理员，更新会话并允许访问
           void fetchData(activeTab, 1, false);
           return;
@@ -109,7 +110,7 @@ export default function AdminPanel() {
       router.push("/auth/signin");
     } else if (status === "authenticated" && session?.user) {
       // 首先检查会话中的角色
-      if (session.user.role === "admin") {
+      if (isAdminRole(session.user.role)) {
         void fetchData(activeTab, 1, false);
       } else {
         // 如果会话中的角色不是管理员，检查服务器上的最新信息
@@ -267,7 +268,7 @@ export default function AdminPanel() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {user.role !== "admin" && (
+                          {!isAdminRole(user.role) && (
                             <button
                               onClick={() => handleBanUser(user.id, !user.banned)}
                               className={`${

@@ -7,6 +7,7 @@ import {
   parseListPageSize,
   parsePage,
 } from "@/lib/pagination";
+import { toPublicUser } from "@/lib/public-user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               avatar: true,
+              role: true,
             },
           },
           post: {
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
 
       return {
         ...notification,
+        sender: toPublicUser(notification.sender),
         post,
         comment: notification.commentId ? commentsMap.get(notification.commentId) ?? null : null,
       };

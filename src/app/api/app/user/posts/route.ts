@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { getRichTextSummary, parseRichTextDocument } from "@/lib/rich-text/content";
 import { isAdminRole } from "@/lib/server-auth";
+import { toPublicUser } from "@/lib/public-user";
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
           pinnedAt: true,
           createdAt: true,
           author: {
-            select: { id: true, name: true, avatar: true },
+            select: { id: true, name: true, avatar: true, role: true },
           },
           _count: {
             select: { likes: true, reposts: true, comments: true },
@@ -97,8 +98,9 @@ export async function GET(request: NextRequest) {
         })).map((like) => like.postId))
       : new Set<string>();
 
-    const list = posts.map(({ contentJson, contentFormat, _count, ...post }) => ({
+    const list = posts.map(({ contentJson, contentFormat, _count, author, ...post }) => ({
       ...post,
+      author: toPublicUser(author),
       contentFormat,
       content: contentFormat === "RICH_TEXT"
         ? getRichTextSummary(parseRichTextDocument(contentJson), 300)

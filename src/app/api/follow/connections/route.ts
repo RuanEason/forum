@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireCurrentUser } from "@/lib/server-auth";
 import { parseListPageSize, parsePage, getPageResult } from "@/lib/pagination";
+import { toPublicUser } from "@/lib/public-user";
 
 type Connection = {
   user: {
@@ -9,6 +10,7 @@ type Connection = {
     name: string | null;
     avatar: string | null;
     bio: string | null;
+    isAdmin: boolean;
   };
   followedAt: Date;
 };
@@ -53,6 +55,7 @@ export async function GET(request: Request) {
         name: true,
         avatar: true,
         bio: true,
+        role: true,
         deletionRequestedAt: true,
       },
     });
@@ -84,6 +87,7 @@ export async function GET(request: Request) {
               name: true,
               avatar: true,
               bio: true,
+              role: true,
             },
           },
         },
@@ -95,7 +99,7 @@ export async function GET(request: Request) {
       });
 
       connections = result.map((follow) => ({
-        user: follow.following,
+        user: toPublicUser(follow.following),
         followedAt: follow.createdAt,
       }));
       total = await prisma.follow.count({
@@ -118,6 +122,7 @@ export async function GET(request: Request) {
               name: true,
               avatar: true,
               bio: true,
+              role: true,
             },
           },
         },
@@ -129,7 +134,7 @@ export async function GET(request: Request) {
       });
 
       connections = result.map((follow) => ({
-        user: follow.follower,
+        user: toPublicUser(follow.follower),
         followedAt: follow.createdAt,
       }));
       total = await prisma.follow.count({
@@ -163,7 +168,7 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({
-      user,
+      user: toPublicUser(user),
       type,
       connections: connectionsWithStatus,
       total,

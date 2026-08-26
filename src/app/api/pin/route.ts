@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminUser } from "@/lib/server-auth";
+import { isAdminRole, requireAdminUser } from "@/lib/server-auth";
 
 /**
  * POST /api/pin
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // 检查是否为管理员
-    if (auth.user.role !== "admin" && auth.user.role !== "super_admin") {
+    if (!isAdminRole(auth.user.role)) {
       return NextResponse.json(
         { error: "无权执行此操作，仅管理员可置顶帖子" },
         { status: 403 }

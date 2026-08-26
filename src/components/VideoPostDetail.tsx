@@ -13,7 +13,9 @@ import PostComments, { CommentProps } from "@/components/PostComments";
 import VideoPlayer from "@/components/VideoPlayer";
 import PostEditHistory from "@/components/PostEditHistory";
 import { createMarkdownComponents } from "@/lib/markdown-components";
+import { isAdminRole } from "@/lib/roles";
 import PostContentImagePreview from "@/components/PostContentImagePreview";
+import AdminBadge from "@/components/AdminBadge";
 
 type VideoStatus = "INIT" | "UPLOADING" | "UPLOADED" | "PROCESSING" | "READY" | "FAILED" | "DELETED";
 
@@ -38,6 +40,7 @@ interface VideoPostDetailProps {
       id: string;
       name: string | null;
       avatar: string | null;
+      isAdmin: boolean;
     };
     topic?: {
       id: string;
@@ -107,7 +110,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
   const videoMessage = getVideoStatusMessage(post.video?.status);
   const canEditPost = Boolean(
     sessionUser?.id
-      && (sessionUser.id === post.author.id || sessionUser.role === "admin"),
+       && (sessionUser.id === post.author.id || isAdminRole(sessionUser.role)),
   );
   const editablePost = {
     id: post.id,
@@ -142,7 +145,8 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
                 >
                   {post.author.name || "匿名用户"}
                 </Link>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                  {post.author.isAdmin && <AdminBadge size="sm" />}
                   <PostEditHistory createdAt={post.createdAt} history={post.editHistory} />
                   {post.topic && (
                     <Link
@@ -215,7 +219,7 @@ export default function VideoPostDetail({ post, sessionUser }: VideoPostDetailPr
               content={post.content}
               createdAt={post.createdAt}
             />
-            {sessionUser?.role === "admin" && (
+            {isAdminRole(sessionUser?.role) && (
               <PinButton postId={post.id} isPinned={post.pinned || false} />
             )}
           </div>

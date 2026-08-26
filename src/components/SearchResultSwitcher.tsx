@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import HomeContent, { type PostProps } from "@/components/HomeContent";
 import { getUserLevel } from "@/lib/experience";
 
@@ -11,6 +12,7 @@ type UserSearchResult = {
   name: string | null;
   avatar: string | null;
   experience: number;
+  isAdmin: boolean;
   _count: { posts: number };
 };
 
@@ -192,7 +194,13 @@ export default function SearchResultSwitcher({ query }: { query: string }) {
                   <div className="flex min-w-0 flex-col">
                     <div className="flex min-w-0 items-center gap-1">
                       <span className="truncate font-medium text-gray-900">{user.name || "未命名用户"}</span>
-                      <span className="shrink-0 text-xs font-medium text-indigo-600">lv.{getUserLevel(user.experience ?? 0)}</span>
+                      {user.isAdmin ? (
+                        <AdminBadge size="sm" />
+                      ) : (
+                        <span className="shrink-0 text-xs font-medium text-indigo-600">
+                          lv.{getUserLevel(user.experience ?? 0)}
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs text-gray-500">{user._count.posts} 篇帖子</span>
                   </div>

@@ -1,4 +1,5 @@
 import { getSession, signIn } from "next-auth/react";
+import { isAdminRole } from "@/lib/roles";
 
 /**
  * 强制刷新用户会话以获取最新的用户信息
@@ -28,7 +29,7 @@ export async function checkAdminPermission(): Promise<boolean> {
     const response = await fetch("/api/auth/me");
     if (response.ok) {
       const userData = await response.json();
-      return userData.role === "admin";
+      return isAdminRole(userData.role);
     }
     return false;
   } catch (error) {

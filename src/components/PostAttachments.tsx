@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import FileIcon from "./FileIcon";
+import { isAdminRole } from "@/lib/roles";
 import { Download, Trash2, FileText } from "lucide-react";
 
 export interface PostAttachmentItem {
@@ -83,7 +84,7 @@ export default function PostAttachments({
   type UserLike = { id?: string | number; role?: string };
   const user = (session?.user as UserLike) ?? null;
   const isAuthor = !!user?.id && String(user.id) === String(authorId);
-  const isAdmin = !!user?.role && user.role === "admin";
+  const isAdmin = isAdminRole(user?.role);
   const canDelete = !!(session && (isAuthor || isAdmin));
 
   return (

@@ -15,6 +15,7 @@ import { DraftsPanel } from "@/app/post/drafts/page";
 import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { useToast } from "@/components/ui/Toast";
 import { startAttachmentUpload, type AttachmentUploadTask } from "@/lib/client-attachment-upload";
+import { isAdminRole } from "@/lib/roles";
 import {
   createEmptyRichTextDocument,
   getRichTextPlainText,
@@ -251,7 +252,7 @@ function CreatePostPageFallback({ presentation }: { presentation: CreatePostPres
 
 function CreatePostPageContent({ presentation }: { presentation: CreatePostPresentation }) {
   const { data: session, status } = useSession();
-  const isAdmin = session?.user?.role === "admin";
+  const isAdmin = isAdminRole(session?.user?.role);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { isAdminRole } from "@/lib/server-auth";
+import { toPublicUser } from "@/lib/public-user";
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -76,12 +77,13 @@ export async function GET(request: NextRequest) {
                     name: true,
                     avatar: true,
                     bio: true,
+                    role: true,
                   },
                 },
               },
             })
           ).map((row) => ({
-            user: row.follower,
+            user: toPublicUser(row.follower),
             followedAt: row.createdAt,
           }))
         : (
@@ -98,12 +100,13 @@ export async function GET(request: NextRequest) {
                     name: true,
                     avatar: true,
                     bio: true,
+                    role: true,
                   },
                 },
               },
             })
           ).map((row) => ({
-            user: row.following,
+            user: toPublicUser(row.following),
             followedAt: row.createdAt,
           }));
 

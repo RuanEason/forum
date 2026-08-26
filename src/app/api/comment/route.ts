@@ -10,6 +10,7 @@ import {
 import { rewardActionExperience } from "@/lib/experience";
 import { createUserNotificationIfEnabled } from "@/lib/user-notifications";
 import { linkMarkdownMentions } from "@/lib/mentions";
+import { toPublicUser } from "@/lib/public-user";
 
 const MAX_COMMENT_IMAGES = 9;
 
@@ -191,6 +192,7 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             avatar: true,
+            role: true,
           },
         },
         likes: {
@@ -210,6 +212,7 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
+                role: true,
               },
             },
           },
@@ -254,7 +257,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ message: "Comment created successfully", comment }, { status: 201 });
+    return NextResponse.json({
+      message: "Comment created successfully",
+      comment: {
+        ...comment,
+        author: toPublicUser(comment.author),
+        replyTo: comment.replyTo
+          ? {
+              ...comment.replyTo,
+              author: toPublicUser(comment.replyTo.author),
+            }
+          : null,
+      },
+    }, { status: 201 });
   } catch (error) {
     console.error("Create comment error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

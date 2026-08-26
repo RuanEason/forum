@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PostListMoreMenu from "@/components/PostListMoreMenu";
@@ -16,6 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { Components } from "react-markdown";
 import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isInternalUserLink } from "@/lib/markdown";
+import { isAdminRole } from "@/lib/roles";
 import { Eye, Lock } from "lucide-react";
 
 interface PostProps {
@@ -32,6 +34,7 @@ interface PostProps {
     id: string;
     name: string | null;
     avatar: string | null;
+    isAdmin?: boolean;
   };
   likes?: { userId: string }[];
   reposts?: { userId: string }[];
@@ -197,6 +200,7 @@ export default function UserPostList({
                         </div>
                       )}
                     </span>
+                    {post.author.isAdmin && <AdminBadge size="sm" />}
                     {post.topic && (
                       <Link
                         href={`/topic/${post.topic.id}`}
@@ -216,7 +220,7 @@ export default function UserPostList({
                       postId={post.id}
                       pinned={post.pinned || false}
                       canDelete={activeUserId === post.author.id}
-                      canPin={session?.user?.role === "admin"}
+                      canPin={isAdminRole(session?.user?.role)}
                       onDelete={handleDeletePost}
                       onPinnedChange={handlePinnedChange}
                     />

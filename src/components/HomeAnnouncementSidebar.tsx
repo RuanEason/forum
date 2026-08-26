@@ -5,6 +5,7 @@ import {
   PanelRightOpen,
 } from "lucide-react";
 import Link from "next/link";
+import AdminBadge from "@/components/AdminBadge";
 
 export type HomeAnnouncement = {
   id: string;
@@ -15,6 +16,7 @@ export type HomeAnnouncement = {
     id: string;
     name: string | null;
     avatar: string | null;
+    isAdmin: boolean;
   };
 };
 
@@ -82,6 +84,7 @@ export default function HomeAnnouncementSidebar({
                         <span className="truncate font-medium text-gray-700">
                           {announcement.author.name || "管理员"}
                         </span>
+                        {announcement.author.isAdmin && <AdminBadge size="sm" />}
                         <span aria-hidden="true">·</span>
                         <span className="truncate">社区公告</span>
                       </div>

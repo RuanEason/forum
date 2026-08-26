@@ -28,6 +28,7 @@ import {
   serializeRichTextDocument,
 } from "@/lib/rich-text/content";
 import type { PostStyleConfig } from "@/types/post-style";
+import { isAdminRole } from "@/lib/roles";
 
 type PostType = "TEXT" | "VIDEO";
 type PostVisibility = "PUBLIC" | "UNLISTED";
@@ -137,7 +138,7 @@ export default function PostEditDrawer({ post, open, onOpenChange }: PostEditDra
   const cancelRequestedRef = useRef(false);
 
   const isTextPost = post.postType === "TEXT";
-  const isAdmin = session?.user?.role === "admin";
+  const isAdmin = isAdminRole(session?.user?.role);
   const [editorMode, setEditorMode] = useState<EditorMode>("edit");
   const [title, setTitle] = useState(post.title ?? "");
   const [content, setContent] = useState(() => getEditableContent(post));

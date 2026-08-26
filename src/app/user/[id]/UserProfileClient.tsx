@@ -5,6 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { CalendarDays, LogOut, Settings } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import UserPostList from "@/components/UserPostList";
 import UserStats from "@/components/UserStats";
 import FollowButton from "@/components/FollowButton";
@@ -39,6 +40,7 @@ interface User {
   createdAt: string;
   posts: Post[];
   showUserData?: boolean;
+  isAdmin: boolean;
 }
 
 interface ProfileActionsProps {
@@ -336,11 +338,14 @@ export default function UserProfileClient({
                     size="lg"
                     className="mb-4 border-4 border-white shadow-md"
                   />
-                  <h2 className="text-xl font-bold text-gray-900">
+                  <h2 className="flex flex-wrap items-center justify-center gap-2 text-xl font-bold text-gray-900">
                     {user.name || "匿名用户"}
                   </h2>
-
-                  {shouldShowUserStatsAndLevel && (
+                  {user.isAdmin ? (
+                    <div className="mt-2">
+                      <AdminBadge size="lg" />
+                    </div>
+                  ) : shouldShowUserStatsAndLevel ? (
                     <div className="mt-2 flex items-center gap-2 text-sm">
                       <span className="font-bold italic text-indigo-600">
                         Lv.{levelProgress.displayLevel}
@@ -355,7 +360,7 @@ export default function UserProfileClient({
                         {levelProgress.progressCurrent}/{levelProgress.progressTarget}
                       </span>
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="mt-5 flex items-center justify-center gap-5 text-sm">
                     <Link
@@ -444,7 +449,7 @@ export default function UserProfileClient({
                     <Avatar src={user.avatar} name={user.name} size="xl" />
                   </div>
                   <div className="flex-1 flex flex-col justify-end">
-                    <h1 className="mb-2 text-xl sm:text-2xl font-bold text-gray-900">
+                    <h1 className="mb-2 flex flex-wrap items-center gap-2 text-xl font-bold text-gray-900 sm:text-2xl">
                       {user.name || "匿名用户"}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
@@ -462,20 +467,24 @@ export default function UserProfileClient({
                         <span className="font-semibold">{stats.followersCount || 0}</span> 粉丝
                       </Link>
                       <span>·</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
-                        <div className="w-32 sm:w-36 flex items-center gap-2">
-                          <div className="h-1.5 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-indigo-500 transition-all"
-                              style={{ width: `${levelProgress.progressPercent}%` }}
-                            />
+                      {user.isAdmin ? (
+                        <AdminBadge size="lg" />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-700">lv.{levelProgress.displayLevel}</span>
+                          <div className="flex w-32 items-center gap-2 sm:w-36">
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+                              <div
+                                className="h-full rounded-full bg-indigo-500 transition-all"
+                                style={{ width: `${levelProgress.progressPercent}%` }}
+                              />
+                            </div>
+                            <span className="whitespace-nowrap text-[11px] leading-none text-gray-500">
+                              {levelProgress.progressCurrent}/{levelProgress.progressTarget}
+                            </span>
                           </div>
-                          <span className="text-[11px] leading-none text-gray-500 whitespace-nowrap">
-                            {levelProgress.progressCurrent}/{levelProgress.progressTarget}
-                          </span>
                         </div>
-                      </div>
+                      )}
                     </div>
                     <p className="text-gray-500 text-xs sm:text-sm mt-1">
                       加入于 {format(new Date(user.createdAt), "yyyy年M月d日")}

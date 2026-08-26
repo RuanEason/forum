@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import FollowConnections from "./FollowConnections";
 import { notFound } from "next/navigation";
+import { toPublicUser } from "@/lib/public-user";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ async function getUser(id: string) {
       name: true,
       avatar: true,
       bio: true,
+      role: true,
     },
   });
 }
@@ -47,7 +49,7 @@ export default async function ConnectionsPage({
     <div className="min-h-screen bg-gray-50 pb-16 sm:pb-0">
       <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 py-6">
         <FollowConnections
-          user={user}
+          user={toPublicUser(user)}
           type={tab as "following" | "followers"}
           isCurrentUser={isCurrentUser}
         />

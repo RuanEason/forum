@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import FollowButton from "@/components/FollowButton";
 import ProfileBio from "@/components/ProfileBio";
 
@@ -11,6 +12,7 @@ interface User {
   name: string | null;
   avatar: string | null;
   bio: string | null;
+  isAdmin: boolean;
 }
 
 interface FollowConnectionsProps {
@@ -95,11 +97,14 @@ export default function FollowConnections({
             <Avatar src={user.avatar} name={user.name} size="lg" />
           </Link>
           <div>
-            <Link href={`/user/${user.id}`}>
-              <h1 className="text-xl font-bold text-gray-900 hover:text-indigo-600 transition-colors">
-                {user.name || "匿名用户"}
-              </h1>
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={`/user/${user.id}`}>
+                <h1 className="text-xl font-bold text-gray-900 transition-colors hover:text-indigo-600">
+                  {user.name || "匿名用户"}
+                </h1>
+              </Link>
+              {user.isAdmin && <AdminBadge size="md" />}
+            </div>
             <div className="flex items-center gap-4 mt-1">
               <Link
                 href={`/user/${user.id}/connections?tab=following`}
@@ -149,14 +154,17 @@ export default function FollowConnections({
                     <Avatar src={conn.user.avatar} name={conn.user.name} size="md" />
                   </Link>
                   <div className="flex-1 min-w-0">
-                    <Link
-                      href={`/user/${conn.user.id}`}
-                      className="block"
-                    >
-                      <h3 className="text-base font-semibold text-gray-900 hover:text-indigo-600 transition-colors truncate">
-                        {conn.user.name || "匿名用户"}
-                      </h3>
-                    </Link>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <Link
+                        href={`/user/${conn.user.id}`}
+                        className="min-w-0"
+                      >
+                        <h3 className="truncate text-base font-semibold text-gray-900 transition-colors hover:text-indigo-600">
+                          {conn.user.name || "匿名用户"}
+                        </h3>
+                      </Link>
+                      {conn.user.isAdmin && <AdminBadge size="sm" />}
+                    </div>
                     {conn.user.bio && (
                       <ProfileBio bio={conn.user.bio} className="mt-1 truncate text-sm text-gray-500" />
                     )}

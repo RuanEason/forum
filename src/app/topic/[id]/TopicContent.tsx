@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import { useTopicHeader } from "@/components/TopicHeaderProvider";
 import TopicParticipationEditor from "@/components/TopicParticipationEditor";
 import TopicPostList from "./TopicPostList";
@@ -20,6 +21,7 @@ interface Topic {
     id: string;
     name: string | null;
     avatar: string | null;
+    isAdmin: boolean;
   } | null;
 }
 
@@ -115,6 +117,7 @@ export default function TopicContent({
                           size="sm"
                         />
                         <span className="font-medium">{topic.creator.name}</span>
+                        {topic.creator.isAdmin && <AdminBadge size="sm" />}
                      </div>
                    </Link>
                  )}

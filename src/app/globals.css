@@ -331,6 +331,14 @@ body.editor-route [data-site-main="app"] {
   margin: 0;
 }
 
+.rich-text-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #94a3b8;
+}
+
 .rich-text-prose h1,
 .rich-text-prose h2,
 .rich-text-prose h3,

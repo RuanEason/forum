@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import LikeButton from "@/components/LikeButton";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import ImagePreviewLightbox from "@/components/ImagePreviewLightbox";
 import Modal from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -35,6 +36,7 @@ interface AuthorProps {
   id: string;
   name: string | null;
   avatar: string | null;
+  isAdmin?: boolean;
 }
 
 export interface CommentProps {
@@ -49,6 +51,7 @@ export interface CommentProps {
     author: {
       id: string;
       name: string | null;
+      isAdmin?: boolean;
     };
   } | null;
   postId: string;
@@ -918,6 +921,7 @@ function ReplyItem({
             >
               {reply.author.name || "匿名用户"}
             </Link>
+            {reply.author.isAdmin && <AdminBadge size="sm" />}
             <span className="text-xs text-gray-400">
               {mounted ? format(new Date(reply.createdAt), "yyyy年MM月dd日 HH:mm") : ""}
             </span>
@@ -928,10 +932,11 @@ function ReplyItem({
               <button
                 type="button"
                 onClick={() => onJumpToReply(reply.replyToId!)}
-                className="mb-1 block text-left text-xs text-gray-500 not-prose hover:text-blue-500 hover:underline"
+                className="mb-1 flex flex-wrap items-center gap-1 text-left text-xs text-gray-500 not-prose hover:text-blue-500 hover:underline"
                 title="跳转到被回复的评论"
               >
-                对{reply.replyTo?.author.name || "匿名用户"}用户的回复：
+                <span>对{reply.replyTo?.author.name || "匿名用户"}用户的回复：</span>
+                {reply.replyTo?.author.isAdmin && <AdminBadge size="sm" />}
               </button>
             )}
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
@@ -1183,6 +1188,7 @@ function CommentItem({
             >
               {comment.author.name || "匿名用户"}
             </Link>
+            {comment.author.isAdmin && <AdminBadge size="sm" />}
             <span className="text-xs text-gray-400">
               {mounted
                 ? format(new Date(comment.createdAt), "yyyy年MM月dd日 HH:mm")

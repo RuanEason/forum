@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import AdminBadge from "@/components/AdminBadge";
 
 interface Notification {
   id: string;
@@ -20,6 +21,7 @@ interface Notification {
     id: string;
     name: string | null;
     avatar: string | null;
+    isAdmin: boolean;
   };
   post: {
     id: string;
@@ -129,6 +131,12 @@ export default function NotificationsPage() {
   const renderNotificationContent = (notification: Notification) => {
     const { type, sender, post, comment } = notification;
     const senderName = sender.name || "Unknown User";
+    const senderLabel = (
+      <>
+        <span className="font-bold text-gray-900">{senderName}</span>
+        {sender.isAdmin && <AdminBadge size="sm" className="ml-1 align-middle" />}
+      </>
+    );
     let postTitle = post?.title;
 
     if (!postTitle && post?.content) {
@@ -141,7 +149,7 @@ export default function NotificationsPage() {
       case "REPLY_POST":
         return (
           <div>
-            <span className="font-bold text-gray-900">{senderName}</span>
+            {senderLabel}
             <span className="text-gray-600"> 回复了你的帖子 </span>
             <span className="font-medium text-indigo-600">
               {postTitle}
@@ -151,7 +159,7 @@ export default function NotificationsPage() {
       case "REPLY_COMMENT":
         return (
           <div>
-            <span className="font-bold text-gray-900">{senderName}</span>
+            {senderLabel}
             <span className="text-gray-600"> 回复了你的评论 </span>
             <span className="font-medium text-indigo-600">
               {postTitle}
@@ -168,7 +176,7 @@ export default function NotificationsPage() {
       case "LIKE_POST":
         return (
           <div>
-            <span className="font-bold text-gray-900">{senderName}</span>
+            {senderLabel}
             <span className="text-gray-600"> 赞了你的帖子 </span>
             <span className="font-medium text-indigo-600">
               {postTitle}
@@ -178,7 +186,7 @@ export default function NotificationsPage() {
       case "LIKE_COMMENT":
         return (
           <div>
-            <span className="font-bold text-gray-900">{senderName}</span>
+            {senderLabel}
             <span className="text-gray-600"> 赞了你的评论 </span>
             <span className="font-medium text-indigo-600">
               {postTitle}
@@ -195,7 +203,7 @@ export default function NotificationsPage() {
       case "FOLLOW_USER":
         return (
           <div>
-            <span className="font-bold text-gray-900">{senderName}</span>
+            {senderLabel}
             <span className="text-gray-600"> 关注了你</span>
           </div>
         );

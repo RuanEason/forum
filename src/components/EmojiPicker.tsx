@@ -20,6 +20,28 @@ interface EmojiPageResponse {
   error?: string;
 }
 
+const EMOJI_TAB_STORAGE_KEY = "forum:emoji-picker-tab";
+
+function readStoredEmojiTab(): "native" | "custom" {
+  if (typeof window === "undefined") {
+    return "native";
+  }
+
+  try {
+    return window.localStorage.getItem(EMOJI_TAB_STORAGE_KEY) === "custom" ? "custom" : "native";
+  } catch {
+    return "native";
+  }
+}
+
+function storeEmojiTab(tab: "native" | "custom"): void {
+  try {
+    window.localStorage.setItem(EMOJI_TAB_STORAGE_KEY, tab);
+  } catch {
+    // localStorage unavailable; tab memory is best-effort only.
+  }
+}
+
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void;
   onSelectCustomEmoji?: (emoji: CustomEmoji) => void;
@@ -143,6 +165,7 @@ export default function EmojiPicker({
 
   const handleTabChange = (tab: "native" | "custom") => {
     setActiveTab(tab);
+    storeEmojiTab(tab);
     if (tab === "custom" && !customEmojiLoaded) {
       setCustomEmojiError("");
     }
@@ -228,7 +251,9 @@ export default function EmojiPicker({
             const nextOpen = !open;
             setOpen(nextOpen);
             onOpenChange?.(nextOpen);
-            setActiveTab("native");
+            if (nextOpen) {
+              setActiveTab(showCustomEmojis ? readStoredEmojiTab() : "native");
+            }
           }
         }}
         disabled={disabled}

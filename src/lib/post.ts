@@ -15,6 +15,7 @@ import {
   InvalidCursorError,
   type CursorPage,
 } from "@/lib/pagination";
+import { toPublicUser } from "@/lib/public-user";
 
 type PostAttachmentInput = {
   url: string;
@@ -158,6 +159,7 @@ export type PostListItem = {
     name: string | null;
     avatar: string | null;
     experience: number;
+    isAdmin: boolean;
   };
   likeCount: number;
   repostCount: number;
@@ -242,6 +244,7 @@ export async function getPostsPage({
           name: true,
           avatar: true,
           experience: true,
+          role: true,
         },
       },
       _count: {
@@ -312,8 +315,9 @@ export async function getPostsPage({
   const likedPostIds = new Set(likedPosts.map((like) => like.postId));
   const repostedPostIds = new Set(repostedPosts.map((repost) => repost.postId));
 
-  const items = page.map(({ contentJson, contentFormat, _count, ...post }) => ({
+  const items = page.map(({ contentJson, contentFormat, _count, author, ...post }) => ({
     ...post,
+    author: toPublicUser(author),
     contentFormat,
     content: contentFormat === "RICH_TEXT"
       ? (parseRichTextDocument(contentJson)
@@ -347,6 +351,7 @@ export type CommentListItem = {
     author: {
       id: string;
       name: string | null;
+      isAdmin: boolean;
     };
   } | null;
   pinned: boolean;
@@ -356,6 +361,7 @@ export type CommentListItem = {
     id: string;
     name: string | null;
     avatar: string | null;
+    isAdmin: boolean;
   };
   likeCount: number;
   likedByMe: boolean;
@@ -415,6 +421,7 @@ export async function getCommentsPage({
             id: true,
             name: true,
             avatar: true,
+            role: true,
           },
         },
         replyTo: {
@@ -424,6 +431,7 @@ export async function getCommentsPage({
               select: {
                 id: true,
                 name: true,
+                role: true,
               },
             },
           },
@@ -455,8 +463,15 @@ export async function getCommentsPage({
     : [];
   const likedCommentIds = new Set(likedComments.map((like) => like.commentId));
 
-  const items = page.map(({ _count, ...comment }) => ({
+  const items = page.map(({ _count, author, replyTo, ...comment }) => ({
     ...comment,
+    author: toPublicUser(author),
+    replyTo: replyTo
+      ? {
+          ...replyTo,
+          author: toPublicUser(replyTo.author),
+        }
+      : null,
     likeCount: _count.likes,
     likedByMe: likedCommentIds.has(comment.id),
     replies: [],
@@ -497,6 +512,7 @@ export async function getForumAnnouncements(limit = 5) {
           id: true,
           name: true,
           avatar: true,
+          role: true,
         },
       },
     },
@@ -507,8 +523,9 @@ export async function getForumAnnouncements(limit = 5) {
     take,
   });
 
-  return announcements.map(({ contentJson, contentFormat, announcementAt, createdAt, ...announcement }) => ({
+  return announcements.map(({ contentJson, contentFormat, announcementAt, createdAt, author, ...announcement }) => ({
     ...announcement,
+    author: toPublicUser(author),
     contentFormat,
     content: contentFormat === "RICH_TEXT"
       ? (parseRichTextDocument(contentJson)
@@ -561,7 +578,7 @@ export async function createPost(
 }
 
 export async function getPostById(id: string) {
-  return prisma.post.findFirst({
+  const post = await prisma.post.findFirst({
     where: {
       id,
       deletedAt: null,
@@ -604,6 +621,7 @@ export async function getPostById(id: string) {
           id: true,
           name: true,
           avatar: true,
+          role: true,
         },
       },
       likes: {
@@ -650,6 +668,8 @@ export async function getPostById(id: string) {
       },
     },
   });
+
+  return post ? { ...post, author: toPublicUser(post.author) } : null;
 }
 
 export async function updatePost(id: string, input: UpdatePostInput, editor: PostEditActor) {
@@ -845,6 +865,7 @@ export async function updatePost(id: string, input: UpdatePostInput, editor: Pos
       },
     });
   });
+
 }
 
 /**

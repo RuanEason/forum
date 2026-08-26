@@ -7,6 +7,8 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Menu, Plus, Search, Settings, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
+import { isAdminRole } from "@/lib/roles";
 import { PageTopProgressBar } from "@/components/PageLoadProgressProvider";
 import { useTopicHeader } from "@/components/TopicHeaderProvider";
 
@@ -285,7 +287,7 @@ export default function Navbar() {
                     )}
                   </Link>
 
-                  {currentUser?.role === "admin" && (
+                  {isAdminRole(currentUser?.role) && (
                     <Link
                       href="/admin"
                       className="flex items-center space-x-1 text-sm font-medium text-gray-500 transition-colors hover:text-indigo-600"
@@ -308,6 +310,7 @@ export default function Navbar() {
                     <span className="hidden text-sm font-medium transition-colors group-hover:text-indigo-600 sm:inline">
                       {currentUser?.name || "用户"}
                     </span>
+                    {isAdminRole(currentUser?.role) && <AdminBadge size="sm" />}
                   </Link>
                 </div>
               ) : (
@@ -419,6 +422,7 @@ export default function Navbar() {
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
                       {currentUser?.name || "用户"}
                     </span>
+                    {isAdminRole(currentUser?.role) && <AdminBadge size="sm" />}
                   </Link>
 
                   <Link
@@ -448,7 +452,7 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {currentUser?.role === "admin" && (
+                  {isAdminRole(currentUser?.role) && (
                     <Link
                       href="/admin"
                       onClick={closeMobileMenu}

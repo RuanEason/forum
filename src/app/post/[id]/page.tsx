@@ -24,6 +24,8 @@ import { extractMarkdownHeadings } from "@/lib/markdown";
 import { markdownHeadingsToCatalogItems } from "@/lib/catalog";
 import { extractRichTextHeadings, getRichTextPlainText, parseRichTextDocument } from "@/lib/rich-text/content";
 import PostEditHistory from "@/components/PostEditHistory";
+import AdminBadge from "@/components/AdminBadge";
+import { isAdminRole } from "@/lib/roles";
 import type { PostStyleConfig } from "@/types/post-style";
 import type { JSONContent } from "@tiptap/core";
 
@@ -31,6 +33,7 @@ interface AuthorProps {
   id: string;
   name: string | null;
   avatar: string | null;
+  isAdmin: boolean;
 }
 
 interface PostDetailProps {
@@ -166,7 +169,7 @@ export default async function PostDetailPage({
   const isVideoPost = post.postType === "VIDEO";
   const canEditPost = Boolean(
     session?.user?.id
-      && (session.user.id === post.author.id || session.user.role === "admin"),
+      && (session.user.id === post.author.id || isAdminRole(session.user.role)),
   );
   const editablePost = {
     id: post.id,
@@ -295,7 +298,8 @@ export default async function PostDetailPage({
                       >
                         {post.author.name || "匿名用户"}
                       </Link>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        {post.author.isAdmin && <AdminBadge size="sm" />}
                         <PostEditHistory
                           createdAt={post.createdAt}
                           history={post.editHistory}
@@ -375,7 +379,7 @@ export default async function PostDetailPage({
                       createdAt={post.createdAt}
                     />
                     {/* 置顶按钮 - 仅管理员可见 */}
-                    {session?.user?.role === "admin" && (
+                    {isAdminRole(session?.user?.role) && (
                       <PinButton postId={post.id} isPinned={post.pinned || false} />
                     )}
                   </div>

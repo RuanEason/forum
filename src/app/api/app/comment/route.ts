@@ -6,6 +6,7 @@ import { getSessionUser, requireSessionUser } from "@/app/api/app/_shared/auth";
 import { linkMarkdownMentions } from "@/lib/mentions";
 import { isAdminRole } from "@/lib/server-auth";
 import { getCommentsPage } from "@/lib/post";
+import { toPublicUser } from "@/lib/public-user";
 import {
   DEFAULT_LIST_PAGE_SIZE,
   InvalidCursorError,
@@ -183,6 +184,7 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             avatar: true,
+            role: true,
           },
         },
         likes: {
@@ -202,6 +204,7 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
+                role: true,
               },
             },
           },
@@ -238,7 +241,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: "Comment created successfully",
-        comment,
+        comment: {
+          ...comment,
+          author: toPublicUser(comment.author),
+          replyTo: comment.replyTo
+            ? {
+                ...comment.replyTo,
+                author: toPublicUser(comment.replyTo.author),
+              }
+            : null,
+        },
       },
       { status: 201 },
     );

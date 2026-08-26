@@ -7,6 +7,7 @@ import UserProfileClient from "./UserProfileClient";
 import { getUserLevel } from "@/lib/experience";
 import { getRichTextSummaryWithMentions, parseRichTextDocument } from "@/lib/rich-text/content";
 import { DEFAULT_LIST_PAGE_SIZE, getPageResult } from "@/lib/pagination";
+import { toPublicUser } from "@/lib/public-user";
 
 interface UserProfileProps {
   params: Promise<{ id: string }>;
@@ -41,6 +42,7 @@ async function getPagedUserProfile(
       bio: true,
       coverImage: true,
       experience: true,
+      role: true,
       createdAt: true,
       showUserData: true,
       posts: {
@@ -64,7 +66,7 @@ async function getPagedUserProfile(
           pinnedAt: true,
           createdAt: true,
           author: {
-            select: { id: true, name: true, avatar: true },
+            select: { id: true, name: true, avatar: true, role: true },
           },
           _count: {
             select: { likes: true, reposts: true, comments: true },
@@ -100,10 +102,11 @@ async function getPagedUserProfile(
       })).map((like) => like.postId))
     : new Set<string>();
 
-  const serializedPosts = user.posts.map(({ contentJson, contentFormat, _count, ...post }) => {
+  const serializedPosts = user.posts.map(({ contentJson, contentFormat, _count, author, ...post }) => {
     const document = contentFormat === "RICH_TEXT" ? parseRichTextDocument(contentJson) : null;
     return {
       ...post,
+      author: toPublicUser(author),
       contentFormat,
       content: document ? getRichTextSummaryWithMentions(document, 300) : post.content,
       likeCount: _count.likes,
@@ -131,7 +134,7 @@ async function getPagedUserProfile(
 
   return {
     user: {
-      ...user,
+      ...toPublicUser(user),
       email: user.email ?? "",
       createdAt: user.createdAt.toISOString(),
       posts: serializedPosts.map((post) => ({

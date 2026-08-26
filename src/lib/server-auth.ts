@@ -2,6 +2,9 @@ import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminRole, isSuperAdminRole } from "@/lib/roles";
+
+export { isAdminRole, isSuperAdminRole } from "@/lib/roles";
 
 const authUserSelect = {
   id: true,
@@ -59,14 +62,6 @@ export function unauthorizedResponse() {
 
 export function forbiddenResponse(error = "Forbidden") {
   return createAuthResponse(error, 403);
-}
-
-export function isAdminRole(role: string) {
-  return role === "admin" || role === "super_admin";
-}
-
-export function isSuperAdminRole(role: string) {
-  return role === "super_admin";
 }
 
 export function canManageUser(actor: CurrentUser, target: Pick<CurrentUser, "id" | "role">) {

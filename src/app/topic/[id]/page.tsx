@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import TopicContent from "./TopicContent";
 import TopicParticleField from "./TopicParticleField";
 import styles from "./TopicPage.module.css";
+import { toPublicUser } from "@/lib/public-user";
 
 async function getTopic(id: string) {
   const topic = await prisma.topic.findUnique({
@@ -19,6 +20,7 @@ async function getTopic(id: string) {
           id: true,
           name: true,
           avatar: true,
+          role: true,
         },
       },
     },
@@ -28,7 +30,10 @@ async function getTopic(id: string) {
     return null;
   }
 
-  return topic;
+  return {
+    ...topic,
+    creator: topic.creator ? toPublicUser(topic.creator) : null,
+  };
 }
 
 export default async function TopicDetailPage({

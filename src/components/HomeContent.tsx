@@ -12,6 +12,7 @@ import LikeButton from "@/components/LikeButton";
 import RepostButton from "@/components/RepostButton";
 import PostListMoreMenu from "@/components/PostListMoreMenu";
 import Avatar from "@/components/Avatar";
+import AdminBadge from "@/components/AdminBadge";
 import PostImages from "@/components/PostImages";
 import Card from "@/components/ui/Card";
 import HomeTopicSidebar from "@/components/HomeTopicSidebar";
@@ -25,6 +26,7 @@ import type { HomeTopic } from "@/types/topic";
 import type { Components } from "react-markdown";
 import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isInternalUserLink } from "@/lib/markdown";
+import { isAdminRole } from "@/lib/roles";
 import { Eye, MessageCircle, Play, Plus } from "lucide-react";
 
 const LEVEL_THRESHOLDS = [50, 200, 800, 1500, 3000, 6666] as const;
@@ -54,6 +56,7 @@ export interface PostProps {
     name: string | null;
     avatar: string | null;
     experience?: number | null;
+    isAdmin?: boolean;
   };
   likes?: {
     userId: string;
@@ -531,7 +534,8 @@ export default function HomeContent({
                             >
                               {post.author.name || "匿名用户"}
                             </Link>
-                            {showAuthorLevel && (
+                            {post.author.isAdmin && <AdminBadge size="sm" />}
+                            {showAuthorLevel && !post.author.isAdmin && (
                               <span className="text-xs font-medium text-indigo-600">
                                 lv.{getUserLevel(post.author.experience ?? 0)}
                               </span>
@@ -557,7 +561,7 @@ export default function HomeContent({
                               postId={post.id}
                               pinned={post.pinned || false}
                               canDelete={session?.user?.id === post.author.id}
-                              canPin={session?.user?.role === "admin"}
+                              canPin={isAdminRole(session?.user?.role)}
                               onDelete={handleDeletePost}
                               onPinnedChange={handlePinnedChange}
                             />

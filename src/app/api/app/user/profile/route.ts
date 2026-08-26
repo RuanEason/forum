@@ -4,6 +4,7 @@ import { getUserLevel } from "@/lib/experience";
 import { getSessionUser } from "@/app/api/app/_shared/auth";
 import { getJoinedDays, getTrimmedParam } from "@/app/api/app/_shared/user";
 import { isAdminRole } from "@/lib/server-auth";
+import { toPublicUser } from "@/lib/public-user";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
         bio: true,
         coverImage: true,
         experience: true,
+        role: true,
         createdAt: true,
         showUserData: true,
         banned: true,
@@ -101,14 +103,17 @@ export async function GET(request: NextRequest) {
 
     const canViewStats = isSelf || user.showUserData;
 
+    const publicUser = toPublicUser(user);
+
     return NextResponse.json({
       user: {
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar,
-        bio: user.bio,
-        coverImage: user.coverImage,
-        joinedAt: user.createdAt,
+        id: publicUser.id,
+        name: publicUser.name,
+        avatar: publicUser.avatar,
+        bio: publicUser.bio,
+        coverImage: publicUser.coverImage,
+        joinedAt: publicUser.createdAt,
+        isAdmin: publicUser.isAdmin,
       },
       relationship: {
         isSelf,
