@@ -8,9 +8,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Menu, Plus, Search, Settings, X } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import AdminBadge from "@/components/AdminBadge";
+import MobileHotTopics, {
+  type MobileHotTopicsStatus,
+} from "@/components/MobileHotTopics";
 import { isAdminRole } from "@/lib/roles";
 import { PageTopProgressBar } from "@/components/PageLoadProgressProvider";
 import { useTopicHeader } from "@/components/TopicHeaderProvider";
+import type { HomeTopic, HomeTopicsResponse } from "@/types/topic";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -20,6 +24,11 @@ export default function Navbar() {
   const currentUser = session?.user;
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileMenuMounted, setIsMobileMenuMounted] = useState(false);
+  const [isMobileMenuVisible, setIsMobileMenuVisible] = useState(false);
+  const [mobileTopics, setMobileTopics] = useState<HomeTopic[]>([]);
+  const [mobileTopicsStatus, setMobileTopicsStatus] =
+    useState<MobileHotTopicsStatus>("idle");
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,9 +89,80 @@ export default function Navbar() {
     setIsMobileMenuOpen(false);
   }, []);
 
-  const toggleMobileMenu = useCallback(() => {
-    setIsMobileMenuOpen((isOpen) => !isOpen);
+  const mobileTopicsRequestRef = useRef<Promise<void> | null>(null);
+
+  const loadMobileTopics = useCallback(() => {
+    if (mobileTopicsRequestRef.current) {
+      return mobileTopicsRequestRef.current;
+    }
+
+    setMobileTopicsStatus("loading");
+
+    const request = fetch("/api/topic?view=home", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load mobile topics");
+        }
+
+        const data = (await response.json()) as Partial<HomeTopicsResponse>;
+        setMobileTopics(Array.isArray(data.topics) ? data.topics : []);
+        setMobileTopicsStatus("success");
+      })
+      .catch(() => {
+        setMobileTopicsStatus("error");
+      })
+      .finally(() => {
+        mobileTopicsRequestRef.current = null;
+      });
+
+    mobileTopicsRequestRef.current = request;
+    return request;
   }, []);
+
+  const toggleMobileMenu = useCallback(() => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
+    setIsMobileMenuOpen(true);
+
+    if (mobileTopicsStatus === "idle") {
+      void loadMobileTopics();
+    }
+  }, [isMobileMenuOpen, loadMobileTopics, mobileTopicsStatus]);
+
+  useEffect(() => {
+    let enterAnimationFrame: number | undefined;
+    let visibleAnimationFrame: number | undefined;
+    let exitTimer: number | undefined;
+
+    if (isMobileMenuOpen) {
+      enterAnimationFrame = window.requestAnimationFrame(() => {
+        setIsMobileMenuMounted(true);
+        visibleAnimationFrame = window.requestAnimationFrame(() => {
+          setIsMobileMenuVisible(true);
+        });
+      });
+    } else {
+      enterAnimationFrame = window.requestAnimationFrame(() => {
+        setIsMobileMenuVisible(false);
+        exitTimer = window.setTimeout(() => setIsMobileMenuMounted(false), 300);
+      });
+    }
+
+    return () => {
+      if (enterAnimationFrame) {
+        window.cancelAnimationFrame(enterAnimationFrame);
+      }
+      if (visibleAnimationFrame) {
+        window.cancelAnimationFrame(visibleAnimationFrame);
+      }
+      if (exitTimer) {
+        window.clearTimeout(exitTimer);
+      }
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -374,19 +454,25 @@ export default function Navbar() {
       </div>
     )}
 
-    {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden" role="presentation">
+    {isMobileMenuMounted && (
+        <div
+          className={`fixed inset-0 z-[60] md:hidden ${isMobileMenuVisible ? "" : "pointer-events-none"}`}
+          role="presentation"
+          aria-hidden={!isMobileMenuVisible}
+        >
           <button
             type="button"
-            className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
+            className={`absolute inset-0 bg-black/30 backdrop-blur-[1px] transition-opacity duration-300 ease-out ${isMobileMenuVisible ? "opacity-100" : "opacity-0"}`}
             onClick={closeMobileMenu}
+            tabIndex={isMobileMenuVisible ? 0 : -1}
             aria-label="关闭菜单"
           />
           <aside
             id="mobile-navigation-drawer"
-            className="absolute right-0 top-0 flex h-full w-[min(88vw,360px)] flex-col bg-white shadow-2xl"
+            className={`absolute right-0 top-0 flex h-full w-[min(88vw,360px)] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${isMobileMenuVisible ? "translate-x-0" : "translate-x-full"}`}
             role="dialog"
             aria-modal="true"
+            aria-hidden={!isMobileMenuVisible}
             aria-label="用户菜单"
           >
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
@@ -401,90 +487,99 @@ export default function Navbar() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              {status === "loading" ? (
-                <div className="space-y-3">
-                  <div className="h-16 animate-pulse rounded-2xl bg-gray-100" />
-                  <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
-                </div>
-              ) : status === "authenticated" ? (
-                <div className="space-y-2">
-                  <Link
-                    href={`/user/${currentUser?.id}`}
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3 transition-colors hover:bg-indigo-50"
-                  >
-                    <Avatar
-                      src={currentUser?.avatar}
-                      name={currentUser?.name}
-                      size="md"
-                    />
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
-                      {currentUser?.name || "用户"}
-                    </span>
-                    {isAdminRole(currentUser?.role) && <AdminBadge size="sm" />}
-                  </Link>
-
-                  <Link
-                    href="/notifications"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600"
-                  >
-                    <span className="relative">
-                      <Bell className="h-5 w-5" />
-                      {visibleUnreadCount > 0 && (
-                        <span className="absolute -right-2 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-4 text-white">
-                          {notificationBadge}
-                        </span>
-                      )}
-                    </span>
-                    <span>通知</span>
-                  </Link>
-
-                  {pathname !== "/" && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4">
+              <div className="shrink-0">
+                {status === "loading" ? (
+                  <div className="space-y-3">
+                    <div className="h-16 animate-pulse rounded-2xl bg-gray-100" />
+                    <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
+                  </div>
+                ) : status === "authenticated" ? (
+                  <div className="space-y-2">
                     <Link
-                      href="/post/create"
+                      href={`/user/${currentUser?.id}`}
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3 transition-colors hover:bg-indigo-50"
+                    >
+                      <Avatar
+                        src={currentUser?.avatar}
+                        name={currentUser?.name}
+                        size="md"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
+                        {currentUser?.name || "用户"}
+                      </span>
+                      {isAdminRole(currentUser?.role) && <AdminBadge size="sm" />}
+                    </Link>
+
+                    <Link
+                      href="/notifications"
                       onClick={closeMobileMenu}
                       className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600"
                     >
-                      <Plus className="h-5 w-5" />
-                      <span>发帖</span>
+                      <span className="relative">
+                        <Bell className="h-5 w-5" />
+                        {visibleUnreadCount > 0 && (
+                          <span className="absolute -right-2 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-4 text-white">
+                            {notificationBadge}
+                          </span>
+                        )}
+                      </span>
+                      <span>通知</span>
                     </Link>
-                  )}
 
-                  {isAdminRole(currentUser?.role) && (
-                    <Link
-                      href="/admin"
+                    {pathname !== "/" && (
+                      <Link
+                        href="/post/create"
+                        onClick={closeMobileMenu}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600"
+                      >
+                        <Plus className="h-5 w-5" />
+                        <span>发帖</span>
+                      </Link>
+                    )}
+
+                    {isAdminRole(currentUser?.role) && (
+                      <Link
+                        href="/admin"
+                        onClick={closeMobileMenu}
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600"
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>管理面板</span>
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="px-1 text-sm text-gray-500">
+                      登录后可以发布帖子、接收通知并管理个人资料。
+                    </p>
+                    <a
+                      href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
+                      data-track-global-loading="true"
                       onClick={closeMobileMenu}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600"
+                      className="flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                     >
-                      <Settings className="h-5 w-5" />
-                      <span>管理面板</span>
+                      登录
+                    </a>
+                    <Link
+                      href={`/auth/signup?redirect=${encodeURIComponent(pathname || "/")}`}
+                      onClick={closeMobileMenu}
+                      className="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                    >
+                      注册
                     </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="px-1 text-sm text-gray-500">
-                    登录后可以发布帖子、接收通知并管理个人资料。
-                  </p>
-                  <a
-                    href={`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`}
-                    data-track-global-loading="true"
-                    onClick={closeMobileMenu}
-                    className="flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
-                  >
-                    登录
-                  </a>
-                  <Link
-                    href={`/auth/signup?redirect=${encodeURIComponent(pathname || "/")}`}
-                    onClick={closeMobileMenu}
-                    className="flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-                  >
-                    注册
-                  </Link>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+
+              <MobileHotTopics
+                topics={mobileTopics}
+                status={mobileTopicsStatus}
+                onRetry={loadMobileTopics}
+                onTopicClick={closeMobileMenu}
+              />
             </div>
           </aside>
         </div>

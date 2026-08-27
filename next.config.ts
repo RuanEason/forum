@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   serverExternalPackages: ["@ffmpeg-installer/ffmpeg"],
 
+  allowedDevOrigins: ["192.168.10.21", "100.123.230.22"],
+
   images: {
     // 允许从腾讯云 CDN 加载图片
     remotePatterns: [
@@ -18,6 +20,10 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    if (process.env.NODE_ENV === "development") {
+      return [];
+    }
+
     return [
       {
         source: '/:path*',

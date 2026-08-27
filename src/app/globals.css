@@ -2,6 +2,19 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* hover 仅在支持悬停的设备生效，避免触屏点按后 hover 样式残留 */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -1706,5 +1719,13 @@ html {
 
   .catalog-active a {
     color: #a5b4fc !important;
+  }
+}
+
+/* 移动端发帖编辑区撑满视口高度 */
+@media (max-width: 767px) {
+  .rich-text-composer-mobile .rich-text-prose {
+    min-height: calc(100vh - 240px) !important;
+    min-height: calc(100dvh - 240px) !important;
   }
 }

@@ -28,6 +28,7 @@ import {
   PenLine,
   Quote,
   Redo2,
+  Smile,
   Strikethrough,
   Underline,
   Undo2,
@@ -53,7 +54,7 @@ import {
 import { parseMarkdownHeadingPaste } from "@/lib/rich-text/paste";
 import { EditableRichTextEmoji, EditableRichTextImage } from "@/components/editor/rich-text-editor-extensions";
 import type { EditorImageInsertRequest, EditorOutlineItem } from "@/components/editor/types";
-import EmojiPicker from "@/components/EmojiPicker";
+import EmojiPicker, { EmojiPickerPanel } from "@/components/EmojiPicker";
 import type { CustomEmoji } from "@/types/emoji";
 
 interface RichTextEditorProps {
@@ -602,18 +603,41 @@ function LineHeightControl({
   );
 }
 
+function promptForEditorLink(editor: Editor) {
+  const currentHref = editor.getAttributes("link").href as string | undefined;
+  const value = window.prompt("输入链接地址", currentHref ?? "https://");
+  if (value === null) {
+    return;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    editor.chain().focus().unsetLink().run();
+    return;
+  }
+
+  if (!isAllowedRichTextUrl(normalized)) {
+    window.alert("链接只支持 http、https 或有效的邮箱地址");
+    return;
+  }
+
+  editor.chain().focus().setLink({ href: normalized }).run();
+}
+
 function RichTextToolbar({
   editor,
   canUndo,
   canRedo,
   onUndo,
   onRedo,
+  className,
 }: {
   editor: Editor;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  className?: string;
 }) {
   const [textColor, setTextColor] = useState("#1e293b");
   const [highlightColor, setHighlightColor] = useState("#fef08a");
@@ -661,29 +685,11 @@ function RichTextToolbar({
     callback(editor);
   };
 
-  const promptForLink = () => {
-    const currentHref = editor.getAttributes("link").href as string | undefined;
-    const value = window.prompt("输入链接地址", currentHref ?? "https://");
-    if (value === null) {
-      return;
-    }
-
-    const normalized = value.trim();
-    if (!normalized) {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-
-    if (!isAllowedRichTextUrl(normalized)) {
-      window.alert("链接只支持 http、https 或有效的邮箱地址");
-      return;
-    }
-
-    editor.chain().focus().setLink({ href: normalized }).run();
-  };
-
   return (
-    <div className="flex min-h-12 flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-4 py-2">
+    <div className={cn(
+      "flex min-h-12 flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-4 py-2",
+      className,
+    )}>
       <ToolbarButton
         label="撤销"
         disabled={!toolbarState.canUndo}
@@ -845,12 +851,176 @@ function RichTextToolbar({
       <ToolbarButton label="代码块" active={toolbarState.codeBlock} onClick={() => run((item) => item.chain().focus().toggleCodeBlock().run())}>
         <Code2 className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton label="链接" active={toolbarState.link} onClick={promptForLink}>
+      <ToolbarButton label="链接" active={toolbarState.link} onClick={() => promptForEditorLink(editor)}>
         <LinkIcon className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton label="清除格式" onClick={() => run((item) => item.chain().focus().unsetAllMarks().clearNodes().run())}>
         <Eraser className="h-4 w-4" />
       </ToolbarButton>
+    </div>
+  );
+}
+
+function MobileAccessoryToolbar({
+  editor,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  visible,
+  offsetY,
+  emojiPanelOpen,
+  onToggleEmojiPanel,
+  onEmojiPanelDismiss,
+}: {
+  editor: Editor;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  visible: boolean;
+  offsetY: number;
+  emojiPanelOpen: boolean;
+  onToggleEmojiPanel: () => void;
+  onEmojiPanelDismiss: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const toolbarState = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => ({
+      canUndo: canUndo ?? currentEditor.can().undo(),
+      canRedo: canRedo ?? currentEditor.can().redo(),
+      bold: currentEditor.isActive("bold"),
+      italic: currentEditor.isActive("italic"),
+      underline: currentEditor.isActive("underline"),
+      strike: currentEditor.isActive("strike"),
+      bulletList: currentEditor.isActive("bulletList"),
+      orderedList: currentEditor.isActive("orderedList"),
+      blockquote: currentEditor.isActive("blockquote"),
+      link: currentEditor.isActive("link"),
+    }),
+  });
+
+  useEffect(() => {
+    if (!emojiPanelOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const targetNode = event.target as Node;
+      if (containerRef.current?.contains(targetNode)) {
+        return;
+      }
+      if (editor.view.dom.contains(targetNode)) {
+        return;
+      }
+      onEmojiPanelDismiss();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [emojiPanelOpen, editor, onEmojiPanelDismiss]);
+
+  if (!visible) {
+    return null;
+  }
+
+  const run = (callback: (editor: Editor) => void) => {
+    callback(editor);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="fixed inset-x-0 top-0 z-[70] md:hidden"
+      style={{ transform: `translateY(${offsetY}px) translateY(-100%)` }}
+    >
+      <div className="border-t border-slate-200 bg-white shadow-[0_-6px_20px_rgba(15,23,42,0.10)]">
+        <div className="flex items-stretch gap-1 px-1.5 py-1.5">
+          <div className="flex shrink-0 items-center">
+            <button
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={onToggleEmojiPanel}
+              className={cn(
+                "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950",
+                emojiPanelOpen && "bg-slate-200 text-slate-950 hover:bg-slate-200 hover:text-slate-950",
+              )}
+              title="表情"
+              aria-label="表情"
+              aria-expanded={emojiPanelOpen}
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+            <ToolbarButton
+              label="撤销"
+              disabled={!toolbarState.canUndo}
+              onClick={() => onUndo ? onUndo() : run((item) => item.chain().focus().undo().run())}
+            >
+              <Undo2 className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton
+              label="重做"
+              disabled={!toolbarState.canRedo}
+              onClick={() => onRedo ? onRedo() : run((item) => item.chain().focus().redo().run())}
+            >
+              <Redo2 className="h-4 w-4" />
+            </ToolbarButton>
+
+            <ToolbarDivider />
+
+            <ToolbarButton label="粗体" active={toolbarState.bold} onClick={() => run((item) => item.chain().focus().toggleBold().run())}>
+              <Bold className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="斜体" active={toolbarState.italic} onClick={() => run((item) => item.chain().focus().toggleItalic().run())}>
+              <Italic className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="下划线" active={toolbarState.underline} onClick={() => run((item) => item.chain().focus().toggleUnderline().run())}>
+              <Underline className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="删除线" active={toolbarState.strike} onClick={() => run((item) => item.chain().focus().toggleStrike().run())}>
+              <Strikethrough className="h-4 w-4" />
+            </ToolbarButton>
+
+            <ToolbarDivider />
+
+            <ToolbarButton label="无序列表" active={toolbarState.bulletList} onClick={() => run((item) => item.chain().focus().toggleBulletList().run())}>
+              <List className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="有序列表" active={toolbarState.orderedList} onClick={() => run((item) => item.chain().focus().toggleOrderedList().run())}>
+              <ListOrdered className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="引用" active={toolbarState.blockquote} onClick={() => run((item) => item.chain().focus().toggleBlockquote().run())}>
+              <Quote className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="链接" active={toolbarState.link} onClick={() => promptForEditorLink(editor)}>
+              <LinkIcon className="h-4 w-4" />
+            </ToolbarButton>
+            <ToolbarButton label="清除格式" onClick={() => run((item) => item.chain().focus().unsetAllMarks().clearNodes().run())}>
+              <Eraser className="h-4 w-4" />
+            </ToolbarButton>
+          </div>
+        </div>
+
+        {emojiPanelOpen ? (
+          <div className="border-t border-slate-200">
+            <EmojiPickerPanel
+              onSelect={(emoji) => editor.chain().insertContent(emoji).run()}
+              onSelectCustomEmoji={(emoji: CustomEmoji) => {
+                editor.chain().insertContent({
+                  type: "emoji",
+                  attrs: { src: emoji.url, alt: emoji.name, title: emoji.name },
+                }).run();
+              }}
+              pickerHeight={280}
+              autoFocusSearch={false}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1143,133 +1313,275 @@ export default function RichTextEditor({
     });
   }, [editor, externalJumpPosition, onExternalJumpHandled]);
 
+  const isMobileAccessoryEnabled = variant === "composer" && typeof window !== "undefined" && Boolean(window.visualViewport);
+  const [isAccessoryBarVisible, setIsAccessoryBarVisible] = useState(false);
+  const [isEmojiPanelOpen, setIsEmojiPanelOpen] = useState(false);
+  const [mobileKeyboardState, setMobileKeyboardState] = useState<{ open: boolean; offsetY: number }>(() => ({
+    open: false,
+    offsetY: 0,
+  }));
+  const accessoryHideTimerRef = useRef<number | null>(null);
+
+  const cancelAccessoryBarHide = useCallback(() => {
+    if (accessoryHideTimerRef.current !== null) {
+      window.clearTimeout(accessoryHideTimerRef.current);
+      accessoryHideTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleAccessoryBarHide = useCallback(() => {
+    if (accessoryHideTimerRef.current !== null) {
+      return;
+    }
+    accessoryHideTimerRef.current = window.setTimeout(() => {
+      accessoryHideTimerRef.current = null;
+      setIsAccessoryBarVisible(false);
+    }, 350);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (accessoryHideTimerRef.current !== null) {
+        window.clearTimeout(accessoryHideTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileAccessoryEnabled || !editor || editor.isDestroyed) {
+      return;
+    }
+
+    const handleFocus = () => {
+      cancelAccessoryBarHide();
+      setIsAccessoryBarVisible(true);
+      setIsEmojiPanelOpen(false);
+    };
+    const handleBlur = () => {
+      scheduleAccessoryBarHide();
+    };
+
+    editor.on("focus", handleFocus);
+    editor.on("blur", handleBlur);
+
+    return () => {
+      editor.off("focus", handleFocus);
+      editor.off("blur", handleBlur);
+    };
+  }, [editor, isMobileAccessoryEnabled, cancelAccessoryBarHide, scheduleAccessoryBarHide]);
+
+  useEffect(() => {
+    if (!isMobileAccessoryEnabled) {
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      return;
+    }
+
+    let baselineHeight = viewport.height;
+    let baselineLandscape = window.innerWidth > window.innerHeight;
+
+    const update = () => {
+      const height = viewport.height;
+      const landscape = window.innerWidth > window.innerHeight;
+
+      if (height > baselineHeight || landscape !== baselineLandscape) {
+        baselineHeight = height;
+        baselineLandscape = landscape;
+      }
+
+      const open = height < window.innerHeight - 120
+        || baselineHeight - height > 120;
+      const offsetY = Math.round(viewport.offsetTop + height);
+
+      setMobileKeyboardState((current) => {
+        if (current.open === open && current.offsetY === offsetY) {
+          return current;
+        }
+        return { open, offsetY };
+      });
+
+      if (open && editor && !editor.isDestroyed && editor.isFocused) {
+        cancelAccessoryBarHide();
+        setIsAccessoryBarVisible(true);
+      } else if (!open) {
+        scheduleAccessoryBarHide();
+      }
+    };
+
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, [editor, isMobileAccessoryEnabled, cancelAccessoryBarHide, scheduleAccessoryBarHide]);
+
+  const handleToggleEmojiPanel = useCallback(() => {
+    if (!editor || editor.isDestroyed) {
+      return;
+    }
+
+    if (isEmojiPanelOpen) {
+      setIsEmojiPanelOpen(false);
+      editor.commands.focus();
+    } else {
+      setIsEmojiPanelOpen(true);
+      editor.commands.blur();
+    }
+  }, [editor, isEmojiPanelOpen]);
+
+  const handleDismissEmojiPanel = useCallback(() => {
+    setIsEmojiPanelOpen(false);
+  }, []);
+
   if (!editor) {
     return <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-slate-400">正在加载编辑器...</div>;
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f7fa]">
-      <RichTextToolbar
-        editor={editor}
-        canUndo={localHistoryEnabled ? localHistoryState.index > 0 : undefined}
-        canRedo={localHistoryEnabled ? localHistoryState.index < localHistoryState.entries.length - 1 : undefined}
-        onUndo={localHistoryEnabled ? () => localUndoRef.current() : undefined}
-        onRedo={localHistoryEnabled ? () => localRedoRef.current() : undefined}
-      />
-      <div className={cn(
-        "min-h-0 flex-1 overflow-y-auto",
-        variant === "composer" ? "p-0" : "p-4 sm:p-6",
-      )}>
+    <>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f7fa]">
+        <RichTextToolbar
+          editor={editor}
+          canUndo={localHistoryEnabled ? localHistoryState.index > 0 : undefined}
+          canRedo={localHistoryEnabled ? localHistoryState.index < localHistoryState.entries.length - 1 : undefined}
+          onUndo={localHistoryEnabled ? () => localUndoRef.current() : undefined}
+          onRedo={localHistoryEnabled ? () => localRedoRef.current() : undefined}
+          className={variant === "composer" ? "hidden md:flex" : undefined}
+        />
         <div className={cn(
-          "min-h-full bg-white",
-          variant === "composer"
-            ? "w-full max-w-none px-6 py-7 sm:px-10"
-            : "mx-auto max-w-4xl border border-slate-200 px-6 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)] sm:px-10",
+          "min-h-0 flex-1 overflow-y-auto",
+          variant === "composer" ? "p-0" : "p-4 sm:p-6",
         )}>
-          <EditorContent editor={editor} />
-          {contentSlot ? <div className="mt-6 border-t border-slate-100 pt-4">{contentSlot}</div> : null}
-        </div>
-      </div>
-      {showToolbarToggle || footerRight || onOpenEditor || onImageClick || onAttachmentClick ? (
-        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3">
           <div className={cn(
-            "flex flex-wrap items-center justify-between gap-3",
-            variant === "composer" && "sm:gap-4",
+            "min-h-full bg-white",
+            variant === "composer"
+              ? "rich-text-composer-mobile w-full max-w-none px-6 py-7 sm:px-10"
+              : "mx-auto max-w-4xl border border-slate-200 px-6 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)] sm:px-10",
           )}>
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {onImageClick ? (
-                <button
-                  type="button"
-                  onClick={onImageClick}
-                  disabled={isUploading || imageCount >= maxImages}
-                  className={cn(
-                    "inline-flex h-9 items-center justify-center text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45",
-                    variant === "composer"
-                      ? "w-9 rounded-md hover:bg-slate-100"
-                      : "gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm hover:bg-slate-50",
-                  )}
-                  title={`添加图片 (${imageCount}/${maxImages})`}
-                  aria-label={`添加图片 (${imageCount}/${maxImages})`}
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <ImageIcon className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  {variant !== "composer" ? <span>图片</span> : null}
-                </button>
-              ) : null}
-
-              {onAttachmentClick ? (
-                <button
-                  type="button"
-                  onClick={onAttachmentClick}
-                  disabled={isUploading || attachmentCount >= maxAttachments}
-                  className={cn(
-                    "inline-flex h-9 items-center justify-center text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45",
-                    variant === "composer"
-                      ? "w-9 rounded-md hover:bg-slate-100"
-                      : "gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm hover:bg-slate-50",
-                  )}
-                  title={`添加附件 (${attachmentCount}/${maxAttachments})`}
-                  aria-label={`添加附件 (${attachmentCount}/${maxAttachments})`}
-                >
-                  <Paperclip className="h-4 w-4" aria-hidden="true" />
-                  {variant !== "composer" ? <span>附件</span> : null}
-                </button>
-              ) : null}
-
-              {isUploading && onCancelUpload ? (
-                <button
-                  type="button"
-                  onClick={onCancelUpload}
-                  className={cn(
-                    "inline-flex h-9 items-center justify-center text-red-600 transition-colors hover:bg-red-50",
-                    variant === "composer"
-                      ? "w-9 rounded-md"
-                      : "gap-1.5 rounded-md border border-red-200 px-2.5 text-sm",
-                  )}
-                  title="取消上传"
-                  aria-label="取消上传"
-                >
-                  {variant === "composer" ? <X className="h-4 w-4" aria-hidden="true" /> : <span>取消</span>}
-                </button>
-              ) : null}
-
-              {onOpenEditor ? (
-                <button
-                  type="button"
-                  onClick={onOpenEditor}
-                  className={cn(
-                    "inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200",
-                    variant === "composer"
-                      ? "h-9 w-9 rounded-md bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-700"
-                      : "h-9 gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                  )}
-                  title={variant === "composer" ? "打开完整编辑器" : "在编辑器中继续编辑"}
-                  aria-label={variant === "composer" ? "打开完整编辑器" : "在编辑器中继续编辑"}
-                >
-                  <PenLine className="h-4 w-4" aria-hidden="true" />
-                  {variant !== "composer" ? <span>编辑器</span> : null}
-                </button>
-              ) : null}
-
-              {isUploading && uploadStatus ? (
-                <span className="max-w-[220px] truncate text-xs text-slate-400" title={uploadStatus}>
-                  {uploadProgress > 0 ? `${uploadProgress}% ` : ""}{uploadStatus}
-                </span>
-              ) : null}
-            </div>
-
-            {(topicSelector || footerRight) ? (
-              <div className="flex min-w-0 shrink-0 items-center gap-2">
-                {topicSelector}
-                {footerRight}
-              </div>
-            ) : null}
+            <EditorContent editor={editor} />
+            {contentSlot ? <div className="mt-6 border-t border-slate-100 pt-4">{contentSlot}</div> : null}
           </div>
         </div>
+        {showToolbarToggle || footerRight || onOpenEditor || onImageClick || onAttachmentClick ? (
+          <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3">
+            <div className={cn(
+              "flex flex-wrap items-center justify-between gap-3",
+              variant === "composer" && "sm:gap-4",
+            )}>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                {onImageClick ? (
+                  <button
+                    type="button"
+                    onClick={onImageClick}
+                    disabled={isUploading || imageCount >= maxImages}
+                    className={cn(
+                      "inline-flex h-9 items-center justify-center text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45",
+                      variant === "composer"
+                        ? "w-9 rounded-md hover:bg-slate-100"
+                        : "gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm hover:bg-slate-50",
+                    )}
+                    title={`添加图片 (${imageCount}/${maxImages})`}
+                    aria-label={`添加图片 (${imageCount}/${maxImages})`}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    {variant !== "composer" ? <span>图片</span> : null}
+                  </button>
+                ) : null}
+
+                {onAttachmentClick ? (
+                  <button
+                    type="button"
+                    onClick={onAttachmentClick}
+                    disabled={isUploading || attachmentCount >= maxAttachments}
+                    className={cn(
+                      "inline-flex h-9 items-center justify-center text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45",
+                      variant === "composer"
+                        ? "w-9 rounded-md hover:bg-slate-100"
+                        : "gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm hover:bg-slate-50",
+                    )}
+                    title={`添加附件 (${attachmentCount}/${maxAttachments})`}
+                    aria-label={`添加附件 (${attachmentCount}/${maxAttachments})`}
+                  >
+                    <Paperclip className="h-4 w-4" aria-hidden="true" />
+                    {variant !== "composer" ? <span>附件</span> : null}
+                  </button>
+                ) : null}
+
+                {isUploading && onCancelUpload ? (
+                  <button
+                    type="button"
+                    onClick={onCancelUpload}
+                    className={cn(
+                      "inline-flex h-9 items-center justify-center text-red-600 transition-colors hover:bg-red-50",
+                      variant === "composer"
+                        ? "w-9 rounded-md"
+                        : "gap-1.5 rounded-md border border-red-200 px-2.5 text-sm",
+                    )}
+                    title="取消上传"
+                    aria-label="取消上传"
+                  >
+                    {variant === "composer" ? <X className="h-4 w-4" aria-hidden="true" /> : <span>取消</span>}
+                  </button>
+                ) : null}
+
+                {onOpenEditor ? (
+                  <button
+                    type="button"
+                    onClick={onOpenEditor}
+                    className={cn(
+                      "inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200",
+                      variant === "composer"
+                        ? "hidden h-9 w-9 rounded-md bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-700 md:inline-flex"
+                        : "h-9 gap-1.5 rounded-md border border-slate-200 px-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                    )}
+                    title={variant === "composer" ? "打开完整编辑器" : "在编辑器中继续编辑"}
+                    aria-label={variant === "composer" ? "打开完整编辑器" : "在编辑器中继续编辑"}
+                  >
+                    <PenLine className="h-4 w-4" aria-hidden="true" />
+                    {variant !== "composer" ? <span>编辑器</span> : null}
+                  </button>
+                ) : null}
+
+                {isUploading && uploadStatus ? (
+                  <span className="max-w-[220px] truncate text-xs text-slate-400" title={uploadStatus}>
+                    {uploadProgress > 0 ? `${uploadProgress}% ` : ""}{uploadStatus}
+                  </span>
+                ) : null}
+              </div>
+
+              {(topicSelector || footerRight) ? (
+                <div className="flex min-w-0 shrink-0 items-center gap-2">
+                  {topicSelector}
+                  {footerRight}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {variant === "composer" ? (
+        <MobileAccessoryToolbar
+          editor={editor}
+          canUndo={localHistoryEnabled ? localHistoryState.index > 0 : undefined}
+          canRedo={localHistoryEnabled ? localHistoryState.index < localHistoryState.entries.length - 1 : undefined}
+          onUndo={localHistoryEnabled ? () => localUndoRef.current() : undefined}
+          onRedo={localHistoryEnabled ? () => localRedoRef.current() : undefined}
+          visible={isMobileAccessoryEnabled && (isAccessoryBarVisible || isEmojiPanelOpen)}
+          offsetY={mobileKeyboardState.offsetY}
+          emojiPanelOpen={isEmojiPanelOpen}
+          onToggleEmojiPanel={handleToggleEmojiPanel}
+          onEmojiPanelDismiss={handleDismissEmojiPanel}
+        />
       ) : null}
-    </div>
+    </>
   );
 }
