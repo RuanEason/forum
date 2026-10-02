@@ -220,14 +220,20 @@ export type CreatePostPresentation = "page" | "sheet";
 
 type CreatePostWorkspaceProps = {
   presentation?: CreatePostPresentation;
+  /**
+   * 视频上传是否可用，由服务端读取 FEATURE_VIDEO_UPLOAD 后下发。
+   * 默认 true，保证未显式传参的调用点行为与历史一致。
+   */
+  videoUploadEnabled?: boolean;
 };
 
 export default function CreatePostWorkspace({
   presentation = "page",
+  videoUploadEnabled = true,
 }: CreatePostWorkspaceProps) {
   return (
     <Suspense fallback={<CreatePostPageFallback presentation={presentation} />}>
-      <CreatePostPageContent presentation={presentation} />
+      <CreatePostPageContent presentation={presentation} videoUploadEnabled={videoUploadEnabled} />
     </Suspense>
   );
 }
@@ -250,7 +256,13 @@ function CreatePostPageFallback({ presentation }: { presentation: CreatePostPres
   return fallback;
 }
 
-function CreatePostPageContent({ presentation }: { presentation: CreatePostPresentation }) {
+function CreatePostPageContent({
+  presentation,
+  videoUploadEnabled = true,
+}: {
+  presentation: CreatePostPresentation;
+  videoUploadEnabled?: boolean;
+}) {
   const { data: session, status } = useSession();
   const isAdmin = isAdminRole(session?.user?.role);
   const router = useRouter();
@@ -458,7 +470,9 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
   }, []);
 
   const hydrateFromDraft = useCallback((draft: DraftDetail) => {
-    setPostMode(draft.postType);
+    // 视频上传关闭时，历史视频草稿一律回落到文本模式，
+    // 否则 UI 会进入一个已经无法上传/发布的视频编辑态。
+    setPostMode(videoUploadEnabled ? draft.postType : "TEXT");
     setVisibility(draft.visibility);
     setTitle(draft.title ?? "");
     setEnableTitle(Boolean(draft.title));
@@ -524,7 +538,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     setVideoFileName(videoAsset?.fileName ?? "");
     setVideoFileSize(typeof videoAsset?.fileSize === "number" ? videoAsset.fileSize : 0);
     setVideoStatus(normalizeVideoWorkflowStatus(videoAsset?.videoAsset?.status || videoAsset?.status));
-  }, [normalizeVideoWorkflowStatus]);
+  }, [normalizeVideoWorkflowStatus, videoUploadEnabled]);
 
   const fetchDraftDetail = useCallback(async (id: string) => {
     setDraftLoading(true);
@@ -1387,6 +1401,13 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
     setVideoUploadError("");
     stopVideoPolling();
 
+    // 入口已在 UI 层隐藏，这里再做一次兜底，
+    // 避免通过拖拽等方式绕过并触发一次注定被服务端拒绝的上传。
+    if (!videoUploadEnabled) {
+      setVideoUploadError("视频上传已暂时关闭，当前仅支持图文与附件帖子");
+      return;
+    }
+
     setVideoUploading(true);
     setVideoAssetId(null);
     setVideoMeta(null);
@@ -1897,6 +1918,8 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           >
             发文本
           </button>
+          {/* 视频上传关闭时隐藏入口，避免用户走到最后一步才被服务端拒绝。 */}
+          {videoUploadEnabled ? (
           <button
             type="button"
             onClick={() => {
@@ -1911,6 +1934,7 @@ function CreatePostPageContent({ presentation }: { presentation: CreatePostPrese
           >
             发视频
           </button>
+          ) : null}
         </div>
 
         {postMode === "TEXT" && (

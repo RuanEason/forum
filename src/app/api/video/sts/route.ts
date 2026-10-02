@@ -7,6 +7,7 @@ import {
   getVideoPublicConstraints,
   issueVideoTemporaryCredential,
 } from "@/lib/video";
+import { isVideoUploadEnabled } from "@/lib/feature-flags";
 import { requireActiveUser } from "@/lib/server-auth";
 
 type StsRequestBody = {
@@ -16,8 +17,19 @@ type StsRequestBody = {
   draftId?: unknown;
 };
 
+const VIDEO_UPLOAD_DISABLED_MESSAGE = "视频上传已暂时关闭，当前仅支持图文与附件帖子";
+
 export async function POST(request: Request) {
   try {
+    // 视频上传是本站最大的流量与转码成本来源，可通过环境变量整体关闭。
+    // 关闭后不再签发上传凭证，但历史视频资源不受影响，仍可正常播放与观看。
+    if (!isVideoUploadEnabled()) {
+      return NextResponse.json(
+        { error: VIDEO_UPLOAD_DISABLED_MESSAGE },
+        { status: 403 },
+      );
+    }
+
     const auth = await requireActiveUser();
     if (!auth.ok) {
       return auth.response;
