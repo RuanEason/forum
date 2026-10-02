@@ -35,14 +35,18 @@ const PREFETCH_HEADER_KEYS = [
 ] as const;
 
 /**
- * 只有「首屏 / 文档加载」这类真正需要白屏的场合才允许遮挡界面。
+ * 需要用全屏遮罩接管交互的任务类型。
  *
- * 这里刻意移除了 "navigation"：站内跳转时用户已经能看到旧页面，
- * 再用全屏遮罩吃掉指针事件，会让页面在高延迟（如 Cloudflare Tunnel）
- * 下变得完全点不动，进而诱发重复点击与并发导航。
- * 站内跳转只保留底部进度条作为反馈。
+ * 这是一个刻意设计的交互保护层，有两个目的：
+ * 1. 给用户即时反馈——点击后立刻有可见响应，而不是毫无动静地等待；
+ * 2. 在加载完成前挡住后续点击，避免用户连点两个入口，
+ *    导致两个导航并发竞争、页面来回跳转。
+ *
+ * 只对「用户主动触发」的任务生效（首屏渲染、文档加载、站内导航）。
+ * 普通的后台 fetch（通知数、session 等）不在此列，
+ * 否则用户什么都没点，页面却会被遮罩锁住。
  */
-const FULLSCREEN_TASK_LABELS = new Set(["initial-screen", "document"]);
+const FULLSCREEN_TASK_LABELS = new Set(["initial-screen", "document", "navigation"]);
 
 /**
  * 导航任务的最长存活时间。
@@ -274,8 +278,9 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     if (navigationTaskRef.current) {
       return;
     }
-    // 站内跳转不再主动拉起全屏遮罩：跳转期间旧页面仍然可交互，
-    // 只由底部进度条反馈加载状态，避免整页被白屏“冻住”。
+    // 站内跳转同样拉起全屏遮罩，作为「已响应」的反馈，
+    // 并在跳转完成前挡住后续点击，防止连点导致并发导航。
+    revealFullScreenOverlay();
     navigationTaskRef.current = startTask("navigation");
     if (navigationTimeoutRef.current !== null) {
       window.clearTimeout(navigationTimeoutRef.current);
@@ -289,7 +294,7 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       }
       navigationTimeoutRef.current = null;
     }, NAVIGATION_FAILSAFE_MS);
-  }, [startTask]);
+  }, [revealFullScreenOverlay, startTask]);
 
   const scheduleNavigationTaskStart = useCallback((rawUrl?: string | URL | null, trackSignInPage = false) => {
     if (isCreatePostRoute(rawUrl) || (isSignInRoute(rawUrl) && !trackSignInPage)) {
@@ -684,13 +689,14 @@ export function PageTopProgressBar() {
 
 function PageFullscreenLoadingOverlay({ visible }: { visible: boolean }) {
   return (
-    // 注意：遮罩不再拦截指针事件（保留 pointer-events-none）。
-    // 之前使用 pointer-events-auto，导致加载期间整页无法点击：
-    // 用户以为没点上而重复点击，反而触发并发导航与来回跳转。
-    // 视觉上依旧是不透明白底，因此不会出现「看到旧页面」的割裂感。
+    // 遮罩在可见时主动接管指针事件（pointer-events-auto）。
+    // 这是有意的交互设计，不是副作用：
+    // - 让用户看到「已点击、正在处理」的即时反馈；
+    // - 在加载结束前拦截其余点击，避免连点造成并发导航与页面乱跳。
+    // 因此不要把它改成 pointer-events-none，否则会重新引入连点竞争。
     <div
       aria-hidden={!visible}
-      className={`pointer-events-none fixed inset-0 z-[120] flex items-center justify-center bg-white transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+      className={`fixed inset-0 z-[120] flex items-center justify-center bg-white transition-opacity duration-200 ${visible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
     >
       <div className="text-indigo-600">
         <ThreeDotsLoader />
