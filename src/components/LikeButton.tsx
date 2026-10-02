@@ -152,7 +152,9 @@ export default function LikeButton({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ targetType, targetId }),
+        // 发送期望状态而非"翻转"指令：请求超时重试或并发重复提交时，
+        // 服务端会把结果收敛到同一目标状态，不会把点赞反转成取消点赞。
+        body: JSON.stringify({ targetType, targetId, liked: optimisticLiked }),
         signal: controller.signal,
       });
 
@@ -176,9 +178,10 @@ export default function LikeButton({
       }
       setLikedByUser(data.liked);
 
-      if (data.liked) {
-        router.refresh();
-      }
+      // 这里刻意不再调用 router.refresh()。
+      // 点赞状态已由本地 state 与上面的服务端回执对齐，
+      // 而 refresh() 会触发一次完整的 RSC 重渲染与重新查询，
+      // 在高延迟网络下这个开销远大于点赞请求本身，且会让按钮闪烁。
     } catch {
       if (!mountedRef.current) {
         return;
