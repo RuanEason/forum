@@ -4,7 +4,15 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 
-const LIKE_REQUEST_TIMEOUT = 3000;
+/**
+ * 点赞请求的超时时间。
+ *
+ * 这里从 3s 放宽到 15s：本站通过 Cloudflare Tunnel 对外提供服务，
+ * 国内访问的往返延迟经常超过 3 秒。原来 3 秒就 abort，会让服务端
+ * 已经写入成功的点赞在客户端被判定为失败并回滚，表现为「点赞丢了」。
+ * 宁可多等，也不要把一次有效的点赞判死。
+ */
+const LIKE_REQUEST_TIMEOUT = 15000;
 const FAILURE_NOTICE_DURATION = 3500;
 
 const particleDirections = [
@@ -47,15 +55,23 @@ export default function LikeButton({
   const requestPendingRef = useRef(false);
   const failureTimerRef = useRef<number | null>(null);
   const animationTimerRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (failureTimerRef.current !== null) {
         window.clearTimeout(failureTimerRef.current);
       }
       if (animationTimerRef.current !== null) {
         window.clearTimeout(animationTimerRef.current);
       }
+      // 组件卸载（例如用户点赞后立刻跳转）时不主动 abort：
+      // 让请求自行完成并落库，避免出现「界面显示已点赞、服务端其实没写进去」。
+      // 这里只是把引用置空，声明式地表示后续回调不再更新 UI。
+      abortRef.current = null;
     };
   }, []);
 
@@ -123,6 +139,7 @@ export default function LikeButton({
     }
 
     const controller = new AbortController();
+    abortRef.current = controller;
     let timedOut = false;
     const timeoutId = window.setTimeout(() => {
       timedOut = true;
@@ -145,6 +162,12 @@ export default function LikeButton({
         throw new Error(data?.error || "Like request failed");
       }
 
+      // 组件已卸载说明用户已经离开当前页面，
+      // 此时服务端已经写入成功，不要再触碰任何 UI 状态。
+      if (!mountedRef.current) {
+        return;
+      }
+
       // Reconcile an unexpected server state without applying the count delta twice.
       if (data.liked !== optimisticLiked) {
         setLikesCount((currentCount) =>
@@ -157,14 +180,22 @@ export default function LikeButton({
         router.refresh();
       }
     } catch {
+      if (!mountedRef.current) {
+        return;
+      }
       setLikedByUser(previousLiked);
       setLikesCount(previousLikesCount);
       stopLikeAnimation();
       showFailureMessage(timedOut ? "点赞失败，请稍后重试" : "点赞失败");
     } finally {
       window.clearTimeout(timeoutId);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
       requestPendingRef.current = false;
-      setRequestPending(false);
+      if (mountedRef.current) {
+        setRequestPending(false);
+      }
     }
   };
 
