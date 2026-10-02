@@ -33,7 +33,23 @@ const PREFETCH_HEADER_KEYS = [
   "next-router-prefetch",
   "x-middleware-prefetch",
 ] as const;
-const FULLSCREEN_TASK_LABELS = new Set(["initial-screen", "document", "navigation"]);
+
+/**
+ * 只有「首屏 / 文档加载」这类真正需要白屏的场合才允许遮挡界面。
+ *
+ * 这里刻意移除了 "navigation"：站内跳转时用户已经能看到旧页面，
+ * 再用全屏遮罩吃掉指针事件，会让页面在高延迟（如 Cloudflare Tunnel）
+ * 下变得完全点不动，进而诱发重复点击与并发导航。
+ * 站内跳转只保留底部进度条作为反馈。
+ */
+const FULLSCREEN_TASK_LABELS = new Set(["initial-screen", "document"]);
+
+/**
+ * 导航任务的最长存活时间。
+ * 超过该时间仍未收到对应路由变更，视为这次导航已作废并主动收尾，
+ * 避免导航任务永久占位导致后续所有导航都被忽略。
+ */
+const NAVIGATION_FAILSAFE_MS = 10000;
 
 const PageLoadProgressContext = createContext<PageLoadProgressContextValue | null>(null);
 
@@ -258,7 +274,8 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
     if (navigationTaskRef.current) {
       return;
     }
-    revealFullScreenOverlay();
+    // 站内跳转不再主动拉起全屏遮罩：跳转期间旧页面仍然可交互，
+    // 只由底部进度条反馈加载状态，避免整页被白屏“冻住”。
     navigationTaskRef.current = startTask("navigation");
     if (navigationTimeoutRef.current !== null) {
       window.clearTimeout(navigationTimeoutRef.current);
@@ -271,20 +288,40 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
         completeTask();
       }
       navigationTimeoutRef.current = null;
-    }, 10000);
-  }, [revealFullScreenOverlay, startTask]);
+    }, NAVIGATION_FAILSAFE_MS);
+  }, [startTask]);
 
   const scheduleNavigationTaskStart = useCallback((rawUrl?: string | URL | null, trackSignInPage = false) => {
     if (isCreatePostRoute(rawUrl) || (isSignInRoute(rawUrl) && !trackSignInPage)) {
       return;
     }
 
-    if (navigationTaskRef.current || navigationStartTimerRef.current !== null) {
-      return;
+    // 注意：本函数会被 history.pushState / replaceState 同步调用，
+    // 而 Next 的 App Router 会在 useInsertionEffect 阶段同步调用 pushState。
+    // 因此这里绝对不能同步触碰 React state（否则触发
+    // "useInsertionEffect must not schedule updates"）。
+    // 所有 startTask / 收尾动作都必须推迟到 setTimeout 回调里执行。
+    if (navigationStartTimerRef.current !== null) {
+      window.clearTimeout(navigationStartTimerRef.current);
+      navigationStartTimerRef.current = null;
     }
 
     navigationStartTimerRef.current = window.setTimeout(() => {
       navigationStartTimerRef.current = null;
+
+      // 重复点击 / 连续跳转时，新的导航意图必须能够顶替旧的，
+      // 否则旧的导航任务会一直占位，而用户的后一次点击照样被 Next 执行，
+      // 最终表现为「URL 已经变了但页面还是旧页面」以及来回跳转。
+      if (navigationTaskRef.current) {
+        const superseded = navigationTaskRef.current;
+        navigationTaskRef.current = null;
+        if (navigationTimeoutRef.current !== null) {
+          window.clearTimeout(navigationTimeoutRef.current);
+          navigationTimeoutRef.current = null;
+        }
+        superseded();
+      }
+
       startNavigationTask();
     }, 0);
   }, [startNavigationTask]);
@@ -304,10 +341,11 @@ export function PageLoadProgressProvider({ children }: { children: React.ReactNo
       window.clearTimeout(navigationTimeoutRef.current);
       navigationTimeoutRef.current = null;
     }
+    // 这里只等一帧，让新路由的首次绘制先落屏，避免进度条抢在内容之前消失。
+    // 原先的双重 rAF 会把「导航任务仍占位」的窗口拉长到两帧以上，
+    // 在高延迟环境下足以让用户的下一次点击撞进旧的导航任务。
     window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        completeTask();
-      });
+      completeTask();
     });
   }, []);
 
@@ -646,9 +684,13 @@ export function PageTopProgressBar() {
 
 function PageFullscreenLoadingOverlay({ visible }: { visible: boolean }) {
   return (
+    // 注意：遮罩不再拦截指针事件（保留 pointer-events-none）。
+    // 之前使用 pointer-events-auto，导致加载期间整页无法点击：
+    // 用户以为没点上而重复点击，反而触发并发导航与来回跳转。
+    // 视觉上依旧是不透明白底，因此不会出现「看到旧页面」的割裂感。
     <div
       aria-hidden={!visible}
-      className={`fixed inset-0 z-[120] flex items-center justify-center bg-white transition-opacity duration-200 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      className={`pointer-events-none fixed inset-0 z-[120] flex items-center justify-center bg-white transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
     >
       <div className="text-indigo-600">
         <ThreeDotsLoader />
