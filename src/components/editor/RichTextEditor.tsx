@@ -1443,19 +1443,43 @@ export default function RichTextEditor({
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f7fa]">
-        <RichTextToolbar
-          editor={editor}
-          canUndo={localHistoryEnabled ? localHistoryState.index > 0 : undefined}
-          canRedo={localHistoryEnabled ? localHistoryState.index < localHistoryState.entries.length - 1 : undefined}
-          onUndo={localHistoryEnabled ? () => localUndoRef.current() : undefined}
-          onRedo={localHistoryEnabled ? () => localRedoRef.current() : undefined}
-          className={variant === "composer" ? "hidden md:flex" : undefined}
-        />
+      <div className={cn(
+        "flex flex-col overflow-hidden bg-[#f5f7fa]",
+        // 编辑器需要一个「有界高度」才能让内部滚动容器真正滚动，
+        // 否则容器会被正文撑高、内部永不滚动，sticky 工具栏也就无从吸附。
+        // composer 版（发帖工作区 / 编辑抽屉）在桌面端限高，
+        // 移动端仍交由键盘配件栏处理，保持 max-h 不生效。
+        variant === "composer"
+          ? "min-h-0 flex-1 md:max-h-[min(72vh,720px)]"
+          : "min-h-0 flex-1",
+      )}>
+        {/*
+          工具栏放在滚动容器内部并吸附顶部，而不是作为它的兄弟节点。
+
+          原因：sticky 只能相对「最近的滚动祖先」生效。若工具栏留在滚动容器之外，
+          正文变长时被撑高的是整页（例如编辑抽屉的 main），
+          工具栏会随之被顶出可视区，用户必须滚回顶部才能点格式按钮。
+          放进滚动容器并 sticky top-0 后，无论正文多长都始终可见。
+        */}
         <div className={cn(
           "min-h-0 flex-1 overflow-y-auto",
           variant === "composer" ? "p-0" : "p-4 sm:p-6",
         )}>
+          <RichTextToolbar
+            editor={editor}
+            canUndo={localHistoryEnabled ? localHistoryState.index > 0 : undefined}
+            canRedo={localHistoryEnabled ? localHistoryState.index < localHistoryState.entries.length - 1 : undefined}
+            onUndo={localHistoryEnabled ? () => localUndoRef.current() : undefined}
+            onRedo={localHistoryEnabled ? () => localRedoRef.current() : undefined}
+            className={cn(
+              "sticky top-0 z-30",
+              // 桌面版滚动容器带内边距；用负外边距把工具栏拉到容器左右与顶边齐平，
+              // 否则吸顶后上方会露出一条滚动内容的缝隙。
+              variant === "composer"
+                ? "hidden md:flex"
+                : "-mx-4 -mt-4 mb-4 sm:-mx-6 sm:-mt-6 sm:mb-6",
+            )}
+          />
           <div className={cn(
             "min-h-full bg-white",
             variant === "composer"
