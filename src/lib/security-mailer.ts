@@ -1,34 +1,8 @@
-import nodemailer from "nodemailer";
+import { brandName, isEmailConfigured, sendEmail } from "@/lib/email-transport";
 import { getSiteOriginOrThrow } from "@/lib/site-url";
 
-function toBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (!value) return defaultValue;
-  return value.toLowerCase() === "true";
-}
-
-function toNumber(value: string | undefined, defaultValue: number): number {
-  if (!value) return defaultValue;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : defaultValue;
-}
-
-const smtpHost = process.env.SMTP_HOST || "smtp.qq.com";
-const smtpPort = toNumber(process.env.SMTP_PORT, 465);
-const smtpSecure = toBoolean(process.env.SMTP_SECURE, true);
-const smtpUser = process.env.SMTP_USER;
-const smtpPass = process.env.SMTP_PASS;
-const mailFrom = process.env.MAIL_FROM || smtpUser || "";
-const brandName = process.env.MAIL_BRAND_NAME || "SLEPT";
-
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpSecure,
-  auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
-});
-
 function isMailConfigured(): boolean {
-  return Boolean(smtpUser && smtpPass && mailFrom);
+  return isEmailConfigured();
 }
 
 function buildHtml(options: {
@@ -59,6 +33,12 @@ function buildHtml(options: {
 </html>`;
 }
 
+/**
+ * 发送账号安全类邮件（重置密码、更换邮箱验证）
+ *
+ * @param options - 收件人、主题、正文文案与跳转路径
+ * @throws {Error} 邮件服务未配置或 Resend 发送失败时抛出
+ */
 async function sendSecurityEmail(options: {
   email: string;
   subject: string;
@@ -69,7 +49,7 @@ async function sendSecurityEmail(options: {
   expiry: string;
 }): Promise<void> {
   if (!isMailConfigured()) {
-    throw new Error("SMTP configuration is incomplete");
+    throw new Error("Resend configuration is incomplete");
   }
 
   const origin = getSiteOriginOrThrow({ allowLocalhost: true });
@@ -82,8 +62,7 @@ async function sendSecurityEmail(options: {
     `This link ${options.expiry}.`,
   ].join("\n");
 
-  await transporter.sendMail({
-    from: mailFrom,
+  await sendEmail({
     to: options.email,
     subject: options.subject,
     text,
