@@ -26,11 +26,22 @@ const resendApiKey = process.env.RESEND_API_KEY;
  */
 const resend = resendApiKey ? new Resend(resendApiKey, resendBaseUrl ? { baseUrl: resendBaseUrl } : undefined) : null;
 
-/** 发件人地址，必须是已在 Resend 完成验证的域名，如 "SLEPT <no-reply@your-domain.com>" */
+/** 发件人地址，必须是已在 Resend 完成验证的域名，如 "RUAN <no-reply@your-domain.com>" */
 const mailFrom = process.env.MAIL_FROM || "";
 
-/** 品牌名，用于邮件标题与正文 */
-export const brandName = process.env.MAIL_BRAND_NAME || "SLEPT";
+/**
+ * 品牌署名，用于邮件 Logo、落款、页脚与发件人身份（属于开发者本人，如 RUAN）
+ *
+ * 注意：它**不是**论坛的名字，正文中提到服务时请用 forumName。
+ */
+export const brandName = process.env.MAIL_BRAND_NAME || "RUAN";
+
+/**
+ * 论坛名称，用于正文中描述用户正在使用的服务（如 Slept）
+ *
+ * 正文示例：「你正在使用 RUAN 名下的 Slept 论坛相关服务」
+ */
+export const forumName = process.env.MAIL_FORUM_NAME || "SLEPT";
 
 /**
  * 判断邮件服务是否已完成配置

@@ -1,40 +1,20 @@
-import { brandName, isEmailConfigured, sendEmail } from "@/lib/email-transport";
+import { brandName, forumName, isEmailConfigured, sendEmail } from "@/lib/email-transport";
+import { buildEmailHtml, joinPlainText } from "@/lib/email-layout";
 import { getSiteOriginOrThrow } from "@/lib/site-url";
 
+/**
+ * 判断账号安全类邮件是否可发送
+ *
+ * @returns 已配置 Resend API Key 与发件人地址返回 true
+ */
 function isMailConfigured(): boolean {
   return isEmailConfigured();
 }
 
-function buildHtml(options: {
-  title: string;
-  description: string;
-  actionLabel: string;
-  actionUrl: string;
-  expiry: string;
-}): string {
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${options.title}</title>
-  </head>
-  <body style="margin:0;padding:32px 16px;background:#f3f5f7;font-family:Arial,sans-serif;color:#111827;">
-    <main style="max-width:620px;margin:0 auto;padding:32px 24px;background:#fff;border-radius:12px;">
-      <h1 style="margin:0;font-size:24px;">${options.title}</h1>
-      <p style="margin:20px 0 0;line-height:1.7;">${options.description}</p>
-      <p style="margin:24px 0;text-align:center;">
-        <a href="${options.actionUrl}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#4f46e5;color:#fff;text-decoration:none;font-weight:600;">${options.actionLabel}</a>
-      </p>
-      <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.7;">This link ${options.expiry}. If you did not request this, ignore this email.</p>
-      <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">${brandName}</p>
-    </main>
-  </body>
-</html>`;
-}
-
 /**
  * 发送账号安全类邮件（重置密码、更换邮箱验证）
+ *
+ * 按钮只跳转论坛自身的功能页面，不包含任何外部推广入口。
  *
  * @param options - 收件人、主题、正文文案与跳转路径
  * @throws {Error} 邮件服务未配置或 Resend 发送失败时抛出
@@ -43,10 +23,10 @@ async function sendSecurityEmail(options: {
   email: string;
   subject: string;
   title: string;
-  description: string;
+  paragraphs: string[];
   actionLabel: string;
   actionPath: string;
-  expiry: string;
+  hint: string;
 }): Promise<void> {
   if (!isMailConfigured()) {
     throw new Error("Resend configuration is incomplete");
@@ -54,46 +34,89 @@ async function sendSecurityEmail(options: {
 
   const origin = getSiteOriginOrThrow({ allowLocalhost: true });
   const actionUrl = `${origin}${options.actionPath}`;
-  const text = [
-    options.title,
+
+  const html = buildEmailHtml({
+    title: options.title,
+    paragraphs: options.paragraphs,
+    highlight: {
+      label: "Action Required / 请及时处理",
+      content: options.hint,
+    },
+    action: {
+      label: options.actionLabel,
+      url: actionUrl,
+    },
+    actionFallbackLabel: "如果按钮无法点击，请复制以下链接在浏览器中打开：",
+  });
+
+  const text = joinPlainText([
+    `${brandName} ${options.title}`,
     "",
-    options.description,
-    actionUrl,
-    `This link ${options.expiry}.`,
-  ].join("\n");
+    ...options.paragraphs.map((paragraph) => paragraph.replace(/<[^>]+>/g, "")),
+    "",
+    `${options.actionLabel}：${actionUrl}`,
+    options.hint,
+    "",
+    "此邮件由系统自动发送，请勿直接回复本邮箱。",
+  ]);
 
   await sendEmail({
     to: options.email,
     subject: options.subject,
     text,
-    html: buildHtml({ ...options, actionUrl }),
+    html,
   });
 }
 
+/**
+ * 判断账号安全类邮件服务是否已配置
+ *
+ * @returns 已配置返回 true
+ */
 export function isSecurityMailConfigured(): boolean {
   return isMailConfigured();
 }
 
+/**
+ * 发送重置密码邮件
+ *
+ * @param email - 收件人邮箱
+ * @param token - 重置令牌
+ * @throws {Error} 邮件服务未配置或 Resend 发送失败时抛出
+ */
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
   await sendSecurityEmail({
     email,
-    subject: `${brandName} password reset`,
-    title: `${brandName} password reset`,
-    description: "We received a request to reset your forum password.",
-    actionLabel: "Reset password",
+    subject: `${forumName} 重置密码`,
+    title: "重置密码",
+    paragraphs: [
+      `你正在使用 <strong>${brandName}</strong> 名下的 <strong>${forumName}</strong> 论坛相关服务，我们收到了一个重置你账号密码的请求。`,
+      "点击下方按钮即可设置新密码：",
+    ],
+    actionLabel: "重置密码",
     actionPath: `/auth/reset-password?token=${encodeURIComponent(token)}`,
-    expiry: "is valid for 30 minutes",
+    hint: "该链接将在 30 分钟后失效，请勿转发给他人。",
   });
 }
 
+/**
+ * 发送更换邮箱的验证邮件
+ *
+ * @param email - 收件人邮箱（待绑定的新邮箱）
+ * @param token - 验证令牌
+ * @throws {Error} 邮件服务未配置或 Resend 发送失败时抛出
+ */
 export async function sendEmailChangeVerificationEmail(email: string, token: string): Promise<void> {
   await sendSecurityEmail({
     email,
-    subject: `${brandName} verify your new email`,
-    title: `${brandName} email change verification`,
-    description: "We received a request to use this address as your forum login email.",
-    actionLabel: "Verify new email",
+    subject: `${forumName} 确认新邮箱`,
+    title: "确认新邮箱",
+    paragraphs: [
+      `你正在使用 <strong>${brandName}</strong> 名下的 <strong>${forumName}</strong> 论坛相关服务，我们收到了将这个邮箱绑定为论坛登录邮箱的请求。`,
+      "点击下方按钮即可完成确认：",
+    ],
+    actionLabel: "确认新邮箱",
     actionPath: `/auth/confirm-email-change?token=${encodeURIComponent(token)}`,
-    expiry: "is valid for 30 minutes",
+    hint: "该链接将在 30 分钟后失效。如果不是你本人的操作，请忽略此邮件。",
   });
 }

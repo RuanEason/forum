@@ -49,3 +49,6 @@ next-env.d.ts
 /src/generated/
 
 tpns-configs.json
+
+# 邮件模板渲染出的预览产物
+/email-preview/
