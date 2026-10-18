@@ -29,6 +29,7 @@ import Modal from "@/components/ui/Modal";
 import Textarea from "@/components/ui/Textarea";
 import Toggle from "@/components/ui/Toggle";
 import EmojiPicker from "@/components/EmojiPicker";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { customEmojiToMarkdown } from "@/lib/emoji";
 import { insertTextAtSelection } from "@/lib/insert-text";
 
@@ -134,6 +135,7 @@ export default function SettingsPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { startInitialRouteDataTask } = usePageLoadProgress();
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [name, setName] = useState("");
   const [savedName, setSavedName] = useState("");
@@ -171,6 +173,9 @@ export default function SettingsPage() {
   const bioSelectionRef = useRef({ start: 0, end: 0 });
   const coverPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initializedRef = useRef(false);
+  // 设置数据是否已经拿到。在此之前渲染出来的都只是「默认值占位」，
+  // 不能给用户看（否则就是先闪一屏错误数据）。
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const profileDirty = name !== savedName || bio !== savedBio;
   const selectedSection = useMemo(
@@ -266,8 +271,9 @@ export default function SettingsPage() {
   const fetchSettings = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/me", { cache: "no-store" });
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("Failed to load settings");
       await applyUser((await response.json()) as SettingsApiUser);
+      setSettingsLoaded(true);
     } catch {
       setError("无法加载设置，请刷新后重试");
     }
@@ -687,7 +693,11 @@ export default function SettingsPage() {
 
   const selectSection = (section: SettingsSection) => {
     setActiveSection(section);
-    router.replace(`/settings?section=${section}`, { scroll: false });
+    // 分区切换只是同一个页面内部的 tab，不是一次路由导航。
+    // 这里用 history.replaceState 而不是 router.replace：只改地址栏，
+    // 完全不进入 Next 的路由协商流程，也就不会给全局加载层任何被惊动的机会。
+    // （实测同 pathname 下改 query 本就不会拉起遮罩，这里是让意图更明确、更省事。）
+    window.history.replaceState(null, "", `/settings?section=${section}`);
   };
 
   useEffect(() => {
@@ -714,8 +724,12 @@ export default function SettingsPage() {
     }
     if (status !== "authenticated" || !session?.user || initializedRef.current) return;
     initializedRef.current = true;
-    void Promise.all([fetchSettings(), refreshSecurity()]);
-  }, [fetchSettings, pathname, refreshSecurity, router, session, status]);
+    // 首个数据请求发出前，向全局加载层声明「这次路由的首屏数据还没到」。
+    // 这会把遮罩延长到数据就绪，避免中间先渲染一屏默认值造成的闪烁。
+    // 非导航进入（例如在设置页刷新后补拉数据）不会拿到任务，直接跳过。
+    const finishRouteDataTask = startInitialRouteDataTask();
+    void Promise.all([fetchSettings(), refreshSecurity()]).finally(finishRouteDataTask);
+  }, [fetchSettings, pathname, refreshSecurity, router, session, startInitialRouteDataTask, status]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -730,8 +744,31 @@ export default function SettingsPage() {
     }
   }, [refreshSecurity]);
 
-  if (status === "loading" || !session) {
-    return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center text-sm text-gray-500">加载设置中...</div>;
+  // 数据没到位之前一律不渲染表单。
+  // - 首屏 / 站内跳转进来时，全局遮罩（统一过渡动画）正盖在上面，
+  //   这里保持透明占位即可，用户全程只看到那一个过渡动画；
+  // - 万一遮罩已经收起（例如数据超时失败后重试），才退化成自己的加载态，
+  //   避免出现一屏空白的错误数据。
+  // 注意：这是条件渲染，调用顺序必须位于下面所有 Hook 之后。
+  if (status === "loading" || !session || !settingsLoaded) {
+    if (status === "loading" || !session) {
+      return <div className="min-h-[calc(100vh-4rem)] bg-white" aria-busy="true" />;
+    }
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-2 text-sm text-gray-500" aria-busy="true">
+        {error ? (
+          <>
+            <span>{error}</span>
+            <button type="button" onClick={() => void fetchSettings()} className="font-medium text-indigo-600 hover:text-indigo-700">重试</button>
+          </>
+        ) : (
+          <>
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            <span>正在加载设置…</span>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (

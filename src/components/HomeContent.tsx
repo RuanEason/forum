@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -143,10 +143,9 @@ export default function HomeContent({
   }>;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { data: session } = useSession();
   const toast = useToast();
-  const { startTask } = usePageLoadProgress();
+  const { push: navigatePush } = usePageLoadProgress();
   const [posts, setPosts] = useState<PostProps[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialPostsNextCursor);
   const [hasMore, setHasMore] = useState(initialPostsHasMore);
@@ -160,22 +159,7 @@ export default function HomeContent({
     useState(false);
   const [announcementSidebarPreferenceReady, setAnnouncementSidebarPreferenceReady] =
     useState(false);
-  const pendingNavigationTaskRef = useRef<(() => void) | null>(null);
-  const navigationTaskTimeoutRef = useRef<number | null>(null);
   const prefetchedPostIdsRef = useRef<Set<string>>(new Set());
-
-  const finishPendingNavigationTask = useCallback(() => {
-    if (navigationTaskTimeoutRef.current !== null) {
-      window.clearTimeout(navigationTaskTimeoutRef.current);
-      navigationTaskTimeoutRef.current = null;
-    }
-
-    if (pendingNavigationTaskRef.current) {
-      const finishTask = pendingNavigationTaskRef.current;
-      pendingNavigationTaskRef.current = null;
-      finishTask();
-    }
-  }, []);
 
   const prefetchPostDetail = useCallback(
     (postId: string) => {
@@ -190,14 +174,10 @@ export default function HomeContent({
 
   const navigateToPostDetail = useCallback(
     (postId: string) => {
-      finishPendingNavigationTask();
-      pendingNavigationTaskRef.current = startTask("navigation");
-      navigationTaskTimeoutRef.current = window.setTimeout(() => {
-        finishPendingNavigationTask();
-      }, 10000);
-      router.push(`/post/${postId}`);
+      // 全屏遮罩、超时作废都由全局导航层统一处理，这里只负责发起跳转。
+      navigatePush(`/post/${postId}`);
     },
-    [finishPendingNavigationTask, router, startTask]
+    [navigatePush]
   );
 
   useEffect(() => {
@@ -281,16 +261,6 @@ export default function HomeContent({
       document.body.classList.remove("home-feed-route");
     };
   }, [embedded]);
-
-  useEffect(() => {
-    finishPendingNavigationTask();
-  }, [finishPendingNavigationTask, pathname]);
-
-  useEffect(() => {
-    return () => {
-      finishPendingNavigationTask();
-    };
-  }, [finishPendingNavigationTask]);
 
   const viewMode = session?.user?.postViewMode || "both"; // title, content, both
   useEffect(() => {

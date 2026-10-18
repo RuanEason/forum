@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Menu, Plus, Search, Settings, X } from "lucide-react";
@@ -12,14 +12,14 @@ import MobileHotTopics, {
   type MobileHotTopicsStatus,
 } from "@/components/MobileHotTopics";
 import { isAdminRole } from "@/lib/roles";
-import { PageTopProgressBar } from "@/components/PageLoadProgressProvider";
+import { PageTopProgressBar, usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 import { useTopicHeader } from "@/components/TopicHeaderProvider";
 import type { HomeTopic, HomeTopicsResponse } from "@/types/topic";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
   const { topicHeader } = useTopicHeader();
   const currentUser = session?.user;
   const [unreadCount, setUnreadCount] = useState(0);
@@ -220,10 +220,10 @@ export default function Navbar() {
   const handleSearch = useCallback(() => {
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery) {
-      router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+      navigatePush(`/search?q=${encodeURIComponent(trimmedQuery)}`);
       closeSearch();
     }
-  }, [searchQuery, router, closeSearch]);
+  }, [searchQuery, navigatePush, closeSearch]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 export default function ProfileCompletionCheck() {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -15,10 +16,10 @@ export default function ProfileCompletionCheck() {
       if (!session.user.name && pathname !== "/auth/complete-profile") {
         // 排除一些不需要完善信息的页面，例如退出登录页面（如果有的话）
         // 这里简单处理，只要不是 complete-profile 页面就重定向
-        router.push("/auth/complete-profile");
+        navigatePush("/auth/complete-profile");
       }
     }
-  }, [session, status, router, pathname]);
+  }, [session, status, navigatePush, pathname]);
 
   return null;
 }

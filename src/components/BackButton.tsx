@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 interface BackButtonProps {
   href?: string;
@@ -9,6 +10,7 @@ interface BackButtonProps {
 
 export default function BackButton({ href, onBeforeNavigate }: BackButtonProps) {
   const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
 
   const handleClick = () => {
     if (onBeforeNavigate && onBeforeNavigate()) {
@@ -16,7 +18,7 @@ export default function BackButton({ href, onBeforeNavigate }: BackButtonProps) 
     }
 
     if (href) {
-      router.push(href);
+      navigatePush(href);
     } else {
       router.back();
     }

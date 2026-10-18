@@ -1,8 +1,8 @@
 "use client";
 
 import { Pen } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 interface Topic {
   id: string;
@@ -17,17 +17,17 @@ export default function TopicParticipationEditor({
   topic,
 }: TopicParticipationEditorProps) {
   const { status } = useSession();
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
 
   const openEditor = () => {
     const editorPath = `/post/create?topicId=${encodeURIComponent(topic.id)}`;
 
     if (status !== "authenticated") {
-      router.push(`/auth/signin?redirect=${encodeURIComponent(editorPath)}`);
+      navigatePush(`/auth/signin?redirect=${encodeURIComponent(editorPath)}`);
       return;
     }
 
-    router.push(editorPath);
+    navigatePush(editorPath);
   };
 
   return (

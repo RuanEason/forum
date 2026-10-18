@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -19,6 +18,7 @@ import { CUSTOM_EMOJI_RENDER_SIZE, isCustomEmojiUrl } from "@/lib/emoji";
 import { isInternalUserLink } from "@/lib/markdown";
 import { isAdminRole } from "@/lib/roles";
 import { Eye, Lock } from "lucide-react";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 interface PostProps {
   id: string;
@@ -58,7 +58,7 @@ export default function UserPostList({
   userId: string;
   initialHasMore?: boolean;
 }) {
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
   const { data: session } = useSession();
   const toast = useToast();
   const activeUserId = currentUserId ?? session?.user?.id;
@@ -265,7 +265,7 @@ export default function UserPostList({
                   <div
                     onClick={(e) => {
                       if ((e.target as HTMLElement).closest("a")) return;
-                      router.push(`/post/${post.id}`);
+                      navigatePush(`/post/${post.id}`);
                     }}
                     className="cursor-pointer block hover:bg-gray-50 rounded-md -mx-2 p-2 transition duration-150 ease-in-out"
                   >

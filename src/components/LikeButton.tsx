@@ -2,7 +2,8 @@
 
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 /**
  * 点赞请求的超时时间。
@@ -45,7 +46,7 @@ export default function LikeButton({
   initialLikedByUser,
 }: LikeButtonProps) {
   const { status } = useSession();
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
   const pathname = usePathname();
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [likedByUser, setLikedByUser] = useState(initialLikedByUser);
@@ -114,7 +115,7 @@ export default function LikeButton({
     }
 
     if (status !== "authenticated") {
-      router.push(`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`);
+      navigatePush(`/auth/signin?redirect=${encodeURIComponent(pathname || "/")}`);
       return;
     }
 

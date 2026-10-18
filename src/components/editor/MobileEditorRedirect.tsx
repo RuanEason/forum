@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { MonitorSmartphone } from "lucide-react";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 export default function MobileEditorRedirect() {
-  const router = useRouter();
+  const { replace: navigateReplace } = usePageLoadProgress();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      router.replace("/post/create");
+      navigateReplace("/post/create");
     }, 1600);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [router]);
+  }, [navigateReplace]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] px-6">

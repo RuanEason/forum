@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
 import { isAdminRole } from "@/lib/roles";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 interface User {
   id: string;
@@ -43,7 +43,7 @@ interface MediaCleanupStats {
 
 export default function AdminPanel() {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [mediaCleanup, setMediaCleanup] = useState<MediaCleanupStats | null>(null);
@@ -98,16 +98,16 @@ export default function AdminPanel() {
         }
       }
       // 如果服务器上的角色也不是管理员，重定向到首页
-      router.push("/");
+      navigatePush("/");
     } catch (error) {
       console.error("检查管理员权限时出错:", error);
-      router.push("/");
+      navigatePush("/");
     }
-  }, [activeTab, fetchData, router]);
+  }, [activeTab, fetchData, navigatePush]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin");
+      navigatePush("/auth/signin");
     } else if (status === "authenticated" && session?.user) {
       // 首先检查会话中的角色
       if (isAdminRole(session.user.role)) {
@@ -117,7 +117,7 @@ export default function AdminPanel() {
         void checkServerForAdminRole();
       }
     }
-  }, [status, session, router, fetchData, checkServerForAdminRole, activeTab]);
+  }, [status, session, navigatePush, fetchData, checkServerForAdminRole, activeTab]);
 
   const handleBanUser = async (userId: string, banned: boolean) => {
     try {

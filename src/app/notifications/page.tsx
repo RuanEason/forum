@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import AdminBadge from "@/components/AdminBadge";
+import { usePageLoadProgress } from "@/components/PageLoadProgressProvider";
 
 interface Notification {
   id: string;
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const { push: navigatePush } = usePageLoadProgress();
 
   useEffect(() => {
     void fetchNotifications(1, false);
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
     }
 
     if (notification.type === "FOLLOW_USER") {
-      router.push(`/user/${notification.sender.id}`);
+      navigatePush(`/user/${notification.sender.id}`);
       return;
     }
 
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
       targetUrl += `#comment-${notification.comment.id}`;
     }
 
-    router.push(targetUrl);
+    navigatePush(targetUrl);
   };
 
   const renderNotificationContent = (notification: Notification) => {
