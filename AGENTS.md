@@ -2,7 +2,7 @@
 
 ## 项目信息
 - **项目类型**: Next.js 16 + TypeScript 全栈论坛应用
-- **前端框架**: React 19.2.1, Next.js 16.0.10 (App Router)
+- **前端框架**: React 19.2.1, Next.js 16.4.6 (App Router)
 - **样式**: Tailwind CSS 4
 - **数据库**: MySQL (通过 Prisma ORM)
 - **认证**: NextAuth.js 4
